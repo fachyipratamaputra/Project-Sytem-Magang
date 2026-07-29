@@ -1,0 +1,7 @@
+{
+  "name": "helpdesk-ticketing",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
