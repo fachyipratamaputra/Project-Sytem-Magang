@@ -1,0 +1,252 @@
+<ion-content class="bagian-departemen-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon-wrapper">
+            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
+          </div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard'" (click)="goToDashboard()">
+          <ion-icon name="home-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'list-ticket'" (click)="goToListTicket()">
+          <ion-icon name="list-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">List Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'approval-ticket'" (click)="goToApprovalTicket()">
+          <ion-icon name="checkmark-done-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Approval Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'assignment-ticket'" (click)="goToAssignmentTicket()">
+          <ion-icon name="clipboard-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Assignment Ticket</span>
+        </div>
+
+        <div class="menu-label">MASTER DATA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'karyawan'" (click)="goToKaryawan()">
+          <ion-icon name="people-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Karyawan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'user'" (click)="goToUser()">
+          <ion-icon name="person-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">User</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'jabatan'" (click)="goToJabatan()">
+          <ion-icon name="ribbon-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Jabatan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'departemen'" (click)="goToDepartemen()">
+          <ion-icon name="business-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'bagian-departemen'" (click)="goToBagianDepartemen()">
+          <ion-icon name="git-branch-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Bagian Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'teknisi'" (click)="goToTeknisi()">
+          <ion-icon name="construct-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Teknisi</span>
+        </div>
+
+        <div class="menu-label">ASSET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'inventory'" (click)="goToInventory()">
+          <ion-icon name="cube-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Inventory</span>
+        </div>
+
+        <div class="menu-label">COMPLAINT MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'kategori'" (click)="goToKategori()">
+          <ion-icon name="pricetags-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Kategori</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'sub-kategori'" (click)="goToSubKategori()">
+          <ion-icon name="pricetag-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Sub Kategori</span>
+        </div>
+
+        <div class="menu-label">REPORT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'laporan-feedback'" (click)="goToLaporanFeedback()">
+          <ion-icon name="chatbox-ellipses-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Laporan Feedback</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'statistik-ticket'" (click)="goToStatistikTicket()">
+          <ion-icon name="bar-chart-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Statistik Ticket</span>
+        </div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="setActiveMenu('pengaturan')">
+          <ion-icon name="settings-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Pengaturan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">Bagian Departemen</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar" (click)="goToProfile()">
+            <img [src]="'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&size=64&bold=true'" alt="Avatar" />
+            <span class="header-avatar-name">Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div class="page-header">
+          <div class="header-left">
+            <div>
+              <h1 class="page-title">Data Bagian Departemen</h1>
+              <p class="page-subtitle">Kelola sub-bagian dari tiap departemen perusahaan</p>
+            </div>
+          </div>
+          <div class="header-right">
+            <ion-button class="tambah-btn" fill="solid" (click)="openTambahModal()">
+              <ion-icon name="add-outline"></ion-icon>
+              Tambah Bagian
+            </ion-button>
+          </div>
+        </div>
+
+        <!-- FILTER -->
+        <div class="filter-section">
+          <div class="filter-group">
+            <input type="text" placeholder="Cari departemen / bagian..." [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" class="filter-input" />
+          </div>
+          <div class="filter-group">
+            <ion-select [(ngModel)]="filterDepartemen" interface="action-sheet" (ionChange)="onFilterChange()" placeholder="Filter Departemen">
+              <ion-select-option value="">Semua Departemen</ion-select-option>
+              <ion-select-option *ngFor="let d of departemenOptions" [value]="d">{{ d }}</ion-select-option>
+            </ion-select>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table class="bagian-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">No</th>
+                  <th>Departemen</th>
+                  <th>Bagian Departemen</th>
+                  <th style="width: 150px;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let b of pagedBagian; let i = index">
+                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                  <td><span class="dept-badge">{{ b.departemen }}</span></td>
+                  <td class="fw-bold">{{ b.bagian }}</td>
+                  <td>
+                    <div class="action-buttons">
+                      <ion-button fill="clear" size="small" class="edit-btn" (click)="openEditModal(b)">
+                        <ion-icon name="create-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small" class="hapus-btn" (click)="hapusBagian(b)">
+                        <ion-icon name="trash-outline"></ion-icon>
+                      </ion-button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr *ngIf="filteredBagian.length === 0">
+                  <td colspan="4" class="empty-row">Tidak ada data bagian departemen yang cocok</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer" *ngIf="totalPages > 1">
+            <span class="table-info">Menampilkan {{ pagedBagian.length }} dari {{ filteredBagian.length }} data</span>
+            <div class="pagination">
+              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()"><ion-icon name="chevron-back-outline"></ion-icon></ion-button>
+              <span class="page-number" *ngFor="let p of totalPagesArray" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</span>
+              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="empty-state" *ngIf="filteredBagian.length === 0 && bagianList.length === 0">
+          <ion-icon name="folder-open-outline"></ion-icon>
+          <h3>Belum Ada Data Bagian</h3>
+          <p>Klik tombol "Tambah Bagian" untuk menambahkan data baru</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<!-- ========================================== -->
+<!-- 🔥 MODAL TAMBAH/EDIT BAGIAN DEPARTEMEN     -->
+<!-- ========================================== -->
+<ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ isEditing ? 'Edit Bagian' : 'Tambah Bagian' }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="modal-body">
+        
+        <!-- Departemen -->
+        <div class="form-group">
+          <label class="form-label">Departemen <span class="required">*</span></label>
+          <ion-select [(ngModel)]="formData.departemen" interface="action-sheet" class="form-select" placeholder="Pilih Departemen">
+            <ion-select-option *ngFor="let d of departemenOptions" [value]="d">{{ d }}</ion-select-option>
+          </ion-select>
+        </div>
+
+        <!-- Bagian -->
+        <div class="form-group">
+          <label class="form-label">Nama Bagian <span class="required">*</span></label>
+          <ion-input type="text" placeholder="Contoh: Software, Lab..." [(ngModel)]="formData.bagian" class="form-input"></ion-input>
+        </div>
+
+        <!-- Tombol -->
+        <div class="modal-actions">
+          <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
+            Batal
+          </ion-button>
+          <ion-button class="submit-modal-btn" (click)="simpanBagian()" [disabled]="!formData.departemen || !formData.bagian">
+            <ion-icon name="save-outline" slot="start"></ion-icon>
+            {{ isEditing ? 'Update' : 'Simpan' }}
+          </ion-button>
+        </div>
+
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

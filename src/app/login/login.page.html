@@ -1,0 +1,88 @@
+<ion-content class="login-content">
+  <div class="login-wrapper">
+    
+    <!-- ===== LEFT SIDE (Branding / Display) ===== -->
+    <div class="login-left">
+      <div class="left-overlay">
+        <div class="left-content">
+          <div class="display-icon">
+            <ion-icon name="headset-outline"></ion-icon>
+          </div>
+          <h1 class="display-title">PT<br>Bakrie Pipe Industry</h1>
+          <p class="display-desc">Platform manajemen tiket terintegrasi untuk Admin, Teknisi, dan Karyawan.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT SIDE (Form Login) ===== -->
+    <div class="login-right">
+      <div class="login-card">
+        
+        <div class="card-header">
+          <div class="mobile-logo">
+            <ion-icon name="headset-outline"></ion-icon>
+          </div>
+          <h2 class="card-title">Masuk ke Akun</h2>
+          <p class="card-subtitle">Silakan masukkan kredensial Anda untuk mengakses sistem</p>
+        </div>
+
+        <form (ngSubmit)="login()" class="login-form">
+          
+          <!-- Username -->
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <ion-input 
+              type="text" 
+              [(ngModel)]="loginData.username" 
+              name="username"
+              placeholder="Contoh: admin / teknisi / user"
+              class="custom-input"
+              autocomplete="off"
+            ></ion-input>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <ion-input 
+              type="password" 
+              [(ngModel)]="loginData.password" 
+              name="password"
+              placeholder="Masukkan password"
+              class="custom-input"
+            ></ion-input>
+          </div>
+
+          <!-- Error Message -->
+          <div class="error-message" *ngIf="errorMessage">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            <span>{{ errorMessage }}</span>
+          </div>
+
+          <!-- Tombol Login -->
+          <ion-button 
+            type="submit" 
+            expand="block" 
+            class="login-btn"
+            [disabled]="isLoading">
+            <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+            <span *ngIf="!isLoading">Masuk ke Sistem</span>
+          </ion-button>
+
+        </form>
+
+        <!-- Footer Info -->
+        <div class="card-footer">
+          <p><strong>Akun Demo:</strong></p>
+          <div class="demo-info">
+            <span><span class="badge blue">Admin</span> admin / 123456</span>
+            <span><span class="badge green">Teknisi</span> teknisi / 123456</span>
+            <span><span class="badge gray">Users</span> user / 123456</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</ion-content>

@@ -1,0 +1,279 @@
+:host {
+  --primary: #2563eb;
+  --primary-dark: #0f172a;
+  --sidebar-bg: #16213e;
+  --content-bg: #f4f6fb;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --danger: #ef4444;
+  --success: #22c55e;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.login-content {
+  --background: var(--content-bg);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ===== LAYOUT UTAMA (Split Screen) ===== */
+.login-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ===== LEFT SIDE (Branding) ===== */
+.login-left {
+  flex: 1;
+  background: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 40px;
+  color: #fff;
+}
+
+.login-left::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: rgba(37, 99, 235, 0.15);
+  border-radius: 50%;
+  top: -200px;
+  right: -200px;
+}
+
+.login-left::after {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 50%;
+  bottom: -150px;
+  left: -150px;
+}
+
+.left-overlay {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 450px;
+}
+
+.display-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--primary);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.display-icon ion-icon {
+  font-size: 40px;
+  color: #fff;
+}
+
+.display-title {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 16px;
+}
+
+.display-desc {
+  font-size: 15px;
+  opacity: 0.8;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ===== RIGHT SIDE (Form) ===== */
+.login-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--content-bg);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 36px 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.mobile-logo {
+  display: none;
+  width: 56px;
+  height: 56px;
+  background: var(--primary);
+  border-radius: 14px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.mobile-logo ion-icon {
+  font-size: 28px;
+  color: #fff;
+}
+
+.card-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 4px;
+}
+
+.card-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ===== FORM INPUT ===== */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+}
+
+.custom-input {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  font-size: 14px;
+  --border-color: var(--border-color);
+  --border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #fafcfc;
+}
+
+.custom-input.ion-touched.ion-invalid {
+  --border-color: var(--danger);
+}
+
+/* ===== ERROR MESSAGE ===== */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef2f2;
+  color: var(--danger);
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #fecaca;
+}
+
+.error-message ion-icon {
+  font-size: 18px;
+}
+
+/* ===== TOMBOL LOGIN ===== */
+.login-btn {
+  --background: var(--primary);
+  --border-radius: 8px;
+  --box-shadow: none;
+  font-weight: 600;
+  font-size: 15px;
+  height: 44px;
+  text-transform: none;
+  margin-top: 8px;
+}
+
+.login-btn[disabled] {
+  --background: #93a5e3;
+}
+
+/* ===== FOOTER INFO ===== */
+.card-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.card-footer p {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 12px;
+}
+
+.demo-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.demo-info span {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--content-bg);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  color: #fff;
+}
+
+.badge.blue { background: var(--primary); }
+.badge.green { background: var(--success); }
+.badge.gray { background: var(--text-muted); }
+
+/* ========================================== */
+/* RESPONSIVE (Desktop vs Mobile)              */
+/* ========================================== */
+@media (max-width: 1024px) {
+  .login-left {
+    display: none; /* Hilangkan sisi kiri di tablet/mobile */
+  }
+
+  .mobile-logo {
+    display: flex; /* Munculkan logo di mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px 20px;
+  }
+}

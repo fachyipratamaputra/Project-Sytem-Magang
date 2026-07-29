@@ -1,0 +1,160 @@
+<ion-content class="riwayat-tiket-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon-wrapper">
+            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
+          </div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="avatar-wrapper">
+          <img
+            [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=128&bold=true'"
+            alt="Avatar"
+            class="sidebar-avatar"
+          />
+          <div class="online-status"></div>
+        </div>
+        <div class="sidebar-user-info">
+          <h4 class="sidebar-username">{{ user.nama || 'Teknisi' }}</h4>
+          <p class="sidebar-userrole">🔧 Teknisi</p>
+        </div>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard-teknisi'" (click)="goToDashboardTeknisi()">
+          <div class="menu-icon-wrapper"><ion-icon name="home-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'ticket'" (click)="goToTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="list-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'proses-tiket'" (click)="goToProsesTiket()">
+          <div class="menu-icon-wrapper"><ion-icon name="construct-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Proses Tiket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'riwayat-tiket'" (click)="goToRiwayatTiket()">
+          <div class="menu-icon-wrapper"><ion-icon name="time-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Riwayat Tiket</span>
+        </div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="goToPengaturan()">
+          <div class="menu-icon-wrapper"><ion-icon name="settings-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Pengaturan</span>
+        </div>
+        <div class="menu-item logout-item" (click)="logout()">
+          <div class="menu-icon-wrapper"><ion-icon name="log-out-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Keluar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">{{ getPageTitle() }}</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar" (click)="goToProfile()">
+            <img
+              [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=64&bold=true'"
+              alt="Avatar"
+            />
+            <span class="header-avatar-name">{{ user.nama }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div class="page-heading">
+          <h1 class="page-title">Riwayat Tiket</h1>
+          <p class="page-subtitle">Histori tiket yang pernah Anda tangani</p>
+        </div>
+
+        <!-- TOOLBAR SEARCH -->
+        <div class="list-toolbar">
+          <div class="search-box">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input
+              type="text"
+              placeholder="Cari ID Ticket / Pelapor..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFilterChange()"
+            />
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table class="riwayat-tiket-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">NO</th>
+                  <th style="min-width: 140px;">ID Ticket</th>
+                  <th>Reported</th>
+                  <th>Kategori</th>
+                  <th style="min-width: 150px;">Tanggal Selesai</th>
+                  <th style="min-width: 80px;">Progress</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let r of pagedRiwayat; let i = index">
+                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                  <td class="ticket-id">{{ r.idTicket }}</td>
+                  <td class="fw-bold">{{ r.reportedBy }}</td>
+                  <td>{{ r.kategori }}</td>
+                  <td class="nowrap">{{ r.tanggalSelesai }}</td>
+                  <td>
+                    <div class="progress-wrap">
+                      <span class="progress-text">{{ r.progress }}%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="status-badge" [ngClass]="getStatusClass(r.status)">{{ r.status }}</span>
+                  </td>
+                </tr>
+
+                <tr *ngIf="filteredRiwayat.length === 0">
+                  <td colspan="7" class="empty-row">Belum ada riwayat tiket yang selesai</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer" *ngIf="totalPages > 1">
+            <span class="table-info">Menampilkan {{ pagedRiwayat.length }} dari {{ filteredRiwayat.length }} data</span>
+            <div class="pagination">
+              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()"><ion-icon name="chevron-back-outline"></ion-icon></ion-button>
+              <span class="page-number" *ngFor="let p of totalPagesArray" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</span>
+              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

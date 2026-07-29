@@ -1,0 +1,202 @@
+<ion-content class="laporan-feedback-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon-wrapper">
+            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
+          </div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard'" (click)="goToDashboard()">
+          <ion-icon name="home-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'list-ticket'" (click)="goToListTicket()">
+          <ion-icon name="list-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">List Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'approval-ticket'" (click)="goToApprovalTicket()">
+          <ion-icon name="checkmark-done-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Approval Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'assignment-ticket'" (click)="goToAssignmentTicket()">
+          <ion-icon name="clipboard-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Assignment Ticket</span>
+        </div>
+
+        <div class="menu-label">MASTER DATA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'karyawan'" (click)="goToKaryawan()">
+          <ion-icon name="people-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Karyawan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'user'" (click)="goToUser()">
+          <ion-icon name="person-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">User</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'jabatan'" (click)="goToJabatan()">
+          <ion-icon name="ribbon-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Jabatan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'departemen'" (click)="goToDepartemen()">
+          <ion-icon name="business-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'bagian-departemen'" (click)="goToBagianDepartemen()">
+          <ion-icon name="git-branch-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Bagian Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'teknisi'" (click)="goToTeknisi()">
+          <ion-icon name="construct-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Teknisi</span>
+        </div>
+
+        <div class="menu-label">ASSET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'inventory'" (click)="goToInventory()">
+          <ion-icon name="cube-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Inventory</span>
+        </div>
+
+        <div class="menu-label">COMPLAINT MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'kategori'" (click)="goToKategori()">
+          <ion-icon name="pricetags-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Kategori</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'sub-kategori'" (click)="goToSubKategori()">
+          <ion-icon name="pricetag-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Sub Kategori</span>
+        </div>
+
+        <div class="menu-label">REPORT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'laporan-feedback'" (click)="goToLaporanFeedback()">
+          <ion-icon name="chatbox-ellipses-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Laporan Feedback</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'statistik-ticket'" (click)="goToStatistikTicket()">
+          <ion-icon name="bar-chart-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Statistik Ticket</span>
+        </div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="setActiveMenu('pengaturan')">
+          <ion-icon name="settings-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Pengaturan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">Laporan Feedback</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar" (click)="goToProfile()">
+            <img [src]="'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&size=64&bold=true'" alt="Avatar" />
+            <span class="header-avatar-name">Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div class="page-header">
+          <div class="header-left">
+            <div>
+              <h1 class="page-title">Laporan Feedback</h1>
+              <p class="page-subtitle">Rekapitulasi feedback positif dan negatif dari pengguna</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOOLBAR: SEARCH + FILTER -->
+        <div class="list-toolbar">
+          <div class="search-box">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input
+              type="text"
+              placeholder="Cari ID Ticket / Pelapor..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFilterChange()"
+            />
+          </div>
+
+          <div class="toolbar-filters">
+            <select [(ngModel)]="filterRating" (change)="onFilterChange()">
+              <option value="">Semua Feedback</option>
+              <option *ngFor="let r of ratingOptions" [value]="r">{{ r }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table class="feedback-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">No</th>
+                  <th>Id Ticket</th>
+                  <th>Reported</th>
+                  <th style="min-width: 140px;">Tanggal</th>
+                  <th>Feedback</th>
+                  <th>Keterangan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let f of pagedFeedback; let i = index">
+                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                  <td class="ticket-id">{{ f.idTicket }}</td>
+                  <td class="fw-bold">{{ f.reportedBy }}</td>
+                  <td class="nowrap">{{ f.tanggal }}</td>
+                  <td>
+                    <span class="feedback-badge" [ngClass]="getRatingClass(f.feedback)">{{ f.feedback }}</span>
+                  </td>
+                  <td class="keterangan-col">{{ f.keterangan || '-' }}</td>
+                </tr>
+
+                <tr *ngIf="filteredFeedback.length === 0">
+                  <td colspan="6" class="empty-row">Tidak ada data feedback yang cocok</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer" *ngIf="totalPages > 1">
+            <span class="table-info">Menampilkan {{ pagedFeedback.length }} dari {{ filteredFeedback.length }} data</span>
+            <div class="pagination">
+              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()"><ion-icon name="chevron-back-outline"></ion-icon></ion-button>
+              <span class="page-number" *ngFor="let p of totalPagesArray" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</span>
+              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="empty-state" *ngIf="filteredFeedback.length === 0 && feedbackList.length === 0">
+          <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+          <h3>Belum Ada Data Feedback</h3>
+          <p>Belum ada laporan feedback yang masuk dari pengguna</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

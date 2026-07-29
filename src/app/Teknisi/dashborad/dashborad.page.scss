@@ -1,0 +1,610 @@
+:host {
+  --primary: #2563eb;
+  --sidebar-bg: #16213e;
+  --sidebar-bg-hover: #1e2a4a;
+  --content-bg: #f4f6fb;
+  --card-bg: #ffffff;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+}
+
+.teknisi-dashboard-content {
+  --background: var(--content-bg);
+}
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ===================== SIDEBAR ===================== */
+.sidebar {
+  width: 250px;
+  background: var(--sidebar-bg);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed; // TETAP fixed di semua ukuran layar — jangan diubah jadi sticky
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+
+  @media (max-width: 992px) {
+    transform: translateX(-100%);
+    &.open {
+      transform: translateX(0);
+    }
+  }
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-icon {
+  font-size: 20px;
+  color: #fff;
+}
+
+.logo-text {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.sidebar-close {
+  display: none;
+  @media (max-width: 992px) {
+    display: block;
+    --color: #fff;
+  }
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.avatar-wrapper {
+  position: relative;
+}
+
+.sidebar-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  object-fit: cover;
+}
+
+.online-status {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: var(--success);
+  border-radius: 50%;
+  border: 2px solid var(--sidebar-bg);
+}
+
+.sidebar-user-info {
+  flex: 1;
+}
+
+.sidebar-username {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+}
+
+.sidebar-userrole {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.sidebar-menu {
+  flex: 1;
+  padding: 8px 16px 24px;
+}
+
+.menu-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 16px 10px 6px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13.5px;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--sidebar-bg-hover);
+    color: #fff;
+  }
+
+  &.active {
+    background: var(--primary);
+    color: #fff;
+  }
+}
+
+.menu-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  width: 20px;
+}
+
+.menu-text {
+  flex: 1;
+}
+
+.logout-item {
+  margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 16px;
+  color: var(--danger);
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .menu-icon-wrapper .menu-icon {
+    color: var(--danger);
+  }
+}
+
+.sidebar-overlay {
+  display: none;
+  @media (max-width: 992px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+
+    &.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+}
+
+/* ===================== MAIN CONTENT ===================== */
+.main-content {
+  flex: 1;
+  min-width: 0; // penting: cegah table-responsive mendorong lebar container
+  margin-left: 250px; // kompensasi sidebar yang fixed — SATU-SATUNYA sumber offset
+
+  @media (max-width: 992px) {
+    margin-left: 0;
+  }
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-toggle {
+  display: none;
+  @media (max-width: 992px) {
+    display: block;
+  }
+}
+
+.page-title-inline {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  img {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+  }
+
+  .header-avatar-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+
+    @media (max-width: 576px) {
+      display: none;
+    }
+  }
+}
+
+.content-area {
+  padding: 24px;
+}
+
+.page-heading {
+  margin-bottom: 18px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.page-subtitle {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+/* ===================== STATS 3 KOLOM ===================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-card-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 22px;
+    color: #ffffff;
+  }
+
+  &.blue { background: var(--primary); }
+  &.orange { background: var(--warning); }
+  &.green { background: var(--success); }
+}
+
+.stat-info {
+  h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-dark);
+  }
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+}
+
+/* ===================== TABLE ===================== */
+.table-card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.view-all {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+  text-transform: none;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.ticket-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th,
+  td {
+    padding: 12px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  thead th {
+    background: var(--content-bg);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border-color);
+
+    &:hover {
+      background: #fafbfe;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  td {
+    color: var(--text-dark);
+    white-space: normal;
+  }
+}
+
+.ticket-id {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.fw-bold {
+  font-weight: 700;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Progress Bar */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 80px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+
+  &.progress-low {
+    background: var(--danger);
+  }
+
+  &.progress-medium {
+    background: var(--warning);
+  }
+
+  &.progress-advanced {
+    background: var(--primary);
+  }
+
+  &.progress-complete {
+    background: var(--success);
+  }
+}
+
+.progress-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+
+  &.status-proses {
+    background: #fff7ed;
+    color: var(--warning);
+  }
+
+  &.status-selesai {
+    background: #f0fdf4;
+    color: var(--success);
+  }
+
+  &.status-default {
+    background: #f1f5f9;
+    color: var(--text-muted);
+  }
+}
+
+/* ===================== PLACEHOLDER ===================== */
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.placeholder-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+
+  ion-icon {
+    font-size: 40px;
+    color: var(--primary);
+  }
+}
+
+.placeholder-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 8px;
+}
+
+.placeholder-text {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.placeholder-sub {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 4px 0 0;
+}
+
+/* ===================== RESPONSIVE ===================== */
+// 🔥 FIX: blok "@media (min-width: 1024px) { .sidebar { position: sticky; ... } }"
+// yang lama DIHAPUS — itu penyebab sidebar keluar dari fixed-position dan ikut
+// makan ruang di flex container, sehingga .main-content ter-geser dobel
+// (margin-left 250px DITAMBAH lebar sidebar 250px yang ikut masuk flow).
+// Sidebar sekarang konsisten "position: fixed" di semua ukuran layar (lihat
+// definisi .sidebar di atas), jadi cukup sembunyikan tombol close/overlay/
+// menu-toggle saja di layar besar — tanpa mengubah position sidebar.
+@media (min-width: 1024px) {
+  .sidebar-close {
+    display: none !important;
+  }
+
+  .sidebar-overlay {
+    display: none !important;
+  }
+
+  .menu-toggle {
+    display: none !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .sidebar-close {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .main-header {
+    padding: 12px 16px;
+  }
+
+  .content-area {
+    padding: 16px;
+  }
+}

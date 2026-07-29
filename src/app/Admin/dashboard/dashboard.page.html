@@ -1,0 +1,317 @@
+<ion-content class="dashboard-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon-wrapper">
+            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
+          </div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard'" (click)="goToDashboard()">
+          <div class="menu-icon-wrapper"><ion-icon name="home-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'list-ticket'" (click)="goToListTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="list-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">List Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'approval-ticket'" (click)="goToApprovalTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="checkmark-done-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Approval Ticket</span>
+          <ion-badge class="menu-badge" *ngIf="waitingApproval > 0">{{ waitingApproval }}</ion-badge>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'assignment-ticket'" (click)="goToAssignmentTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="clipboard-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Assignment Ticket</span>
+        </div>
+
+        <div class="menu-label">MASTER DATA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'karyawan'" (click)="goToKaryawan()">
+          <div class="menu-icon-wrapper"><ion-icon name="people-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Karyawan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'user'" (click)="goToUser()">
+          <div class="menu-icon-wrapper"><ion-icon name="person-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">User</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'jabatan'" (click)="goToJabatan()">
+          <div class="menu-icon-wrapper"><ion-icon name="ribbon-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Jabatan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'departemen'" (click)="goToDepartemen()">
+          <div class="menu-icon-wrapper"><ion-icon name="business-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'bagian-departemen'" (click)="goToBagianDepartemen()">
+          <div class="menu-icon-wrapper"><ion-icon name="git-branch-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Bagian Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'teknisi'" (click)="goToTeknisi()">
+          <div class="menu-icon-wrapper"><ion-icon name="construct-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Teknisi</span>
+        </div>
+
+        <div class="menu-label">ASSET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'inventory'" (click)="goToInventory()">
+          <div class="menu-icon-wrapper"><ion-icon name="cube-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Inventory</span>
+        </div>
+
+        <div class="menu-label">COMPLAINT MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'kategori'" (click)="goToKategori()">
+          <div class="menu-icon-wrapper"><ion-icon name="pricetags-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Kategori</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'sub-kategori'" (click)="goToSubKategori()">
+          <div class="menu-icon-wrapper"><ion-icon name="pricetag-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Sub Kategori</span>
+        </div>
+
+        <div class="menu-label">REPORT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'laporan-feedback'" (click)="goToLaporanFeedback()">
+          <div class="menu-icon-wrapper"><ion-icon name="chatbox-ellipses-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Laporan Feedback</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'statistik-ticket'" (click)="goToStatistikTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="bar-chart-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Statistik Ticket</span>
+        </div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="setActiveMenu('pengaturan')">
+          <div class="menu-icon-wrapper"><ion-icon name="settings-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Pengaturan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">{{ getPageTitle() }}</span>
+        </div>
+        <div class="header-right">
+          <div class="search-bar">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input type="text" placeholder="Cari sesuatu..." class="search-input">
+          </div>
+          <div class="notification-wrapper">
+            <ion-button class="notification-btn" fill="clear" (click)="goToNotifikasi()">
+              <ion-icon name="notifications-outline"></ion-icon>
+              <span class="notification-badge" *ngIf="pendingCount > 0">{{ pendingCount }}</span>
+            </ion-button>
+          </div>
+          <div class="header-avatar" (click)="goToProfile()">
+            <img
+              [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Admin') + '&background=2563eb&color=fff&size=64&bold=true'"
+              alt="Avatar"
+            />
+            <span class="header-avatar-name">{{ user.nama }}</span>
+            <ion-icon name="chevron-down-outline"></ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div *ngIf="isLoading" class="loading-container">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Memuat data...</p>
+        </div>
+
+        <div *ngIf="!isLoading && activeMenu === 'dashboard'">
+          <div class="page-heading">
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">{{ getPageSubtitle() }}</p>
+          </div>
+
+          <!-- ===== STATS GRID ===== -->
+          <div class="stats-grid">
+            <div class="stat-card" (click)="goToListTicket()">
+              <div class="stat-card-top">
+                <div class="stat-info">
+                  <p class="stat-label">Total Ticket</p>
+                  <h3 class="stat-value">{{ totalTicket }}</h3>
+                </div>
+                <div class="stat-icon blue"><ion-icon name="document-text-outline"></ion-icon></div>
+              </div>
+              <div class="stat-footer">
+                <span class="stat-trend up"><ion-icon name="arrow-up-outline"></ion-icon> {{ totalTicketTrend }}% dari bulan lalu</span>
+              </div>
+            </div>
+
+            <div class="stat-card" (click)="goToApprovalTicket()">
+              <div class="stat-card-top">
+                <div class="stat-info">
+                  <p class="stat-label">Waiting Approval</p>
+                  <h3 class="stat-value">{{ waitingApproval }}</h3>
+                </div>
+                <div class="stat-icon orange"><ion-icon name="time-outline"></ion-icon></div>
+              </div>
+              <div class="stat-footer">
+                <span class="stat-trend up"><ion-icon name="arrow-up-outline"></ion-icon> {{ waitingApprovalTrend }}% dari bulan lalu</span>
+              </div>
+            </div>
+
+            <div class="stat-card" (click)="goToAssignmentTicket()">
+              <div class="stat-card-top">
+                <div class="stat-info">
+                  <p class="stat-label">On Progress</p>
+                  <h3 class="stat-value">{{ onProgress }}</h3>
+                </div>
+                <div class="stat-icon purple"><ion-icon name="sync-outline"></ion-icon></div>
+              </div>
+              <div class="stat-footer">
+                <span class="stat-trend up"><ion-icon name="arrow-up-outline"></ion-icon> {{ onProgressTrend }}% dari bulan lalu</span>
+              </div>
+            </div>
+
+            <div class="stat-card" (click)="goToListTicket()">
+              <div class="stat-card-top">
+                <div class="stat-info">
+                  <p class="stat-label">Closed</p>
+                  <h3 class="stat-value">{{ closedTicket }}</h3>
+                </div>
+                <div class="stat-icon green"><ion-icon name="checkmark-circle-outline"></ion-icon></div>
+              </div>
+              <div class="stat-footer">
+                <span class="stat-trend up"><ion-icon name="arrow-up-outline"></ion-icon> {{ closedTicketTrend }}% dari bulan lalu</span>
+              </div>
+            </div>
+
+            <div class="stat-card" (click)="goToUser()">
+              <div class="stat-card-top">
+                <div class="stat-info">
+                  <p class="stat-label">Total User</p>
+                  <h3 class="stat-value">{{ totalUser }}</h3>
+                </div>
+                <div class="stat-icon blue"><ion-icon name="person-outline"></ion-icon></div>
+              </div>
+            </div>
+
+            <div class="stat-card" (click)="goToTeknisi()">
+              <div class="stat-card-top">
+                <div class="stat-info">
+                  <p class="stat-label">Total Teknisi</p>
+                  <h3 class="stat-value">{{ totalTeknisi }}</h3>
+                </div>
+                <div class="stat-icon green"><ion-icon name="construct-outline"></ion-icon></div>
+              </div>
+            </div>
+
+            <div class="stat-card" (click)="goToInventory()">
+              <div class="stat-card-top">
+                <div class="stat-info">
+                  <p class="stat-label">Total Asset</p>
+                  <h3 class="stat-value">{{ totalAsset }}</h3>
+                </div>
+                <div class="stat-icon teal"><ion-icon name="desktop-outline"></ion-icon></div>
+              </div>
+            </div>
+
+            <div class="stat-card" (click)="goToLaporanFeedback()">
+              <div class="stat-card-top">
+                <div class="stat-info">
+                  <p class="stat-label">Feedback Positif</p>
+                  <h3 class="stat-value">{{ feedbackPositifPercent }}%</h3>
+                </div>
+                <div class="stat-icon green"><ion-icon name="happy-outline"></ion-icon></div>
+              </div>
+              <div class="stat-footer">
+                <span class="stat-trend up"><ion-icon name="arrow-up-outline"></ion-icon> {{ feedbackPositifTrend }}% dari bulan lalu</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== CHART + ACTIVITY + FEEDBACK ===== -->
+          <div class="content-grid">
+            <div class="chart-card">
+              <div class="card-header">
+                <h4 class="card-title">Grafik Ticket Bulanan</h4>
+                <select class="year-select">
+                  <option>Tahun 2026</option>
+                </select>
+              </div>
+              <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot blue"></span> Total</span>
+                <span class="legend-item"><span class="legend-dot green"></span> Closed</span>
+                <span class="legend-item"><span class="legend-dot orange"></span> On Progress</span>
+                <span class="legend-item"><span class="legend-dot red"></span> Waiting Approval</span>
+              </div>
+              <div class="chart-container">
+                <canvas #ticketChart></canvas>
+              </div>
+            </div>
+
+            <div class="activity-card">
+              <div class="card-header">
+                <h4 class="card-title">Aktivitas Terbaru</h4>
+                <a class="view-all-link">Lihat Semua</a>
+              </div>
+              <div class="activity-list" *ngIf="activities.length > 0">
+                <div class="activity-item" *ngFor="let activity of activities">
+                  <div class="activity-icon" [class]="activity.type">
+                    <ion-icon [name]="activity.icon"></ion-icon>
+                  </div>
+                  <div class="activity-content">
+                    <p class="activity-text">{{ activity.text }}</p>
+                    <span class="activity-time">{{ activity.time }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="activity-empty" *ngIf="activities.length === 0">
+                <p>Belum ada aktivitas tercatat</p>
+              </div>
+            </div>
+
+            <div class="feedback-card">
+              <div class="card-header">
+                <h4 class="card-title">Feedback</h4>
+              </div>
+              <div class="feedback-chart-wrapper">
+                <canvas #feedbackChart></canvas>
+                <div class="feedback-percent-label">
+                  <span class="feedback-percent-value">{{ feedbackPositifPercent }}%</span>
+                  <span class="feedback-percent-text">Positif</span>
+                </div>
+              </div>
+              <div class="feedback-legend">
+                <div class="legend-item">
+                  <span class="legend-dot green"></span> Positif ({{ feedbackPositifPercent }}%)
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot red"></span> Negatif ({{ feedbackNegatifPercent }}%)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLACEHOLDER untuk menu selain dashboard -->
+        <div *ngIf="!isLoading && activeMenu !== 'dashboard'" class="placeholder-page">
+          <h2 class="placeholder-title">{{ getPageTitle() }}</h2>
+          <p class="placeholder-text">Halaman ini sedang dalam pengembangan</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

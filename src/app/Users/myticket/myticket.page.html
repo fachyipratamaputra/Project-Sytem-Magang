@@ -1,0 +1,219 @@
+<ion-content class="my-ticket-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon-wrapper">
+            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
+          </div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="avatar-wrapper">
+          <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'User') + '&background=2563eb&color=fff&size=128&bold=true'" alt="Avatar" class="sidebar-avatar" />
+          <div class="online-status"></div>
+        </div>
+        <div class="sidebar-user-info">
+          <h4 class="sidebar-username">{{ user.nama || 'User' }}</h4>
+          <p class="sidebar-userrole">👤 User</p>
+        </div>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard-user'" (click)="goToDashboardUser()">
+          <ion-icon name="home-outline" class="menu-icon"></ion-icon>
+          <span>Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'my-ticket'" (click)="goToMyTicket()">
+          <ion-icon name="list-outline" class="menu-icon"></ion-icon>
+          <span>My Ticket + New Ticket</span>
+        </div>
+
+        <div class="menu-label">ASSET</div>
+        <div class="menu-item" [class.active]="activeMenu === 'input-aset'" (click)="goToInputAset()">
+          <ion-icon name="cube-outline" class="menu-icon"></ion-icon>
+          <span>Input Aset</span>
+        </div>
+
+        <div class="menu-label">FEEDBACK</div>
+        <div class="menu-item" [class.active]="activeMenu === 'laporan-feedback'" (click)="goToLaporanFeedback()">
+          <ion-icon name="chatbox-ellipses-outline" class="menu-icon"></ion-icon>
+          <span>Laporan Feedback</span>
+        </div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="goToPengaturan()">
+          <ion-icon name="settings-outline" class="menu-icon"></ion-icon>
+          <span>Pengaturan</span>
+        </div>
+        <div class="menu-item logout-item" (click)="logout()">
+          <ion-icon name="log-out-outline" class="menu-icon"></ion-icon>
+          <span>Keluar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER CUSTOM -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">{{ getPageTitle() }}</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar" (click)="goToProfile()">
+            <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'User') + '&background=2563eb&color=fff&size=64&bold=true'" alt="Avatar" />
+            <span class="header-avatar-name">{{ user.nama }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT AREA -->
+      <div class="content-area">
+        <div class="page-heading">
+          <h1 class="page-title">My Ticket</h1>
+          <p class="page-subtitle">Riwayat tiket yang pernah Anda kirim, dan buat tiket baru</p>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="list-toolbar">
+          <div class="search-box">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input type="text" placeholder="Cari ID / Kategori..." [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" />
+          </div>
+          <ion-button class="btn-new-ticket" fill="solid" (click)="openTambahModal()">
+            <ion-icon name="add-outline"></ion-icon>
+            Tambah Tiket
+          </ion-button>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table class="my-ticket-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">NO</th>
+                  <th>ID Ticket</th>
+                  <th>Kategori</th>
+                  <th>Sub Kategori</th>
+                  <th>Asset</th>
+                  <th>Lampiran</th>
+                  <th>Tanggal</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let t of pagedTickets; let i = index">
+                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                  <td class="ticket-id">{{ t.id }}</td>
+                  <td>{{ t.kategori }}</td>
+                  <td>{{ t.subKategori }}</td>
+                  <td>{{ t.asset || '-' }}</td>
+                  <td>
+                    <span class="lampiran-badge" *ngIf="t.lampiran && t.lampiran !== '-'">
+                      <ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}
+                    </span>
+                    <span *ngIf="!t.lampiran || t.lampiran === '-'">-</span>
+                  </td>
+                  <td class="nowrap">{{ t.tanggal }}</td>
+                  <td>
+                    <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span>
+                  </td>
+                </tr>
+
+                <tr *ngIf="filteredTickets.length === 0">
+                  <td colspan="8" class="empty-row">Belum ada tiket yang dibuat</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer" *ngIf="totalPages > 1">
+            <span class="table-info">Menampilkan {{ pagedTickets.length }} dari {{ filteredTickets.length }} data</span>
+            <div class="pagination">
+              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()"><ion-icon name="chevron-back-outline"></ion-icon></ion-button>
+              <span class="page-number" *ngFor="let p of totalPagesArray" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</span>
+              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<!-- ===== MODAL TAMBAH TIKET ===== -->
+<ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Tambah Tiket Baru</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="modal-body">
+        <!-- Kategori -->
+        <div class="form-group">
+          <label class="form-label">Kategori <span class="required">*</span></label>
+          <ion-select [(ngModel)]="formData.kategori" interface="action-sheet" class="form-select" placeholder="Pilih Kategori">
+            <ion-select-option *ngFor="let k of kategoriOptions" [value]="k">{{ k }}</ion-select-option>
+          </ion-select>
+        </div>
+        <!-- Sub Kategori -->
+        <div class="form-group">
+          <label class="form-label">Sub Kategori <span class="required">*</span></label>
+          <ion-select [(ngModel)]="formData.subKategori" interface="action-sheet" class="form-select" placeholder="Pilih Sub Kategori">
+            <ion-select-option *ngFor="let s of subKategoriMap[formData.kategori] || []" [value]="s">{{ s }}</ion-select-option>
+            <ion-select-option *ngIf="!formData.kategori" disabled>-- Pilih Kategori terlebih dahulu --</ion-select-option>
+          </ion-select>
+        </div>
+        <!-- Asset -->
+        <div class="form-group">
+          <label class="form-label">Asset</label>
+          <ion-input type="text" placeholder="Kode asset (misal: AST-0001)" [(ngModel)]="formData.asset" class="form-input"></ion-input>
+        </div>
+        <!-- Deskripsi -->
+        <div class="form-group">
+          <label class="form-label">Deskripsi <span class="required">*</span></label>
+          <ion-textarea placeholder="Jelaskan detail keluhan Anda..." [(ngModel)]="formData.deskripsi" class="form-textarea" rows="4"></ion-textarea>
+        </div>
+        <!-- Lampiran -->
+        <div class="form-group">
+          <label class="form-label">Lampiran (Foto)</label>
+          <ion-input type="text" placeholder="Nama file foto (misal: foto.png)" [(ngModel)]="formData.lampiran" class="form-input"></ion-input>
+        </div>
+        <!-- Tombol -->
+        <div class="modal-actions">
+          <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
+            Batal
+          </ion-button>
+          <ion-button class="submit-modal-btn" (click)="simpanTiket()" [disabled]="!formData.kategori || !formData.subKategori || !formData.deskripsi">
+            <ion-icon name="send-outline" slot="start"></ion-icon>
+            Kirim Tiket
+          </ion-button>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

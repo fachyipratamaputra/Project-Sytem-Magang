@@ -1,0 +1,232 @@
+<ion-content class="assignment-ticket-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon-wrapper">
+            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
+          </div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard'" (click)="goToDashboard()">
+          <div class="menu-icon-wrapper"><ion-icon name="home-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'list-ticket'" (click)="goToListTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="list-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">List Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'approval-ticket'" (click)="goToApprovalTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="checkmark-done-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Approval Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'assignment-ticket'" (click)="goToAssignmentTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="clipboard-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Assignment Ticket</span>
+        </div>
+
+        <div class="menu-label">MASTER DATA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'karyawan'" (click)="goToKaryawan()">
+          <div class="menu-icon-wrapper"><ion-icon name="people-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Karyawan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'user'" (click)="goToUser()">
+          <div class="menu-icon-wrapper"><ion-icon name="person-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">User</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'jabatan'" (click)="goToJabatan()">
+          <div class="menu-icon-wrapper"><ion-icon name="ribbon-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Jabatan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'departemen'" (click)="goToDepartemen()">
+          <div class="menu-icon-wrapper"><ion-icon name="business-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'bagian-departemen'" (click)="goToBagianDepartemen()">
+          <div class="menu-icon-wrapper"><ion-icon name="git-branch-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Bagian Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'teknisi'" (click)="goToTeknisi()">
+          <div class="menu-icon-wrapper"><ion-icon name="construct-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Teknisi</span>
+        </div>
+
+        <div class="menu-label">ASSET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'inventory'" (click)="goToInventory()">
+          <div class="menu-icon-wrapper"><ion-icon name="cube-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Inventory</span>
+        </div>
+
+        <div class="menu-label">COMPLAINT MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'kategori'" (click)="goToKategori()">
+          <div class="menu-icon-wrapper"><ion-icon name="pricetags-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Kategori</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'sub-kategori'" (click)="goToSubKategori()">
+          <div class="menu-icon-wrapper"><ion-icon name="pricetag-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Sub Kategori</span>
+        </div>
+
+        <div class="menu-label">REPORT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'laporan-feedback'" (click)="goToLaporanFeedback()">
+          <div class="menu-icon-wrapper"><ion-icon name="chatbox-ellipses-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Laporan Feedback</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'statistik-ticket'" (click)="goToStatistikTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="bar-chart-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Statistik Ticket</span>
+        </div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="setActiveMenu('pengaturan')">
+          <div class="menu-icon-wrapper"><ion-icon name="settings-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Pengaturan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">Assignment Ticket</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar" (click)="goToProfile()">
+            <img
+              [src]="'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&size=64&bold=true'"
+              alt="Avatar"
+            />
+            <span class="header-avatar-name">Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div class="page-heading">
+          <h1 class="page-title">Assignment Ticket</h1>
+          <p class="page-subtitle">Assign tiket yang sudah disetujui ke teknisi sesuai kategori</p>
+        </div>
+
+        <!-- TOOLBAR: SEARCH + FILTER -->
+        <div class="list-toolbar">
+          <div class="search-box">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input
+              type="text"
+              placeholder="Cari id ticket / nama pelapor..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFilterChange()"
+            />
+          </div>
+
+          <div class="toolbar-filters">
+            <select [(ngModel)]="filterKategori" (change)="onFilterChange()">
+              <option value="">Semua Kategori</option>
+              <option *ngFor="let k of kategoriOptions" [value]="k">{{ k }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table class="ticket-table">
+              <thead>
+                <tr>
+                  <th>NO</th>
+                  <th>ID Ticket</th>
+                  <th>Reported</th>
+                  <th>Kategori</th>
+                  <th>Sub Kategori</th>
+                  <th>Asset</th>
+                  <th>Tanggal</th>
+                  <th>Pilih Teknisi</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let t of pagedTickets; let i = index">
+                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                  <td class="ticket-id">{{ t.idTicket }}</td>
+                  <td>{{ t.reportedBy }}</td>
+                  <td>{{ t.kategori }}</td>
+                  <td>{{ t.subKategori }}</td>
+                  <td>{{ t.asset || '-' }}</td>
+                  <td class="nowrap">{{ t.tanggal }}</td>
+                  <td>
+                    <ion-select 
+                      [(ngModel)]="t.teknisiTerpilih" 
+                      interface="popover" 
+                      placeholder="Pilih Teknisi"
+                      class="teknisi-select"
+                    >
+                      <ion-select-option *ngFor="let tech of teknisiOptions" [value]="tech">
+                        {{ tech }}
+                      </ion-select-option>
+                    </ion-select>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <ion-button 
+                        fill="solid" 
+                        color="primary" 
+                        size="small" 
+                        class="btn-assign"
+                        (click)="onAssign(t)">
+                        <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                        Assign
+                      </ion-button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr *ngIf="filteredTickets.length === 0">
+                  <td colspan="9" class="empty-row">Tidak ada data ticket untuk di-assign</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <span class="table-info">
+              Menampilkan {{ pagedTickets.length }} dari {{ filteredTickets.length }} data
+            </span>
+            <div class="pagination" *ngIf="totalPages > 1">
+              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()">
+                <ion-icon name="chevron-back-outline"></ion-icon>
+              </ion-button>
+              <span
+                class="page-number"
+                *ngFor="let p of totalPagesArray"
+                [class.active]="p === currentPage"
+                (click)="goToPage(p)"
+              >{{ p }}</span>
+              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()">
+                <ion-icon name="chevron-forward-outline"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
