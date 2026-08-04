@@ -588,6 +588,16 @@
   .menu-toggle {
     display: none !important;
   }
+
+  // 🔥 FIX: sidebar sudah "sticky" di breakpoint ini (ikut masuk flex layout,
+  // otomatis makan jatah 250px). Kalau main-content MASIH punya margin-left: 250px
+  // dari rule dasar di atas, jaraknya jadi DOBEL (250px sidebar + 250px margin)
+  // -> muncul ruang kosong lebar di tengah. Makanya di sini di-reset ke 0.
+  .main-content {
+    margin-left: 0;
+    width: auto;
+    flex: 1;
+  }
 }
 
 @media (max-width: 992px) {

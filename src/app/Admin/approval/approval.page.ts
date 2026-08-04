@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonContent, IonButton, IonIcon } from '@ionic/angular/standalone';
+import { ApprovalService } from '../../services/approval.service';
+import { environment } from '../../../environments/environment';
 
 export interface ApprovalTicket {
   no: number;
@@ -14,6 +16,7 @@ export interface ApprovalTicket {
   tanggal: string;
   deskripsi: string;
   lampiran: string;
+  lampiranPath: string;
   status: string;
 }
 
@@ -28,32 +31,9 @@ export class ApprovalTicketPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'approval-ticket';
 
-  tickets: ApprovalTicket[] = [
-    {
-      no: 1,
-      idTicket: 'T202612020001',
-      reportedBy: 'Desi',
-      departemen: 'IT',
-      kategori: 'Hardware',
-      subKategori: 'Kerusakan monitor',
-      tanggal: '02-12-2026',
-      deskripsi: 'Monitor layar gelap tidak menampilkan gambar sama sekali setelah listrik padam.',
-      lampiran: 'foto',
-      status: 'Menunggu Approval',
-    },
-    {
-      no: 2,
-      idTicket: 'T202612020002',
-      reportedBy: 'Yulita',
-      departemen: 'IT',
-      kategori: 'Hardware',
-      subKategori: 'Kerusakan komponen monitor',
-      tanggal: '02-12-2026',
-      deskripsi: 'Layar monitor berkedip-kedip terus dan muncul garis vertikal hitam di layar.',
-      lampiran: 'foto',
-      status: 'Menunggu Approval',
-    },
-  ];
+  tickets: ApprovalTicket[] = [];
+  isLoading = false;
+  errorMessage = '';
 
   searchTerm = '';
   filterStatus = '';
@@ -67,10 +47,56 @@ export class ApprovalTicketPage implements OnInit {
   currentPage = 1;
   pageSize = 10;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private approvalService: ApprovalService
+  ) {}
 
   ngOnInit() {
-    this.buildFilterOptions();
+    this.loadApprovalList();
+  }
+
+  loadApprovalList() {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.approvalService.getList().subscribe({
+      next: (res: any) => {
+        const rows = res?.data || [];
+        this.tickets = rows.map((row: any, index: number): ApprovalTicket => ({
+          no: index + 1,
+          idTicket: row.id_ticket,
+          reportedBy: row.reported,
+          departemen: row.departemen,
+          kategori: row.kategori,
+          subKategori: row.sub_kategori,
+          tanggal: row.tanggal,
+          deskripsi: row.deskripsi,
+          lampiran: row.lampiran ? 'Lihat Foto' : '',
+          lampiranPath: row.lampiran || '',
+          status: row.status,
+        }));
+        this.buildFilterOptions();
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Gagal memuat data approval:', err);
+        this.errorMessage = 'Gagal memuat data approval ticket.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  getLampiranUrl(lampiranPath: string): string {
+    if (!lampiranPath) return '';
+    const backendBase = environment.apiUrl.replace(/\/api\/?$/, '');
+    
+    // Membersihkan path nested folder agar mengarah langsung ke nama file di folder uploads
+    let cleanPath = lampiranPath.trim().replace(/\\/g, '/');
+    const parts = cleanPath.split('/');
+    const fileName = parts[parts.length - 1];
+
+    return `${backendBase}/uploads/${fileName}`;
   }
 
   private buildFilterOptions() {
@@ -128,25 +154,42 @@ export class ApprovalTicketPage implements OnInit {
     const s = status.toLowerCase();
 
     if (s.includes('menunggu')) return 'status-pending';
-    if (s.includes('disetujui') || s.includes('approved') || s.includes('selesai')) return 'status-approved';
-    if (s.includes('ditolak') || s.includes('rejected')) return 'status-rejected';
+    if (s.includes('disetujui') || s.includes('approve') || s.includes('selesai')) return 'status-approved';
+    if (s.includes('ditolak') || s.includes('reject')) return 'status-rejected';
     if (s.includes('proses') || s.includes('progress')) return 'status-progress';
 
     return 'status-default';
   }
 
   onApprove(ticket: ApprovalTicket) {
-    ticket.status = 'Disetujui';
-    this.buildFilterOptions();
-    console.log(`✅ Tiket ${ticket.idTicket} telah DISETUJUI.`);
-    alert(`Tiket ${ticket.idTicket} berhasil disetujui!`);
+    if (!confirm(`Setujui tiket ${ticket.idTicket}?`)) return;
+
+    this.approvalService.process(ticket.idTicket, 'Approve').subscribe({
+      next: () => {
+        alert(`Tiket ${ticket.idTicket} berhasil disetujui!`);
+        this.loadApprovalList();
+      },
+      error: (err) => {
+        console.error('Gagal approve tiket:', err);
+        alert(err?.error?.message || 'Gagal menyetujui tiket.');
+      }
+    });
   }
 
   onReject(ticket: ApprovalTicket) {
-    ticket.status = 'Ditolak';
-    this.buildFilterOptions();
-    console.log(`❌ Tiket ${ticket.idTicket} telah DITOLAK.`);
-    alert(`Tiket ${ticket.idTicket} ditolak.`);
+    const catatan = prompt(`Alasan penolakan tiket ${ticket.idTicket} (opsional):`) || undefined;
+    if (!confirm(`Tolak tiket ${ticket.idTicket}?`)) return;
+
+    this.approvalService.process(ticket.idTicket, 'Reject', catatan).subscribe({
+      next: () => {
+        alert(`Tiket ${ticket.idTicket} ditolak.`);
+        this.loadApprovalList();
+      },
+      error: (err) => {
+        console.error('Gagal reject tiket:', err);
+        alert(err?.error?.message || 'Gagal menolak tiket.');
+      }
+    });
   }
 
   toggleSidebar() {
@@ -171,13 +214,9 @@ export class ApprovalTicketPage implements OnInit {
   goToTeknisi() { this.router.navigate(['/teknisi']); }
   goToInventory() { this.router.navigate(['/inventory']); }
 
-  // 🔥 FIX: sebelumnya cuma `this.activeMenu = '/feedback'` (typo, gak match
-  // key manapun, dan yang lebih penting: TIDAK PERNAH manggil router.navigate()
-  // sama sekali). Sekarang beneran navigasi ke halaman Laporan Feedback.
-
   goToLaporanFeedback() {
     this.setActiveMenu('laporan-feedback');
-    this.router.navigate(['/laporan-feedback']); 
+    this.router.navigate(['/laporan-feedback']);
   }
 
   goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }

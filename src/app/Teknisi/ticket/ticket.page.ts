@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
+import { TicketService, AssignedTicketApiRow } from '../../services/ticket.service'; 
+import { environment } from '../../../environments/environment'; 
 
 export interface TeknisiTicket {
   id: string;
@@ -10,10 +12,12 @@ export interface TeknisiTicket {
   kategori: string;
   subKategori: string;
   asset: string;
-  deskripsi: string;   // Kolom baru
+  deskripsi: string;
   lampiran: string;
+  lampiranUrl: string | null; 
   tanggalAssign: string;
   status: string;
+  isProsesing?: boolean;
 }
 
 @Component({
@@ -27,57 +31,21 @@ export class TeknisiTicketPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'ticket';
 
-  // Data user teknisi
-  user = { nama: 'Muhlison', role: 'teknisi' };
+  user = { nama: 'Teknisi', role: 'teknisi' };
 
-  // ===== DATA TICKET (dummy) =====
-  tickets: TeknisiTicket[] = [
-    {
-      id: 'T202612020001',
-      reportedBy: 'Desi',
-      kategori: 'Hardware',
-      subKategori: 'Kerusakan monitor',
-      asset: 'Laptop',
-      deskripsi: 'Layar laptop tidak menyala sama sekali, indikator power menyala namun gelap.',
-      lampiran: 'Foto',
-      tanggalAssign: '02-12-2026',
-      status: 'Menunggu Diproses',
-    },
-    {
-      id: 'T202612020002',
-      reportedBy: 'Dewi',
-      kategori: 'Hardware',
-      subKategori: 'Kerusakan komponen monitor',
-      asset: 'Monitor',
-      deskripsi: 'Monitor berkedip-kedip dan muncul garis vertikal hitam.',
-      lampiran: 'Foto',
-      tanggalAssign: '02-12-2026',
-      status: 'Diproses',
-    },
-    {
-      id: 'T202612020003',
-      reportedBy: 'Yulita',
-      kategori: 'Software',
-      subKategori: 'Aplikasi error',
-      asset: 'Laptop',
-      deskripsi: 'Aplikasi HRIS tidak bisa login setelah update Windows.',
-      lampiran: 'Foto',
-      tanggalAssign: '02-12-2026',
-      status: 'Selesai',
-    },
-  ];
+  tickets: TeknisiTicket[] = [];
+  isLoading = false;
+  loadError = '';
 
-  // ==== FILTER ====
   searchTerm = '';
   filterStatus = '';
 
-  statusOptions: string[] = ['Menunggu Diproses', 'Diproses', 'Selesai'];
+  statusOptions: string[] = ['Menunggu Diproses', 'Proses', 'Selesai'];
 
-  // ==== PAGINATION ====
   currentPage = 1;
   pageSize = 10;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private ticketService: TicketService) {}
 
   ngOnInit() {
     const storedUser = localStorage.getItem('user');
@@ -88,9 +56,43 @@ export class TeknisiTicketPage implements OnInit {
         this.user.role = parsed.role || 'teknisi';
       } catch (e) {}
     }
+
+    this.loadTickets();
   }
 
-  // ===== LOGIKA FILTER & PAGINATION =====
+  loadTickets() {
+    this.isLoading = true;
+    this.loadError = '';
+    this.ticketService.getAssignedMe().subscribe({
+      next: (data: AssignedTicketApiRow[]) => {
+        this.tickets = (data || []).map(this.mapToTeknisiTicket);
+        this.isLoading = false;
+      },
+      error: (err: any) => {
+        console.error('Gagal mengambil daftar tiket', err);
+        this.loadError = err?.error?.message || 'Gagal memuat data tiket, coba lagi.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  private mapToTeknisiTicket(row: any): TeknisiTicket {
+    const uploadsBase = environment.apiUrl.replace(/\/api\/?$/, ''); 
+    return {
+      id: row.id_ticket || row.id,
+      reportedBy: row.nama_pelapor || row.reported || '-',
+      kategori: row.nama_kategori || row.kategori || '-',
+      subKategori: row.nama_sub_kategori || row.sub_kategori || '-',
+      asset: row.aset || row.asset || '-',
+      deskripsi: row.deskripsi || '-',
+      lampiran: row.lampiran ? 'Foto' : '-',
+      lampiranUrl: row.lampiran ? `${uploadsBase}${row.lampiran}` : null,
+      tanggalAssign: row.tanggal_assign || '-',
+      // Fallback pengecekan status dari berbagai kemungkinan key backend
+      status: row.status_pengerjaan || row.status || 'Menunggu Diproses',
+    };
+  }
+
   get filteredTickets(): TeknisiTicket[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.tickets.filter((t) => {
@@ -119,23 +121,34 @@ export class TeknisiTicketPage implements OnInit {
   prevPage() { if (this.currentPage > 1) this.currentPage--; }
   nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
 
-  // ===== HELPER =====
   getStatusClass(status: string): string {
-    const s = status.toLowerCase();
+    const s = (status || '').toLowerCase();
     if (s.includes('menunggu')) return 'status-waiting';
-    if (s.includes('diproses')) return 'status-proses';
+    if (s.includes('proses')) return 'status-proses';
     if (s.includes('selesai')) return 'status-selesai';
     return 'status-default';
   }
 
-  // ===== AKSI =====
   onProses(ticket: TeknisiTicket) {
-    console.log(`🛠️ Memproses ticket: ${ticket.id}`);
-    // TODO: arahkan ke halaman Proses Tiket
-    // this.router.navigate(['/teknisi/proses', ticket.id]);
+    if (ticket.status === 'Menunggu Diproses') {
+      ticket.isProsesing = true;
+      this.ticketService
+        .updateProgress(ticket.id, { progress: 0, status_pengerjaan: 'Proses' })
+        .subscribe({
+          next: () => {
+            ticket.isProsesing = false;
+            this.router.navigate(['/teknisi/proses'], { queryParams: { id: ticket.id } });
+          },
+          error: (err: any) => {
+            ticket.isProsesing = false;
+            alert(err?.error?.message || 'Gagal memulai proses tiket');
+          },
+        });
+    } else {
+      this.router.navigate(['/teknisi/proses'], { queryParams: { id: ticket.id } });
+    }
   }
 
-  // ===== NAVIGASI =====
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
   }

@@ -119,7 +119,7 @@
                   <th>Kategori</th>
                   <th>Sub Kategori</th>
                   <th>Asset</th>
-                  <th>Deskripsi</th>  <!-- Kolom baru di sini -->
+                  <th>Deskripsi</th>
                   <th>Lampiran</th>
                   <th>Tanggal Assign</th>
                   <th>Status</th>
@@ -136,10 +136,10 @@
                   <td>{{ t.asset || '-' }}</td>
                   <td class="deskripsi-col">{{ t.deskripsi }}</td>
                   <td>
-                    <span class="lampiran-badge" *ngIf="t.lampiran">
+                    <a class="lampiran-badge" *ngIf="t.lampiranUrl" [href]="t.lampiranUrl" target="_blank" rel="noopener">
                       <ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}
-                    </span>
-                    <span *ngIf="!t.lampiran">-</span>
+                    </a>
+                    <span *ngIf="!t.lampiranUrl">-</span>
                   </td>
                   <td class="nowrap">{{ t.tanggalAssign }}</td>
                   <td>
@@ -152,10 +152,11 @@
                       size="small"
                       class="btn-proses"
                       (click)="onProses(t)"
+                      [disabled]="t.isProsesing"
                       *ngIf="t.status !== 'Selesai'"
                     >
                       <ion-icon name="construct-outline" slot="start"></ion-icon>
-                      Proses
+                      {{ t.isProsesing ? 'Memproses...' : 'Proses' }}
                     </ion-button>
                     <span *ngIf="t.status === 'Selesai'" class="text-muted">-</span>
                   </td>

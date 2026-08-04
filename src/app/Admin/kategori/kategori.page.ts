@@ -3,11 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
-
-export interface Kategori {
-  id: number;
-  nama: string;
-}
+import { HttpErrorResponse } from '@angular/common/http';
+import { Kategori, KategoriService } from '../../services/kategori.service';
 
 @Component({
   selector: 'app-kategori',
@@ -20,38 +17,44 @@ export class KategoriPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'kategori';
 
-  // ===== DATA KATEGORI =====
-  kategoriList: Kategori[] = [
-    { id: 1, nama: 'Hardware' },
-    { id: 2, nama: 'Software' },
-    { id: 3, nama: 'Jaringan' },
-  ];
-
-  // ==== FILTER ====
+  kategoriList: Kategori[] = [];
   searchTerm = '';
-
-  // ==== PAGINATION ====
   currentPage = 1;
   pageSize = 10;
 
-  // ==== STATE MODAL ====
   isModalOpen = false;
   isEditing = false;
   selectedId: number | null = null;
   formData: any = {
-    nama: '',
+    nama_kategori: '',
   };
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private kategoriService: KategoriService
+  ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.loadKategori();
+  }
 
-  // ===== LOGIKA FILTER & PAGINATION =====
+  loadKategori() {
+    this.kategoriService.getAll().subscribe({
+      next: (res: Kategori[]) => {
+        this.kategoriList = res;
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Gagal memuat data kategori:', err);
+        alert('Gagal memuat data kategori dari server.');
+      }
+    });
+  }
+
   get filteredKategori(): Kategori[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) return this.kategoriList;
     return this.kategoriList.filter((k) => 
-      k.nama.toLowerCase().includes(term)
+      k.nama && k.nama.toLowerCase().includes(term)
     );
   }
 
@@ -69,18 +72,17 @@ export class KategoriPage implements OnInit {
   prevPage() { if (this.currentPage > 1) this.currentPage--; }
   nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
 
-  // ===== FUNGSI MODAL =====
   openTambahModal() {
     this.isEditing = false;
     this.selectedId = null;
-    this.formData = { nama: '' };
+    this.formData = { nama_kategori: '' };
     this.isModalOpen = true;
   }
 
   openEditModal(k: Kategori) {
     this.isEditing = true;
     this.selectedId = k.id;
-    this.formData = { ...k };
+    this.formData = { nama_kategori: k.nama };
     this.isModalOpen = true;
   }
 
@@ -89,38 +91,48 @@ export class KategoriPage implements OnInit {
   }
 
   simpanKategori() {
-    if (!this.formData.nama) {
+    const namaVal = this.formData.nama_kategori;
+    if (!namaVal) {
       alert('Nama kategori wajib diisi!');
       return;
     }
 
     if (this.isEditing && this.selectedId !== null) {
-      // Update data
-      const index = this.kategoriList.findIndex(k => k.id === this.selectedId);
-      if (index !== -1) {
-        this.kategoriList[index] = { ...this.formData, id: this.selectedId };
-      }
+      this.kategoriService.update(this.selectedId, namaVal).subscribe({
+        next: () => {
+          alert('Data kategori berhasil diperbarui!');
+          this.closeModal();
+          this.loadKategori();
+        },
+        error: (err: HttpErrorResponse) => alert('Gagal memperbarui: ' + (err.error?.message || err.message))
+      });
     } else {
-      // Tambah data baru
-      const newId = Math.max(...this.kategoriList.map(k => k.id), 0) + 1;
-      this.kategoriList.push({ ...this.formData, id: newId });
+      this.kategoriService.create(namaVal).subscribe({
+        next: () => {
+          alert('Kategori berhasil ditambahkan!');
+          this.closeModal();
+          this.loadKategori();
+        },
+        error: (err: HttpErrorResponse) => alert('Gagal menambah kategori: ' + (err.error?.message || err.message))
+      });
     }
-
-    this.closeModal();
-    alert(this.isEditing ? 'Data kategori berhasil diperbarui!' : 'Kategori berhasil ditambahkan!');
   }
 
   hapusKategori(k: Kategori) {
     if (confirm(`Apakah Anda yakin ingin menghapus kategori "${k.nama}"?`)) {
-      this.kategoriList = this.kategoriList.filter(item => item.id !== k.id);
-      this.onFilterChange();
+      this.kategoriService.remove(k.id).subscribe({
+        next: () => {
+          alert('Kategori berhasil dihapus!');
+          this.loadKategori();
+        },
+        error: (err: HttpErrorResponse) => alert('Gagal menghapus: ' + (err.error?.message || err.message))
+      });
     }
   }
 
-  // ===== NAVIGASI & SIDEBAR =====
+  // Navigasi Sidebar
   toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
   setActiveMenu(menu: string) { this.activeMenu = menu; }
-
   goToDashboard() { this.router.navigate(['/dashboard']); }
   goToListTicket() { this.router.navigate(['/list']); }
   goToApprovalTicket() { this.router.navigate(['/approval']); }
@@ -129,16 +141,12 @@ export class KategoriPage implements OnInit {
   goToUser() { this.router.navigate(['/users']); }
   goToJabatan() { this.router.navigate(['/jabatan']); }
   goToDepartemen() { this.router.navigate(['/departemen']); }
-  goToBagianDepartemen() { this.router.navigate(['/bagian-departemen']); }
+  goToBagianDepartemen() { this.activeMenu = 'bagian-departemen'; this.router.navigate(['/bagian-departemen']); }
   goToKategori() { this.activeMenu = 'kategori'; this.router.navigate(['/kategori']); }
   goToSubKategori() { this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.router.navigate(['/teknisi']); }
   goToInventory() { this.router.navigate(['/inventory']); }
-  
-  goToLaporanFeedback() {
-    this.setActiveMenu('laporan-feedback');
-    this.router.navigate(['/laporan-feedback']); 
-  }
-  goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }
-  goToProfile() { this.activeMenu = 'profile'; }
+  goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
+  goToProfile() { this.activeMenu = 'profile'; this.router.navigate(['/profile']); }
 }

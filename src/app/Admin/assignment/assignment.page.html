@@ -126,6 +126,11 @@
           <p class="page-subtitle">Assign tiket yang sudah disetujui ke teknisi sesuai kategori</p>
         </div>
 
+        <!-- ERROR STATE -->
+        <div class="error-banner" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
         <!-- TOOLBAR: SEARCH + FILTER -->
         <div class="list-toolbar">
           <div class="search-box">
@@ -173,23 +178,24 @@
                   <td>{{ t.asset || '-' }}</td>
                   <td class="nowrap">{{ t.tanggal }}</td>
                   <td>
-                    <ion-select 
-                      [(ngModel)]="t.teknisiTerpilih" 
-                      interface="popover" 
-                      placeholder="Pilih Teknisi"
+                    <ion-select
+                      [(ngModel)]="t.teknisiTerpilih"
+                      interface="popover"
+                      [placeholder]="t.loadingTeknisi ? 'Memuat teknisi...' : (t.teknisiOptions.length === 0 ? 'Tidak ada teknisi' : 'Pilih Teknisi')"
                       class="teknisi-select"
+                      [disabled]="t.loadingTeknisi"
                     >
-                      <ion-select-option *ngFor="let tech of teknisiOptions" [value]="tech">
-                        {{ tech }}
+                      <ion-select-option *ngFor="let tech of t.teknisiOptions" [value]="tech.id_teknisi">
+                        {{ tech.nama }} ({{ tech.jumlah_tiket_ditangani }} tiket)
                       </ion-select-option>
                     </ion-select>
                   </td>
                   <td>
                     <div class="action-buttons">
-                      <ion-button 
-                        fill="solid" 
-                        color="primary" 
-                        size="small" 
+                      <ion-button
+                        fill="solid"
+                        color="primary"
+                        size="small"
                         class="btn-assign"
                         (click)="onAssign(t)">
                         <ion-icon name="checkmark-outline" slot="start"></ion-icon>
@@ -199,7 +205,7 @@
                   </td>
                 </tr>
 
-                <tr *ngIf="filteredTickets.length === 0">
+                <tr *ngIf="!isLoading && filteredTickets.length === 0">
                   <td colspan="9" class="empty-row">Tidak ada data ticket untuk di-assign</td>
                 </tr>
               </tbody>

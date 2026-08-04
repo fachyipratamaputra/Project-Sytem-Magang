@@ -543,6 +543,15 @@
   .menu-toggle {
     display: none !important;
   }
+
+  /* 🔥 FIX: sidebar sekarang position:sticky (ikut makan tempat di flex
+     layout), jadi margin-left:250px bawaan .main-content harus di-reset
+     ke 0 di sini. Kalau tidak, ruangnya kehitung DOBEL — sekali dari
+     lebar sidebar di flex layout, sekali lagi dari margin-left —
+     itulah penyebab ruang kosong lebar di antara sidebar dan konten. */
+  .main-content {
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 992px) {

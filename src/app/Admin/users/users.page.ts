@@ -3,14 +3,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 export interface User {
-  id: number;
+  id_user?: number;
+  id?: number;
   username: string;
   nama: string;
   departemen: string;
   level: string;
-  password?: string; // tidak disimpan di list, hanya untuk modal
+  status?: string;
+  nik?: string;
+  password?: string;
 }
 
 @Component({
@@ -24,57 +28,88 @@ export class UsersPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'user';
 
-  // ===== DATA USER (dummy) =====
-  userList: User[] = [
-    { id: 1, username: 'K0003', nama: 'DESI', departemen: 'IT', level: 'Admin' },
-    { id: 2, username: 'K0004', nama: 'Dewi', departemen: 'IT', level: 'Teknisi' },
-    { id: 3, username: 'K0005', nama: 'Yulita', departemen: 'IT', level: 'Users' },
-  ];
+  userList: User[] = [];
+  departemenMasterList: any[] = [];
 
-  // ==== STATISTIK =====
   get totalUsers() { return this.userList.length; }
-  get totalAdmin() { return this.userList.filter(u => u.level === 'Admin').length; }
-  get totalTeknisi() { return this.userList.filter(u => u.level === 'Teknisi').length; }
-  get totalUsersLevel() { return this.userList.filter(u => u.level === 'Users').length; }
+  get totalAdmin() { return this.userList.filter(u => u.level && u.level.toLowerCase() === 'admin').length; }
+  get totalTeknisi() { return this.userList.filter(u => u.level && u.level.toLowerCase() === 'teknisi').length; }
+  get totalUsersLevel() { return this.userList.filter(u => u.level && u.level.toLowerCase() === 'users').length; }
 
-  // ==== FILTER ====
   searchTerm = '';
   filterLevel = '';
   filterDepartemen = '';
-  levelOptions: string[] = [];
-  departemenOptions: string[] = [];
+  levelOptions: string[] = ['Admin', 'Teknisi', 'Users'];
+  
+  // Menggabungkan master departemen database dengan data user yang sudah ada
+  get departemenOptions(): string[] {
+    const fromMaster = this.departemenMasterList.map(d => d.nama_departemen);
+    const fromUsers = this.userList.map(u => u.departemen);
+    return [...new Set([...fromMaster, ...fromUsers])].filter(Boolean);
+  }
 
-  // ==== PAGINATION ====
   currentPage = 1;
   pageSize = 10;
 
-  // ==== STATE MODAL ====
   isModalOpen = false;
   isEditing = false;
   selectedId: number | null = null;
   formData: any = {
+    nik: '',
+    username: '',
     nama: '',
     departemen: '',
     level: 'Users',
     password: '',
   };
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private http: HttpClient) {}
 
   ngOnInit() {
-    this.buildFilterOptions();
+    this.loadUsers();
+    this.loadDepartemenMaster();
   }
 
-  private buildFilterOptions() {
-    this.levelOptions = [...new Set(this.userList.map((u) => u.level))];
-    this.departemenOptions = [...new Set(this.userList.map((u) => u.departemen))];
+  loadUsers() {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    this.http.get<any>('http://localhost:5000/api/users', { headers }).subscribe({
+      next: (res) => {
+        if (res.success || Array.isArray(res.data) || Array.isArray(res)) {
+          const rawData = res.success ? res.data : (res.data || res);
+          this.userList = rawData.map((u: any) => ({
+            ...u,
+            id: u.id_user || u.id
+          }));
+        }
+      },
+      error: (err) => {
+        console.error('Gagal memuat data user:', err);
+        if (err.status === 403 || err.status === 401) {
+          alert('Akses ditolak. Pastikan Anda login sebagai Admin!');
+        }
+      }
+    });
   }
 
-  // ===== LOGIKA FILTER & PAGINATION =====
+  // Ambil data departemen langsung dari tabel master database
+  loadDepartemenMaster() {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    this.http.get<any>('http://localhost:5000/api/departemen', { headers }).subscribe({
+      next: (res) => {
+        this.departemenMasterList = Array.isArray(res) ? res : (res.data || []);
+      },
+      error: (err) => console.error('Gagal memuat master departemen untuk user:', err)
+    });
+  }
+
   get filteredUsers(): User[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.userList.filter((u) => {
-      const matchSearch = !term || u.nama.toLowerCase().includes(term) || u.username.toLowerCase().includes(term);
+      const matchSearch = !term || (u.nama && u.nama.toLowerCase().includes(term)) || (u.username && u.username.toLowerCase().includes(term));
       const matchLevel = !this.filterLevel || u.level === this.filterLevel;
       const matchDept = !this.filterDepartemen || u.departemen === this.filterDepartemen;
       return matchSearch && matchLevel && matchDept;
@@ -84,7 +119,11 @@ export class UsersPage implements OnInit {
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredUsers.length / this.pageSize));
   }
-  get totalPagesArray(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
+  
+  get totalPagesArray(): number[] { 
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1); 
+  }
+
   get pagedUsers(): User[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredUsers.slice(start, start + this.pageSize);
@@ -95,18 +134,27 @@ export class UsersPage implements OnInit {
   prevPage() { if (this.currentPage > 1) this.currentPage--; }
   nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
 
-  // ===== FUNGSI MODAL =====
   openTambahModal() {
     this.isEditing = false;
     this.selectedId = null;
-    this.formData = { nama: '', departemen: '', level: 'Users', password: '' };
+    this.formData = { 
+      nik: '', 
+      username: '', 
+      nama: '', 
+      departemen: '', 
+      level: 'Users', 
+      password: '' 
+    };
+    // Refresh master departemen saat modal tambah dibuka
+    this.loadDepartemenMaster();
     this.isModalOpen = true;
   }
 
   openEditModal(u: User) {
     this.isEditing = true;
-    this.selectedId = u.id;
-    this.formData = { ...u, password: '' }; // password tidak ditampilkan saat edit
+    this.selectedId = u.id_user || u.id || null;
+    this.formData = { ...u, password: '' }; 
+    this.loadDepartemenMaster();
     this.isModalOpen = true;
   }
 
@@ -115,69 +163,62 @@ export class UsersPage implements OnInit {
   }
 
   simpanUser() {
-    if (!this.formData.nama || !this.formData.departemen || !this.formData.level) {
-      alert('Nama, Departemen, dan Level wajib diisi!');
-      return;
-    }
-    if (!this.isEditing && !this.formData.password) {
-      alert('Password wajib diisi untuk user baru!');
-      return;
-    }
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
     if (this.isEditing && this.selectedId !== null) {
-      // Update data (password tidak diubah jika kosong)
-      const index = this.userList.findIndex(u => u.id === this.selectedId);
-      if (index !== -1) {
-        const updated = { ...this.userList[index], ...this.formData };
-        if (!updated.password) delete updated.password; // jangan simpan password kosong
-        this.userList[index] = updated;
-      }
+      this.http.put(`http://localhost:5000/api/users/${this.selectedId}`, this.formData, { headers }).subscribe({
+        next: () => {
+          alert('Data user berhasil diperbarui!');
+          this.closeModal();
+          this.loadUsers();
+        },
+        error: (err) => alert('Gagal memperbarui: ' + (err.error?.message || err.message))
+      });
     } else {
-      // Tambah data baru
-      const newId = Math.max(...this.userList.map(u => u.id), 0) + 1;
-      const username = 'U' + String(newId).padStart(4, '0'); // contoh U0004
-      const newUser: User = {
-        id: newId,
-        username: username,
-        nama: this.formData.nama,
-        departemen: this.formData.departemen,
-        level: this.formData.level,
-        password: this.formData.password,
-      };
-      this.userList.push(newUser);
+      this.http.post('http://localhost:5000/api/users', this.formData, { headers }).subscribe({
+        next: () => {
+          alert('User berhasil ditambahkan!');
+          this.closeModal();
+          this.loadUsers();
+        },
+        error: (err) => alert('Gagal menambah user: ' + (err.error?.message || err.message))
+      });
     }
-
-    this.buildFilterOptions();
-    this.closeModal();
-    alert(this.isEditing ? 'Data user berhasil diperbarui!' : 'User berhasil ditambahkan!');
   }
 
   hapusUser(u: User) {
-    if (confirm(`Apakah Anda yakin ingin menghapus user ${u.nama}?`)) {
-      this.userList = this.userList.filter(item => item.id !== u.id);
-      this.buildFilterOptions();
-      this.onFilterChange();
+    const targetId = u.id_user || u.id;
+    if (confirm(`Apakah Anda yakin ingin menghapus user ${u.username}?`)) {
+      const token = localStorage.getItem('token');
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+      this.http.delete(`http://localhost:5000/api/users/${targetId}`, { headers }).subscribe({
+        next: () => {
+          alert('User berhasil dihapus!');
+          this.loadUsers();
+        },
+        error: (err) => alert('Gagal menghapus: ' + (err.error?.message || err.message))
+      });
     }
   }
 
-  // ===== HELPER =====
   getLevelClass(level: string): string {
+    if (!level) return 'level-default';
     const l = level.toLowerCase();
     if (l === 'admin') return 'level-admin';
     if (l === 'teknisi') return 'level-teknisi';
-    if (l === 'users') return 'level-users';
-    return 'level-default';
+    return 'level-users';
   }
 
-  // ===== NAVIGASI & SIDEBAR =====
   toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
   setActiveMenu(menu: string) { this.activeMenu = menu; }
 
   goToDashboard() { this.router.navigate(['/dashboard']); }
   goToListTicket() { this.router.navigate(['/list']); }
-  goToApprovalTicket() { this.router.navigate(['/approval']); }
-  goToAssignmentTicket() { this.router.navigate(['/assignment']); }
-  goToKaryawan() { this.router.navigate(['/karyawan']); }
+  goToApprovalTicket() { this.activeMenu = 'approval-ticket'; this.router.navigate(['/approval']); }
+  goToAssignmentTicket() { this.activeMenu = 'assignment-ticket'; this.router.navigate(['/assignment']); }
+  goToKaryawan() { this.activeMenu = 'karyawan'; this.router.navigate(['/karyawan']); }
   goToUser() { this.activeMenu = 'user'; this.router.navigate(['/users']); }
   goToJabatan() { this.router.navigate(['/jabatan']); }
   goToDepartemen() { this.router.navigate(['/departemen']); }
@@ -186,11 +227,7 @@ export class UsersPage implements OnInit {
   goToSubKategori() { this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.router.navigate(['/teknisi']); }
   goToInventory() { this.router.navigate(['/inventory']); }
-  
-  goToLaporanFeedback() {
-    this.setActiveMenu('laporan-feedback');
-    this.router.navigate(['/laporan-feedback']); 
-  }
-  goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }
-  goToProfile() { this.activeMenu = 'profile'; }
+  goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
+  goToProfile() { this.activeMenu = 'profile'; this.router.navigate(['/profile']); }
 }

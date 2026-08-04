@@ -3,6 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { DepartemenService } from 'src/app/services/departemen.services';
+import { KaryawanService } from 'src/app/services/karyawan.service';
+// Jika Anda punya kategori.service.ts, import di sini:
+// import { KategoriService } from 'src/app/services/kategori.service';
 
 export interface Inventory {
   kodeAsset: string;
@@ -11,6 +16,9 @@ export interface Inventory {
   dept: string;
   kategori: string;
   pemegang: string;
+  idDepartemen?: number;
+  idKategori?: number;
+  nikPemegang?: string;
 }
 
 @Component({
@@ -24,57 +32,145 @@ export class InventoryPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'inventory';
 
-  // ===== DATA INVENTORY =====
-  inventoryList: Inventory[] = [
-    { kodeAsset: 'AST-0001', namaBarang: 'Monitor', merkModel: 'Samsung 19"', dept: 'IT', kategori: 'Hardware', pemegang: 'Dewi' },
-    { kodeAsset: 'AST-0002', namaBarang: 'Laptop', merkModel: 'Lenovo ThinkPad', dept: 'IT', kategori: 'Hardware', pemegang: 'Desi' },
-    { kodeAsset: 'AST-0003', namaBarang: 'Printer', merkModel: 'Epson L3110', dept: 'IT', kategori: 'Hardware', pemegang: 'Yulita' },
-    { kodeAsset: 'AST-0004', namaBarang: 'Switch Jaringan', merkModel: 'Cisco 24 Port', dept: 'IT', kategori: 'Jaringan', pemegang: 'Rian' },
-  ];
+  inventoryList: Inventory[] = [];
+  
+  // ===== DATA MASTER UNTUK DROPDOWN =====
+  departemenList: any[] = [];
+  karyawanList: any[] = [];
+  kategoriList: any[] = [];
 
-  // ==== FILTER ====
   searchTerm = '';
   filterDept = '';
   filterKategori = '';
   deptOptions: string[] = [];
   kategoriOptions: string[] = [];
 
-  // ==== PAGINATION ====
   currentPage = 1;
   pageSize = 10;
 
-  // ==== STATE MODAL ====
   isModalOpen = false;
   isEditing = false;
   selectedKode: string | null = null;
+  
   formData: any = {
-    namaBarang: '',
-    merkModel: '',
-    dept: '',
-    kategori: '',
-    pemegang: '',
+    nama_barang: '',
+    merk_model: '',
+    id_departemen: null,
+    id_kategori: null,
+    nik_pemegang: null,
   };
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router, 
+    private http: HttpClient,
+    private departemenService: DepartemenService,
+    private karyawanService: KaryawanService,
+    // private kategoriService: KategoriService // Uncomment jika sudah membuat service Kategori
+  ) {}
 
   ngOnInit() {
-    this.buildFilterOptions();
+    this.loadInventory();
+    this.loadDepartemenList();
+    this.loadKaryawanList();
+    this.loadKategoriList();
+  }
+
+  loadInventory() {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    this.http.get<any>('http://localhost:5000/api/inventory', { headers }).subscribe({
+      next: (res) => {
+        const rawData = res.data || res;
+        if (Array.isArray(rawData)) {
+          this.inventoryList = rawData.map((item: any) => ({
+            kodeAsset: item.kode_asset || item.kodeAsset,
+            namaBarang: item.nama_barang || item.namaBarang,
+            merkModel: item.merk_model || item.merkModel,
+            dept: item.dept || item.nama_departemen,
+            kategori: item.kategori,
+            pemegang: item.pemegang || item.nama_pemegang,
+            idDepartemen: item.id_departemen,
+            idKategori: item.id_kategori,
+            nikPemegang: item.nik_pemegang
+          }));
+          this.buildFilterOptions();
+        }
+      },
+      error: (err) => console.error('Gagal memuat data inventory:', err)
+    });
+  }
+
+  private loadDepartemenList() {
+    this.departemenService.getAll().subscribe({
+      next: (res: any) => {
+        const rows = res?.data ?? res ?? [];
+        this.departemenList = rows.map((d: any) => ({
+          idDepartemen: d.id_departemen ?? d.idDepartemen,
+          namaDepartemen: d.nama_departemen ?? d.namaDepartemen,
+        }));
+      },
+      error: (err) => console.error('Gagal memuat departemen:', err)
+    });
+  }
+
+  private loadKaryawanList() {
+    this.karyawanService.getKaryawan().subscribe({
+      next: (res: any) => {
+        const rows = res?.data ?? res ?? [];
+        this.karyawanList = rows.map((k: any) => ({
+          nik: k.nik ?? k.NIK ?? k.id_karyawan,
+          namaKaryawan: k.nama_karyawan ?? k.namaKaryawan ?? k.nama,
+        }));
+      },
+      error: (err) => console.error('Gagal memuat karyawan:', err)
+    });
+  }
+
+  private loadKategoriList() {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    // 🔥 PERBAIKAN: Ubah URL jika backend Anda menggunakan prefix tambahan (misal: /api/master/kategori)
+    // Atau jika Anda menggunakan KategoriService, ubah menjadi: this.kategoriService.getAll()...
+    this.http.get<any>('http://localhost:5000/api/master/kategori', { headers }).subscribe({
+      next: (res: any) => {
+        const rows = res?.data ?? res ?? [];
+        this.kategoriList = rows.map((k: any) => ({
+          idKategori: k.id_kategori ?? k.idKategori,
+          namaKategori: k.nama_kategori ?? k.namaKategori,
+        }));
+        console.log('Kategori berhasil dimuat:', this.kategoriList);
+      },
+      error: (err) => {
+        // Fallback coba endpoint alternatif jika /api/master/kategori gagal
+        this.http.get<any>('http://localhost:5000/api/kategori', { headers }).subscribe({
+          next: (fallbackRes: any) => {
+            const rows = fallbackRes?.data ?? fallbackRes ?? [];
+            this.kategoriList = rows.map((k: any) => ({
+              idKategori: k.id_kategori ?? k.idKategori,
+              namaKategori: k.nama_kategori ?? k.namaKategori,
+            }));
+          },
+          error: (fallbackErr) => console.error('Gagal memuat kategori dari semua endpoint:', fallbackErr)
+        });
+      }
+    });
   }
 
   private buildFilterOptions() {
-    this.deptOptions = [...new Set(this.inventoryList.map((i) => i.dept))];
-    this.kategoriOptions = [...new Set(this.inventoryList.map((i) => i.kategori))];
+    this.deptOptions = [...new Set(this.inventoryList.map((i) => i.dept).filter(Boolean))];
+    this.kategoriOptions = [...new Set(this.inventoryList.map((i) => i.kategori).filter(Boolean))];
   }
 
-  // ===== LOGIKA FILTER & PAGINATION =====
   get filteredInventory(): Inventory[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.inventoryList.filter((i) => {
       const matchSearch =
         !term ||
-        i.kodeAsset.toLowerCase().includes(term) ||
-        i.namaBarang.toLowerCase().includes(term) ||
-        i.pemegang.toLowerCase().includes(term);
+        (i.kodeAsset && i.kodeAsset.toLowerCase().includes(term)) ||
+        (i.namaBarang && i.namaBarang.toLowerCase().includes(term)) ||
+        (i.pemegang && i.pemegang.toLowerCase().includes(term));
       const matchDept = !this.filterDept || i.dept === this.filterDept;
       const matchKategori = !this.filterKategori || i.kategori === this.filterKategori;
       return matchSearch && matchDept && matchKategori;
@@ -95,18 +191,31 @@ export class InventoryPage implements OnInit {
   prevPage() { if (this.currentPage > 1) this.currentPage--; }
   nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
 
-  // ===== FUNGSI MODAL =====
   openTambahModal() {
     this.isEditing = false;
     this.selectedKode = null;
-    this.formData = { namaBarang: '', merkModel: '', dept: '', kategori: '', pemegang: '' };
+    this.formData = { 
+      nama_barang: '', 
+      merk_model: '', 
+      id_departemen: null, 
+      id_kategori: null, 
+      nik_pemegang: null 
+    };
+    this.loadKategoriList(); // Pastikan data direfresh saat modal dibuka
     this.isModalOpen = true;
   }
 
   openEditModal(item: Inventory) {
     this.isEditing = true;
     this.selectedKode = item.kodeAsset;
-    this.formData = { ...item }; // Kode asset ikut terbawa
+    this.formData = { 
+      nama_barang: item.namaBarang, 
+      merk_model: item.merkModel, 
+      id_departemen: item.idDepartemen, 
+      id_kategori: item.idKategori, 
+      nik_pemegang: item.nikPemegang 
+    }; 
+    this.loadKategoriList(); // Pastikan data direfresh saat modal dibuka
     this.isModalOpen = true;
   }
 
@@ -115,52 +224,50 @@ export class InventoryPage implements OnInit {
   }
 
   simpanInventory() {
-    if (!this.formData.namaBarang) {
-      alert('Nama Barang wajib diisi!');
+    if (!this.formData.nama_barang || !this.formData.id_departemen || !this.formData.id_kategori) {
+      alert('Nama Barang, Departemen, dan Kategori wajib diisi!');
       return;
     }
 
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
     if (this.isEditing && this.selectedKode !== null) {
-      // Update data (Kode Asset tetap menggunakan yang lama)
-      const index = this.inventoryList.findIndex(i => i.kodeAsset === this.selectedKode);
-      if (index !== -1) {
-        this.inventoryList[index] = { ...this.formData, kodeAsset: this.selectedKode };
-      }
+      this.http.put(`http://localhost:5000/api/inventory/${this.selectedKode}`, this.formData, { headers }).subscribe({
+        next: () => {
+          alert('Data asset berhasil diperbarui!');
+          this.closeModal();
+          this.loadInventory();
+        },
+        error: (err) => alert('Gagal memperbarui: ' + (err.error?.message || err.message))
+      });
     } else {
-      // 🔥 GENERATE KODE ASSET OTOMATIS SAAT SIMPAN
-      let maxNum = 0;
-      if (this.inventoryList.length > 0) {
-        this.inventoryList.forEach(item => {
-          const parts = item.kodeAsset.split('-');
-          if (parts.length === 2 && parts[0] === 'AST') {
-            const num = parseInt(parts[1], 10);
-            if (!isNaN(num) && num > maxNum) {
-              maxNum = num;
-            }
-          }
-        });
-      }
-      const newKodeNum = maxNum + 1;
-      const newKode = 'AST-' + String(newKodeNum).padStart(4, '0');
-
-      // Tambah data baru dengan kode yang sudah digenerate
-      this.inventoryList.push({ ...this.formData, kodeAsset: newKode });
+      this.http.post('http://localhost:5000/api/inventory', this.formData, { headers }).subscribe({
+        next: () => {
+          alert('Asset berhasil ditambahkan!');
+          this.closeModal();
+          this.loadInventory();
+        },
+        error: (err) => alert('Gagal menambah asset: ' + (err.error?.message || err.message))
+      });
     }
-
-    this.buildFilterOptions();
-    this.closeModal();
-    alert(this.isEditing ? 'Data asset berhasil diperbarui!' : 'Asset berhasil ditambahkan!');
   }
 
   hapusInventory(item: Inventory) {
     if (confirm(`Apakah Anda yakin ingin menghapus asset "${item.kodeAsset}" (${item.namaBarang})?`)) {
-      this.inventoryList = this.inventoryList.filter(i => i.kodeAsset !== item.kodeAsset);
-      this.buildFilterOptions();
-      this.onFilterChange();
+      const token = localStorage.getItem('token');
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+      this.http.delete(`http://localhost:5000/api/inventory/${item.kodeAsset}`, { headers }).subscribe({
+        next: () => {
+          alert('Asset berhasil dihapus!');
+          this.loadInventory();
+        },
+        error: (err) => alert('Gagal menghapus: ' + (err.error?.message || err.message))
+      });
     }
   }
 
-  // ===== NAVIGASI & SIDEBAR =====
   toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
   setActiveMenu(menu: string) { this.activeMenu = menu; }
 
@@ -177,11 +284,7 @@ export class InventoryPage implements OnInit {
   goToSubKategori() { this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.router.navigate(['/teknisi']); }
   goToInventory() { this.activeMenu = 'inventory'; this.router.navigate(['/inventory']); }
-  
-  goToLaporanFeedback() {
-    this.setActiveMenu('laporan-feedback');
-    this.router.navigate(['/laporan-feedback']); 
-  }
-  goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }
-  goToProfile() { this.activeMenu = 'profile'; }
+  goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
+  goToProfile() { this.setActiveMenu('profile'); this.router.navigate(['/profile']); }
 }

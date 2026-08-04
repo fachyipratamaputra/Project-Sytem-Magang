@@ -8,7 +8,7 @@ import { IonContent, IonButton, IonIcon, IonBadge, IonSpinner } from '@ionic/ang
   templateUrl: './dashborad.page.html',
   styleUrls: ['./dashborad.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonContent, IonButton, IonIcon, IonBadge, IonSpinner],
+  imports: [CommonModule, IonContent, IonButton, IonIcon, IonSpinner],
 })
 export class TeknisiDashboardPage implements OnInit {
   

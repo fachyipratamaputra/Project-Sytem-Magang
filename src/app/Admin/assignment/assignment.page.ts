@@ -3,16 +3,21 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonContent, IonButton, IonIcon, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
+import { AssignmentService } from '../../services/assignment.service ';
+import { TeknisiOption } from '../../services/teknisi.service';
 
 export interface AssignmentTicket {
   no: number;
   idTicket: string;
   reportedBy: string;
+  idKategori: number;
   kategori: string;
   subKategori: string;
   asset: string;
   tanggal: string;
-  teknisiTerpilih: string;
+  teknisiTerpilih: number | null;
+  teknisiOptions: TeknisiOption[];
+  loadingTeknisi: boolean;
 }
 
 @Component({
@@ -26,61 +31,82 @@ export class AssignmentTicketPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'assignment-ticket';
 
-  // ==== DATA TICKET (Dummy sesuai permintaan Anda) ====
-  tickets: AssignmentTicket[] = [
-    {
-      no: 1,
-      idTicket: 'T202612020001',
-      reportedBy: 'Desi',
-      kategori: 'Hardware',
-      subKategori: 'Kerusakan monitor',
-      asset: 'AST-0001',
-      tanggal: '02-12-2026',
-      teknisiTerpilih: '',
-    },
-    {
-      no: 2,
-      idTicket: 'T202612020002',
-      reportedBy: 'Yulita',
-      kategori: 'Hardware',
-      subKategori: 'Kerusakan komponen monitor',
-      asset: 'AST-0002',
-      tanggal: '02-12-2026',
-      teknisiTerpilih: '',
-    },
-  ];
+  tickets: AssignmentTicket[] = [];
+  isLoading = false;
+  errorMessage = '';
 
-  // ==== DATA TEKNISI (Dummy) ====
-  // Dalam skenario nyata, data ini akan diambil dari API berdasarkan kategori Hardware/Software
-  teknisiOptions: string[] = [
-    'Muhlison (Hardware)',
-    'Rian (Hardware)',
-    'Andi (Software)',
-    'Budi (Jaringan)',
-    'Citra (Hardware)',
-  ];
-
-  // ==== FILTER ====
   searchTerm = '';
   filterKategori = '';
-  
   kategoriOptions: string[] = [];
 
-  // ==== PAGINATION ====
   currentPage = 1;
   pageSize = 10;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private assignmentService: AssignmentService
+  ) {}
 
   ngOnInit() {
-    this.buildFilterOptions();
+    this.loadAssignableTickets();
+  }
+
+  loadAssignableTickets() {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.assignmentService.getAssignableTickets().subscribe({
+      next: (res: any) => {
+        const rows = res?.data || [];
+        this.tickets = rows.map((row: any, index: number): AssignmentTicket => ({
+          no: index + 1,
+          idTicket: row.id_ticket,
+          reportedBy: row.reported,
+          idKategori: row.id_kategori,
+          kategori: row.kategori,
+          subKategori: row.sub_kategori,
+          asset: row.asset,
+          tanggal: row.tanggal,
+          teknisiTerpilih: null,
+          teknisiOptions: [],
+          loadingTeknisi: false,
+        }));
+        
+        this.buildFilterOptions();
+        this.isLoading = false;
+
+        // Panggil fetch teknisi untuk setiap tiket berdasarkan idKategori-nya
+        this.tickets.forEach((t) => this.loadTeknisiForTicket(t));
+      },
+      error: (err: any) => {
+        console.error('Gagal memuat tiket assignment:', err);
+        this.errorMessage = 'Gagal memuat data tiket.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  loadTeknisiForTicket(ticket: AssignmentTicket) {
+    ticket.loadingTeknisi = true;
+    console.log(`Mengambil teknisi untuk Kategori ID: ${ticket.idKategori} (Tiket: ${ticket.idTicket})`);
+
+    this.assignmentService.getTeknisiByKategori(ticket.idKategori).subscribe({
+      next: (res: any) => {
+        console.log(`Respon teknisi untuk kategori ${ticket.idKategori}:`, res);
+        ticket.teknisiOptions = Array.isArray(res) ? res : (res?.data || []);
+        ticket.loadingTeknisi = false;
+      },
+      error: (err: any) => {
+        console.error(`Gagal memuat teknisi untuk tiket ${ticket.idTicket}:`, err);
+        ticket.loadingTeknisi = false;
+      }
+    });
   }
 
   private buildFilterOptions() {
     this.kategoriOptions = [...new Set(this.tickets.map((t) => t.kategori))];
   }
 
-  // ===== LOGIKA FILTER & PAGINATION =====
   get filteredTickets(): AssignmentTicket[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.tickets.filter((t) => {
@@ -122,18 +148,24 @@ export class AssignmentTicketPage implements OnInit {
     if (this.currentPage < this.totalPages) this.currentPage++;
   }
 
-  // ===== FUNGSI AKSI ASSIGN =====
   onAssign(ticket: AssignmentTicket) {
     if (!ticket.teknisiTerpilih) {
       alert(`Silakan pilih teknisi terlebih dahulu untuk ticket ${ticket.idTicket}!`);
       return;
     }
-    console.log(`🔧 Tiket ${ticket.idTicket} di-assign ke ${ticket.teknisiTerpilih}.`);
-    alert(`Tiket ${ticket.idTicket} berhasil di-assign ke ${ticket.teknisiTerpilih}!`);
-    // TODO: Panggil API untuk assign ticket di sini
+
+    this.assignmentService.assignTicket(ticket.idTicket, ticket.teknisiTerpilih).subscribe({
+      next: () => {
+        alert(`Tiket ${ticket.idTicket} berhasil di-assign!`);
+        this.loadAssignableTickets();
+      },
+      error: (err: any) => {
+        console.error('Gagal assign tiket:', err);
+        alert(err?.error?.message || 'Gagal assign tiket.');
+      }
+    });
   }
 
-  // ===== NAVIGASI & SIDEBAR =====
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
@@ -155,10 +187,9 @@ export class AssignmentTicketPage implements OnInit {
   goToSubKategori() { this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.router.navigate(['/teknisi']); }
   goToInventory() { this.router.navigate(['/inventory']); }
-  
   goToLaporanFeedback() {
     this.setActiveMenu('laporan-feedback');
-    this.router.navigate(['/laporan-feedback']); 
+    this.router.navigate(['/laporan-feedback']);
   }
   goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }
   goToProfile() { this.activeMenu = 'profile'; }

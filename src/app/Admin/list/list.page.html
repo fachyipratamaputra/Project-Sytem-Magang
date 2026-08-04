@@ -95,7 +95,7 @@
       </div>
     </div>
 
-    <!-- ===== OVERLAY (mobile) ===== -->
+    <!-- ===== OVERLAY ===== -->
     <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
 
     <!-- ===== MAIN CONTENT ===== -->
@@ -122,11 +122,11 @@
       <!-- CONTENT -->
       <div class="content-area">
         <div class="page-heading">
-          <h1 class="page-title">List Ticket</h1>
+          <h1 class="page-title">📋 List Ticket</h1>
           <p class="page-subtitle">Kelola dan pantau seluruh ticket yang masuk</p>
         </div>
 
-        <!-- TOOLBAR: SEARCH + FILTER + TOMBOL BARU -->
+        <!-- TOOLBAR -->
         <div class="list-toolbar">
           <div class="search-box">
             <ion-icon name="search-outline" class="search-icon"></ion-icon>
@@ -155,7 +155,7 @@
             </select>
           </div>
 
-          <ion-button class="btn-new-ticket" (click)="onNewTicket()">
+          <ion-button class="btn-new-ticket" (click)="openTambahModal()">
             <ion-icon name="add-outline" slot="start"></ion-icon>
             Ticket Baru
           </ion-button>
@@ -184,17 +184,18 @@
               <tbody>
                 <tr *ngFor="let t of pagedTickets; let i = index">
                   <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
-                  <td class="ticket-id">{{ t.idTicket }}</td>
-                  <td>{{ t.reportedBy }}</td>
-                  <td>{{ t.departemen }}</td>
+                  <td class="ticket-id">{{ t.id_ticket }}</td>
+                  <td>{{ t.reported }}</td>
+                  <td>{{ t.dept }}</td>
                   <td class="nowrap">{{ t.tanggal }}</td>
-                  <td>{{ t.kategori }}</td>
-                  <td>{{ t.subKategori }}</td>
+                  <td>{{ t.nama_kategori }}</td>
+                  <td>{{ t.nama_sub_kategori }}</td>
                   <td>{{ t.aset || '-' }}</td>
                   <td>
-                    <span class="lampiran-badge" *ngIf="t.lampiran">
-                      <ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}
-                    </span>
+                    <!-- TAMPILAN DISAMAKAN DENGAN APPROVAL: Tombol 'Lihat Foto' -->
+                    <a *ngIf="t.lampiran" [href]="getLampiranUrl(t.lampiran)" target="_blank" class="lampiran-badge" style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                      Lihat Foto
+                    </a>
                     <span *ngIf="!t.lampiran">-</span>
                   </td>
                   <td>{{ t.teknisi || '-' }}</td>
@@ -206,8 +207,11 @@
                       <ion-button fill="clear" size="small" (click)="onViewDetail(t)">
                         <ion-icon name="eye-outline"></ion-icon>
                       </ion-button>
-                      <ion-button fill="clear" size="small" (click)="onEditTicket(t)">
+                      <ion-button fill="clear" size="small" (click)="openEditModal(t)">
                         <ion-icon name="create-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small" (click)="hapusTicket(t)">
+                        <ion-icon name="trash-outline"></ion-icon>
                       </ion-button>
                     </div>
                   </td>
@@ -244,3 +248,108 @@
     </div>
   </div>
 </ion-content>
+
+<!-- ========================================== -->
+<!-- MODAL TAMBAH / EDIT TICKET                 -->
+<!-- ========================================== -->
+<ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ isEditing ? 'Edit Ticket' : 'Tambah Ticket' }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Departemen <span class="required">*</span></label>
+          <ion-select
+            [(ngModel)]="formData.id_departemen"
+            (ngModelChange)="onDepartemenChange()"
+            class="form-select"
+            placeholder="Pilih Departemen"
+          >
+            <ion-select-option *ngFor="let d of departemenOptionsForModal" [value]="d.id_departemen ?? d.id">
+              {{ d.nama_departemen ?? d.nama }}
+            </ion-select-option>
+          </ion-select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Kategori <span class="required">*</span></label>
+          <ion-select
+            [(ngModel)]="formData.id_kategori"
+            (ngModelChange)="onKategoriChange()"
+            class="form-select"
+            placeholder="Pilih Kategori"
+          >
+            <ion-select-option *ngFor="let k of kategoriOptionsForModal" [value]="k.id ?? k.id_kategori">
+              {{ k.nama ?? k.nama_kategori }}
+            </ion-select-option>
+          </ion-select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sub Kategori</label>
+          <ion-select [(ngModel)]="formData.id_sub_kategori" class="form-select" placeholder="Pilih Sub Kategori">
+            <ion-select-option *ngFor="let sub of filteredSubKategoriOptions" [value]="sub.id ?? sub.id_sub_kategori">
+              {{ sub.namaSubKategori ?? sub.nama_sub_kategori }}
+            </ion-select-option>
+          </ion-select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Aset</label>
+          <ion-select [(ngModel)]="formData.kode_asset" class="form-select" placeholder="Pilih Aset">
+            <ion-select-option *ngFor="let item of filteredAssetOptions" [value]="item.kode_asset">
+              {{ item.kode_asset }} - {{ item.nama_barang }}
+            </ion-select-option>
+          </ion-select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Lampiran (Foto)</label>
+          <div class="upload-wrapper">
+            <input type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;" #fileInput>
+            <ion-button fill="outline" (click)="fileInput.click()">
+              <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+              {{ selectedFile ? selectedFile.name : 'Pilih Foto' }}
+            </ion-button>
+            <ion-button *ngIf="selectedFile" fill="clear" color="danger" (click)="selectedFile = null">
+              <ion-icon name="close-circle-outline"></ion-icon>
+            </ion-button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Deskripsi Keluhan <span class="required">*</span></label>
+          <ion-textarea
+            placeholder="Tuliskan detail keluhan..."
+            [(ngModel)]="formData.deskripsi"
+            class="form-textarea"
+            rows="3"
+          ></ion-textarea>
+        </div>
+
+        <div class="modal-actions">
+          <ion-button class="cancel-btn" fill="outline" color="medium" (click)="closeModal()">
+            Batal
+          </ion-button>
+          <ion-button
+            class="submit-btn"
+            (click)="simpanTicket()"
+            [disabled]="!formData.id_departemen || !formData.id_kategori || !formData.deskripsi"
+          >
+            <ion-icon name="save-outline" slot="start"></ion-icon>
+            {{ isEditing ? 'Update' : 'Simpan' }}
+          </ion-button>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

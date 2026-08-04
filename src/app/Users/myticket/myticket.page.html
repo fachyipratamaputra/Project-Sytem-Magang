@@ -41,7 +41,7 @@
         <div class="menu-label">ASSET</div>
         <div class="menu-item" [class.active]="activeMenu === 'input-aset'" (click)="goToInputAset()">
           <ion-icon name="cube-outline" class="menu-icon"></ion-icon>
-          <span>Input Aset</span>
+          <span>Asset</span>
         </div>
 
         <div class="menu-label">FEEDBACK</div>
@@ -102,8 +102,14 @@
           </ion-button>
         </div>
 
+        <div *ngIf="isLoading" class="loading-state">Memuat data...</div>
+        <div *ngIf="!isLoading && loadError" class="error-state">
+          {{ loadError }}
+          <ion-button size="small" fill="outline" (click)="loadMyTickets()">Coba Lagi</ion-button>
+        </div>
+
         <!-- TABLE -->
-        <div class="table-card">
+        <div class="table-card" *ngIf="!isLoading && !loadError">
           <div class="table-wrapper">
             <table class="my-ticket-table">
               <thead>
@@ -126,9 +132,14 @@
                   <td>{{ t.subKategori }}</td>
                   <td>{{ t.asset || '-' }}</td>
                   <td>
-                    <span class="lampiran-badge" *ngIf="t.lampiran && t.lampiran !== '-'">
+                    <!-- DIPERBAIKI: *ngIf diletakkan dengan benar di dalam tag a -->
+                    <a *ngIf="t.lampiran && t.lampiran !== '-'"
+                       [href]="getLampiranUrl(t.lampiranPath)"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="lampiran-badge">
                       <ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}
-                    </span>
+                    </a>
                     <span *ngIf="!t.lampiran || t.lampiran === '-'">-</span>
                   </td>
                   <td class="nowrap">{{ t.tanggal }}</td>
@@ -171,46 +182,81 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
+
     <ion-content class="modal-content">
       <div class="modal-body">
         <!-- Kategori -->
         <div class="form-group">
           <label class="form-label">Kategori <span class="required">*</span></label>
-          <ion-select [(ngModel)]="formData.kategori" interface="action-sheet" class="form-select" placeholder="Pilih Kategori">
-            <ion-select-option *ngFor="let k of kategoriOptions" [value]="k">{{ k }}</ion-select-option>
+          <ion-select
+            [(ngModel)]="formData.idKategori"
+            (ngModelChange)="onKategoriChange()"
+            interface="action-sheet"
+            class="form-select"
+            placeholder="Pilih Kategori">
+            <ion-select-option *ngFor="let k of kategoriOptions" [value]="k.id">
+              {{ k.nama }}
+            </ion-select-option>
           </ion-select>
         </div>
+
         <!-- Sub Kategori -->
         <div class="form-group">
           <label class="form-label">Sub Kategori <span class="required">*</span></label>
-          <ion-select [(ngModel)]="formData.subKategori" interface="action-sheet" class="form-select" placeholder="Pilih Sub Kategori">
-            <ion-select-option *ngFor="let s of subKategoriMap[formData.kategori] || []" [value]="s">{{ s }}</ion-select-option>
-            <ion-select-option *ngIf="!formData.kategori" disabled>-- Pilih Kategori terlebih dahulu --</ion-select-option>
+          <ion-select
+            [(ngModel)]="formData.idSubKategori"
+            interface="action-sheet"
+            class="form-select"
+            placeholder="Pilih Sub Kategori"
+            [disabled]="!formData.idKategori">
+            <ion-select-option *ngFor="let s of subKategoriOptions" [value]="s.id">
+              {{ s.namaSubKategori }}
+            </ion-select-option>
           </ion-select>
         </div>
-        <!-- Asset -->
+
+        <!-- Asset (Dropdown dari list aset user) -->
         <div class="form-group">
           <label class="form-label">Asset</label>
-          <ion-input type="text" placeholder="Kode asset (misal: AST-0001)" [(ngModel)]="formData.asset" class="form-input"></ion-input>
+          <ion-select
+            [(ngModel)]="formData.asset"
+            interface="action-sheet"
+            class="form-select"
+            placeholder="Pilih Asset Anda">
+            <ion-select-option *ngFor="let asset of myAssets" [value]="asset.kodeAsset">
+              {{ asset.kodeAsset }} - {{ asset.namaBarang }}
+            </ion-select-option>
+          </ion-select>
         </div>
+
         <!-- Deskripsi -->
         <div class="form-group">
           <label class="form-label">Deskripsi <span class="required">*</span></label>
-          <ion-textarea placeholder="Jelaskan detail keluhan Anda..." [(ngModel)]="formData.deskripsi" class="form-textarea" rows="4"></ion-textarea>
+          <ion-textarea
+            placeholder="Jelaskan detail keluhan Anda..."
+            [(ngModel)]="formData.deskripsi"
+            class="form-textarea"
+            rows="4">
+          </ion-textarea>
         </div>
-        <!-- Lampiran -->
+
+        <!-- Lampiran File -->
         <div class="form-group">
           <label class="form-label">Lampiran (Foto)</label>
-          <ion-input type="text" placeholder="Nama file foto (misal: foto.png)" [(ngModel)]="formData.lampiran" class="form-input"></ion-input>
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" class="form-input" />
         </div>
-        <!-- Tombol -->
+
+        <!-- Tombol Aksi -->
         <div class="modal-actions">
           <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
             Batal
           </ion-button>
-          <ion-button class="submit-modal-btn" (click)="simpanTiket()" [disabled]="!formData.kategori || !formData.subKategori || !formData.deskripsi">
+          <ion-button
+            class="submit-modal-btn"
+            (click)="simpanTiket()"
+            [disabled]="!formData.idKategori || !formData.idSubKategori || !formData.deskripsi || isSaving">
             <ion-icon name="send-outline" slot="start"></ion-icon>
-            Kirim Tiket
+            {{ isSaving ? 'Mengirim...' : 'Kirim Tiket' }}
           </ion-button>
         </div>
       </div>

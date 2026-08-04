@@ -140,8 +140,14 @@
           </div>
         </div>
 
+        <div *ngIf="isLoading" class="loading-state">Memuat data...</div>
+        <div *ngIf="!isLoading && loadError" class="error-state">
+          {{ loadError }}
+          <ion-button size="small" fill="outline" (click)="loadSubKategori()">Coba Lagi</ion-button>
+        </div>
+
         <!-- TABLE -->
-        <div class="table-card">
+        <div class="table-card" *ngIf="!isLoading && !loadError">
           <div class="table-wrapper">
             <table class="sub-kategori-table">
               <thead>
@@ -187,7 +193,7 @@
         </div>
 
         <!-- EMPTY STATE -->
-        <div class="empty-state" *ngIf="filteredSubKategori.length === 0 && subKategoriList.length === 0">
+        <div class="empty-state" *ngIf="!isLoading && !loadError && filteredSubKategori.length === 0 && subKategoriList.length === 0">
           <ion-icon name="pricetag-outline"></ion-icon>
           <h3>Belum Ada Data Sub Kategori</h3>
           <p>Klik tombol "Tambah Sub Kategori" untuk menambahkan data baru</p>
@@ -198,7 +204,7 @@
 </ion-content>
 
 <!-- ========================================== -->
-<!-- 🔥 MODAL TAMBAH/EDIT SUB KATEGORI          -->
+<!-- MODAL TAMBAH/EDIT SUB KATEGORI            -->
 <!-- ========================================== -->
 <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
   <ng-template>
@@ -214,11 +220,14 @@
     </ion-header>
     <ion-content class="modal-content">
       <div class="modal-body">
-        
-        <!-- Kategori -->
+
+        <!-- Kategori (DROPDOWN) -->
         <div class="form-group">
           <label class="form-label">Kategori <span class="required">*</span></label>
-          <ion-input type="text" placeholder="Contoh: Hardware, Software..." [(ngModel)]="formData.kategori" class="form-input"></ion-input>
+          <select [(ngModel)]="formData.idKategori" class="form-input">
+            <option [ngValue]="null" disabled>Pilih kategori...</option>
+            <option *ngFor="let k of kategoriOptions" [ngValue]="k.id">{{ k.nama }}</option>
+          </select>
         </div>
 
         <!-- Nama Sub Kategori -->
@@ -232,7 +241,7 @@
           <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
             Batal
           </ion-button>
-          <ion-button class="submit-modal-btn" (click)="simpanSubKategori()" [disabled]="!formData.kategori || !formData.namaSubKategori">
+          <ion-button class="submit-modal-btn" (click)="simpanSubKategori()" [disabled]="!formData.idKategori || !formData.namaSubKategori">
             <ion-icon name="save-outline" slot="start"></ion-icon>
             {{ isEditing ? 'Update' : 'Simpan' }}
           </ion-button>

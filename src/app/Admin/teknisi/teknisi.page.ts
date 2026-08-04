@@ -3,13 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
+import { HttpErrorResponse } from '@angular/common/http';
+import { TeknisiService } from 'src/app/services/teknisi.service';
+import { UserService } from 'src/app/services/user.service'; // Menggunakan UserService
+import { Kategori, KategoriService } from 'src/app/services/kategori.service';
+import { Teknisi } from 'src/app/models/teknisi.model';
 
-export interface Teknisi {
-  idTeknisi: string;
-  nama: string;
-  kategoriSpesialis: string;
+interface TeknisiFormData {
+  nik: string;
+  idKategori: number | null;
   status: string;
-  jumlahTiket: number; // Dihitung otomatis sistem, bukan input manual
 }
 
 @Component({
@@ -23,54 +26,79 @@ export class TeknisiPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'teknisi';
 
-  // ===== DATA TEKNISI =====
-  teknisiList: Teknisi[] = [
-    { idTeknisi: 'T202612020001', nama: 'Desi', kategoriSpesialis: 'Hardware', status: 'Aktif', jumlahTiket: 5 },
-    { idTeknisi: 'T202612020002', nama: 'Rian', kategoriSpesialis: 'Jaringan', status: 'Aktif', jumlahTiket: 12 },
-    { idTeknisi: 'T202612020003', nama: 'Budi', kategoriSpesialis: 'Software', status: 'Non-Aktif', jumlahTiket: 0 },
-    { idTeknisi: 'T202612020004', nama: 'Citra', kategoriSpesialis: 'Hardware', status: 'Aktif', jumlahTiket: 8 },
-  ];
+  teknisiList: Teknisi[] = [];
+  userList: any[] = []; // Menampung data user
+  kategoriList: Kategori[] = [];
 
-  // ==== FILTER ====
   searchTerm = '';
   filterKategori = '';
   filterStatus = '';
   kategoriOptions: string[] = [];
   statusOptions: string[] = [];
 
-  // ==== PAGINATION ====
   currentPage = 1;
   pageSize = 10;
 
-  // ==== STATE MODAL ====
   isModalOpen = false;
   isEditing = false;
   selectedId: string | null = null;
-  formData: any = {
-    nama: '',
-    kategoriSpesialis: '',
+  editingNamaDisplay = ''; 
+  formData: TeknisiFormData = {
+    nik: '',
+    idKategori: null,
     status: 'Aktif',
   };
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private teknisiService: TeknisiService,
+    private userService: UserService, // Inject UserService di sini
+    private kategoriService: KategoriService
+  ) {}
 
   ngOnInit() {
-    this.buildFilterOptions();
+    this.loadTeknisi();
+    this.loadUsers(); // Memanggil data user
+    this.loadKategori();
+  }
+
+  private loadTeknisi() {
+    this.teknisiService.getAll().subscribe({
+      next: (res: any) => {
+        this.teknisiList = res?.data ?? res ?? [];
+        this.buildFilterOptions();
+      },
+      error: (err: HttpErrorResponse) => console.error('Gagal mengambil data teknisi:', err),
+    });
+  }
+
+  private loadUsers() {
+    this.userService.getUsers().subscribe({
+      next: (res: any) => { 
+        this.userList = res?.data ?? res ?? []; 
+      },
+      error: (err: HttpErrorResponse) => console.error('Gagal mengambil data user:', err),
+    });
+  }
+
+  private loadKategori() {
+    this.kategoriService.getAll().subscribe({
+      next: (res: any) => { 
+        this.kategoriList = res?.data ?? res ?? []; 
+      },
+      error: (err: HttpErrorResponse) => console.error('Gagal mengambil data kategori:', err),
+    });
   }
 
   private buildFilterOptions() {
-    this.kategoriOptions = [...new Set(this.teknisiList.map((t) => t.kategoriSpesialis))];
-    this.statusOptions = [...new Set(this.teknisiList.map((t) => t.status))];
+    this.kategoriOptions = [...new Set(this.teknisiList.map((t) => t.kategoriSpesialis).filter((v): v is string => !!v))];
+    this.statusOptions = [...new Set(this.teknisiList.map((t) => t.status).filter((v): v is string => !!v))];
   }
 
-  // ===== LOGIKA FILTER & PAGINATION =====
   get filteredTeknisi(): Teknisi[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.teknisiList.filter((t) => {
-      const matchSearch =
-        !term ||
-        t.idTeknisi.toLowerCase().includes(term) ||
-        t.nama.toLowerCase().includes(term);
+      const matchSearch = !term || t.idTeknisi.toLowerCase().includes(term) || t.nama.toLowerCase().includes(term);
       const matchKategori = !this.filterKategori || t.kategoriSpesialis === this.filterKategori;
       const matchStatus = !this.filterStatus || t.status === this.filterStatus;
       return matchSearch && matchKategori && matchStatus;
@@ -91,81 +119,76 @@ export class TeknisiPage implements OnInit {
   prevPage() { if (this.currentPage > 1) this.currentPage--; }
   nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
 
-  // ===== FUNGSI MODAL =====
   openTambahModal() {
     this.isEditing = false;
     this.selectedId = null;
-    this.formData = { nama: '', kategoriSpesialis: '', status: 'Aktif' };
+    this.editingNamaDisplay = '';
+    this.formData = { nik: '', idKategori: null, status: 'Aktif' };
     this.isModalOpen = true;
   }
 
   openEditModal(t: Teknisi) {
     this.isEditing = true;
     this.selectedId = t.idTeknisi;
-    this.formData = { ...t };
+    this.editingNamaDisplay = t.nama;
+
+    const matched = this.kategoriList.find((k: any) => k.nama === t.kategoriSpesialis || k.nama_kategori === t.kategoriSpesialis);
+
+    this.formData = {
+      nik: '', 
+      idKategori: matched ? (matched.id ?? (matched as any).id_kategori) : null,
+      status: t.status,
+    };
     this.isModalOpen = true;
   }
 
-  closeModal() {
-    this.isModalOpen = false;
-  }
+  closeModal() { this.isModalOpen = false; }
 
   simpanTeknisi() {
-    if (!this.formData.nama || !this.formData.kategoriSpesialis) {
-      alert('Nama dan Kategori Spesialis wajib diisi!');
-      return;
-    }
-
     if (this.isEditing && this.selectedId !== null) {
-      // Update data (jaga agar jumlahTiket tetap sesuai data asli)
-      const index = this.teknisiList.findIndex(t => t.idTeknisi === this.selectedId);
-      if (index !== -1) {
-        this.teknisiList[index].nama = this.formData.nama;
-        this.teknisiList[index].kategoriSpesialis = this.formData.kategoriSpesialis;
-        this.teknisiList[index].status = this.formData.status;
+      if (!this.formData.idKategori) {
+        alert('Kategori Spesialis wajib diisi!');
+        return;
       }
+      this.teknisiService.update(this.selectedId, { idKategori: this.formData.idKategori, status: this.formData.status }).subscribe({
+        next: () => {
+          this.loadTeknisi();
+          this.closeModal();
+          alert('Data teknisi berhasil diperbarui!');
+        },
+        error: () => alert('Gagal memperbarui data.'),
+      });
     } else {
-      // Tambah data baru - Generate ID Teknisi Otomatis
-      const lastId = this.teknisiList.length > 0 
-        ? parseInt(this.teknisiList[this.teknisiList.length - 1].idTeknisi.replace('T', '')) 
-        : 202612020000;
-      
-      const newId = 'T' + (lastId + 1);
-      
-      const newTeknisi: Teknisi = {
-        idTeknisi: newId,
-        nama: this.formData.nama,
-        kategoriSpesialis: this.formData.kategoriSpesialis,
-        status: this.formData.status,
-        jumlahTiket: 0, // Default 0
-      };
-      this.teknisiList.push(newTeknisi);
-    }
+      if (!this.formData.nik || !this.formData.idKategori) {
+        alert('User dan Kategori Spesialis wajib diisi!');
+        return;
+      }
 
-    this.buildFilterOptions();
-    this.closeModal();
-    alert(this.isEditing ? 'Data teknisi berhasil diperbarui!' : 'Teknisi berhasil ditambahkan!');
+      this.teknisiService.create({ nik: this.formData.nik, idKategori: this.formData.idKategori }).subscribe({
+        next: () => {
+          this.loadTeknisi();
+          this.closeModal();
+          alert('Teknisi berhasil ditambahkan!');
+        },
+        error: () => alert('Gagal menambah data.'),
+      });
+    }
   }
 
   hapusTeknisi(t: Teknisi) {
-    if (confirm(`Apakah Anda yakin ingin menghapus teknisi "${t.nama}"?`)) {
-      this.teknisiList = this.teknisiList.filter(item => item.idTeknisi !== t.idTeknisi);
-      this.buildFilterOptions();
-      this.onFilterChange();
-    }
+    if (!confirm(`Apakah Anda yakin ingin menghapus teknisi "${t.nama}"?`)) return;
+    this.teknisiService.remove(t.idTeknisi).subscribe({
+      next: () => this.loadTeknisi(),
+      error: () => alert('Gagal menghapus data.'),
+    });
   }
 
-  // ===== HELPER =====
   getStatusClass(status: string): string {
-    if (status === 'Aktif') return 'status-aktif';
-    if (status === 'Non-Aktif') return 'status-nonaktif';
-    return 'status-default';
+    return status === 'Aktif' ? 'status-aktif' : 'status-nonaktif';
   }
 
-  // ===== NAVIGASI & SIDEBAR =====
   toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
   setActiveMenu(menu: string) { this.activeMenu = menu; }
-
   goToDashboard() { this.router.navigate(['/dashboard']); }
   goToListTicket() { this.router.navigate(['/list']); }
   goToApprovalTicket() { this.router.navigate(['/approval']); }
@@ -179,10 +202,7 @@ export class TeknisiPage implements OnInit {
   goToSubKategori() { this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.activeMenu = 'teknisi'; this.router.navigate(['/teknisi']); }
   goToInventory() { this.router.navigate(['/inventory']); }
-
-  goToLaporanFeedback() {
-    this.setActiveMenu('laporan-feedback');
-    this.router.navigate(['/laporan-feedback']); 
-  }  goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }
+  goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
+  goToStatistikTicket() { this.router.navigate(['/statistik-ticket']); }
   goToProfile() { this.activeMenu = 'profile'; }
 }

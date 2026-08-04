@@ -3,11 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
+import { HttpErrorResponse } from '@angular/common/http';
+import { BagianDepartemenService } from '../../services/bagian-departemen.service';
+import { DepartemenService } from '../../services/departemen.services';
+import { BagianDepartemen } from '../../models/Bagian departemen.model ';
 
-export interface BagianDepartemen {
-  id: number;
-  departemen: string;
-  bagian: string;
+// Bentuk sederhana untuk dropdown Departemen (id + nama saja)
+interface DepartemenOption {
+  idDepartemen: number;
+  namaDepartemen: string;
 }
 
 @Component({
@@ -21,42 +25,67 @@ export class BagianDepartemenPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'bagian-departemen';
 
-  // ===== DATA BAGIAN DEPARTEMEN =====
-  bagianList: BagianDepartemen[] = [
-    { id: 1, departemen: 'IT', bagian: 'Infrastruktur' },
-    { id: 2, departemen: 'Finance', bagian: 'Accounting' },
-    { id: 3, departemen: 'IT', bagian: 'Infrastruktur' },
-  ];
+  bagianList: BagianDepartemen[] = [];
+  private departemenIdMap: DepartemenOption[] = [];
 
-  // ==== FILTER ====
   searchTerm = '';
   filterDepartemen = '';
   departemenOptions: string[] = [];
 
-  // ==== PAGINATION ====
   currentPage = 1;
   pageSize = 10;
 
-  // ==== STATE MODAL ====
   isModalOpen = false;
   isEditing = false;
   selectedId: number | null = null;
-  formData: any = {
+  formData: { departemen: string; bagian: string } = {
     departemen: '',
     bagian: '',
   };
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private bagianDepartemenService: BagianDepartemenService,
+    private departemenService: DepartemenService
+  ) {}
 
   ngOnInit() {
-    this.buildFilterOptions();
+    this.loadBagianDepartemen();
+    this.loadDepartemenIdMap();
+  }
+
+  private loadBagianDepartemen() {
+    this.bagianDepartemenService.getAll().subscribe({
+      next: (res) => {
+        this.bagianList = res;
+        this.buildFilterOptions();
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Gagal mengambil data bagian departemen:', err);
+        alert('Gagal mengambil data Bagian Departemen dari server.');
+      },
+    });
+  }
+
+  private loadDepartemenIdMap() {
+    this.departemenService.getAll().subscribe({
+      next: (res: any) => {
+        const rows = res?.data ?? res ?? [];
+        this.departemenIdMap = rows.map((d: any) => ({
+          idDepartemen: d.id_departemen,
+          namaDepartemen: d.nama_departemen,
+        }));
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Gagal mengambil data departemen:', err);
+      },
+    });
   }
 
   private buildFilterOptions() {
     this.departemenOptions = [...new Set(this.bagianList.map((b) => b.departemen))];
   }
 
-  // ===== LOGIKA FILTER & PAGINATION =====
   get filteredBagian(): BagianDepartemen[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.bagianList.filter((b) => {
@@ -83,7 +112,6 @@ export class BagianDepartemenPage implements OnInit {
   prevPage() { if (this.currentPage > 1) this.currentPage--; }
   nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
 
-  // ===== FUNGSI MODAL =====
   openTambahModal() {
     this.isEditing = false;
     this.selectedId = null;
@@ -93,8 +121,8 @@ export class BagianDepartemenPage implements OnInit {
 
   openEditModal(item: BagianDepartemen) {
     this.isEditing = true;
-    this.selectedId = item.id;
-    this.formData = { ...item };
+    this.selectedId = item.idBagian;
+    this.formData = { departemen: item.departemen, bagian: item.bagian };
     this.isModalOpen = true;
   }
 
@@ -108,32 +136,60 @@ export class BagianDepartemenPage implements OnInit {
       return;
     }
 
-    if (this.isEditing && this.selectedId !== null) {
-      // Update data
-      const index = this.bagianList.findIndex(b => b.id === this.selectedId);
-      if (index !== -1) {
-        this.bagianList[index] = { ...this.formData, id: this.selectedId };
-      }
-    } else {
-      // Tambah data baru
-      const newId = Math.max(...this.bagianList.map(b => b.id), 0) + 1;
-      this.bagianList.push({ ...this.formData, id: newId });
+    const matched = this.departemenIdMap.find((d) => d.namaDepartemen === this.formData.departemen);
+    if (!matched) {
+      alert('Departemen tidak ditemukan / data departemen belum termuat. Coba lagi sebentar.');
+      return;
     }
 
-    this.buildFilterOptions();
-    this.closeModal();
-    alert(this.isEditing ? 'Data berhasil diperbarui!' : 'Bagian berhasil ditambahkan!');
+    const payload = {
+      idDepartemen: matched.idDepartemen,
+      bagian: this.formData.bagian,
+    };
+
+    if (this.isEditing && this.selectedId !== null) {
+      this.bagianDepartemenService.update(this.selectedId, payload).subscribe({
+        next: () => {
+          this.loadBagianDepartemen();
+          this.closeModal();
+          alert('Data berhasil diperbarui!');
+        },
+        error: (err: HttpErrorResponse) => {
+          console.error('Gagal memperbarui bagian departemen:', err);
+          alert('Gagal memperbarui data. Cek console untuk detail error.');
+        },
+      });
+    } else {
+      this.bagianDepartemenService.create(payload).subscribe({
+        next: () => {
+          this.loadBagianDepartemen();
+          this.closeModal();
+          alert('Bagian berhasil ditambahkan!');
+        },
+        error: (err: HttpErrorResponse) => {
+          console.error('Gagal menambah bagian departemen:', err);
+          alert('Gagal menambah data. Cek console untuk detail error.');
+        },
+      });
+    }
   }
 
   hapusBagian(item: BagianDepartemen) {
-    if (confirm(`Apakah Anda yakin ingin menghapus bagian "${item.bagian}" dari departemen "${item.departemen}"?`)) {
-      this.bagianList = this.bagianList.filter(b => b.id !== item.id);
-      this.buildFilterOptions();
-      this.onFilterChange();
+    if (!confirm(`Apakah Anda yakin ingin menghapus bagian "${item.bagian}" dari departemen "${item.departemen}"?`)) {
+      return;
     }
+    this.bagianDepartemenService.remove(item.idBagian).subscribe({
+      next: () => {
+        this.loadBagianDepartemen();
+        this.onFilterChange();
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Gagal menghapus bagian departemen:', err);
+        alert('Gagal menghapus data (kemungkinan masih dipakai data lain).');
+      },
+    });
   }
 
-  // ===== NAVIGASI & SIDEBAR =====
   toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
   setActiveMenu(menu: string) { this.activeMenu = menu; }
 
@@ -150,10 +206,10 @@ export class BagianDepartemenPage implements OnInit {
   goToSubKategori() { this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.router.navigate(['/teknisi']); }
   goToInventory() { this.router.navigate(['/inventory']); }
-  
+
   goToLaporanFeedback() {
     this.setActiveMenu('laporan-feedback');
-    this.router.navigate(['/laporan-feedback']); 
+    this.router.navigate(['/laporan-feedback']);
   }
   goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }
   goToProfile() { this.activeMenu = 'profile'; }

@@ -3,14 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
-
-export interface FeedbackReport {
-  idTicket: string;
-  reportedBy: string;
-  tanggal: string;
-  feedback: string;
-  keterangan: string;
-}
+import { FeedbackService, FeedbackReport } from '../../services/feedback.service';
 
 @Component({
   selector: 'app-laporan-feedback',
@@ -23,30 +16,8 @@ export class LaporanFeedbackPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'laporan-feedback';
 
-  // ===== DATA LAPORAN FEEDBACK =====
-  feedbackList: FeedbackReport[] = [
-    {
-      idTicket: 'T202612020001',
-      reportedBy: 'DESI',
-      tanggal: '2026-12-02 16:59:02',
-      feedback: 'Positif',
-      keterangan: 'Teknisi sangat cepat tanggap dan profesional dalam menangani masalah monitor.',
-    },
-    {
-      idTicket: 'T202612020002',
-      reportedBy: 'Dewi',
-      tanggal: '2026-12-02 16:44:45',
-      feedback: 'Negatif',
-      keterangan: 'Proses perbaikan terlalu lambat, memakan waktu hingga 3 hari kerja.',
-    },
-    {
-      idTicket: 'T202612020003',
-      reportedBy: 'Yulita',
-      tanggal: '2026-12-02 16:44:45',
-      feedback: 'Positif',
-      keterangan: 'Masalah software sudah terselesaikan dengan baik, terima kasih atas bantuan tim IT.',
-    },
-  ];
+  // ===== DATA DARI DATABASE =====
+  feedbackList: FeedbackReport[] = [];
 
   // ==== FILTER ====
   searchTerm = '';
@@ -58,9 +29,34 @@ export class LaporanFeedbackPage implements OnInit {
   currentPage = 1;
   pageSize = 10;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private feedbackService: FeedbackService) {}
 
   ngOnInit() {}
+
+  ionViewWillEnter() {
+    this.loadFeedback();
+  }
+
+  loadFeedback() {
+    this.feedbackService.getAll().subscribe({
+      next: (res: any) => {
+        // Menangani struktur response baik berupa array langsung maupun dibungkus objek { data: [...] }
+        const rawData = res.data || res;
+        if (Array.isArray(rawData)) {
+          this.feedbackList = rawData.map((item: any) => ({
+            idTicket: item.id_ticket,
+            reportedBy: item.reported || item.nik_pelapor || '-',
+            tanggal: item.tanggal,
+            feedback: item.feedback,
+            keterangan: item.keterangan || '-'
+          }));
+        }
+      },
+      error: (err) => {
+        console.error('Gagal mengambil data dari database:', err);
+      }
+    });
+  }
 
   // ===== LOGIKA FILTER & PAGINATION =====
   get filteredFeedback(): FeedbackReport[] {

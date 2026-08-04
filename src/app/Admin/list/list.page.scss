@@ -23,7 +23,7 @@
   min-height: 100vh;
 }
 
-/* ===================== SIDEBAR (sama seperti dashboard) ===================== */
+/* ===================== SIDEBAR ===================== */
 .sidebar {
   width: 250px;
   background: var(--sidebar-bg);
@@ -249,7 +249,7 @@
   color: var(--text-muted);
 }
 
-/* ===================== TOOLBAR: SEARCH + FILTER + TOMBOL ===================== */
+/* ===================== TOOLBAR ===================== */
 .list-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -476,4 +476,65 @@
     color: #fff;
     font-weight: 600;
   }
+}
+
+/* ========================================== */
+/* MODAL STYLING                               */
+/* ========================================== */
+.modal-content {
+  --background: #f9fafb;
+}
+
+.modal-body {
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.required {
+  color: var(--danger);
+}
+
+.form-input, .form-select, .form-textarea {
+  --background: #ffffff;
+  --border-radius: 8px;
+  --border-color: var(--border-color);
+  --padding-start: 14px;
+  --padding-end: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.cancel-btn {
+  --border-radius: 8px;
+  font-weight: 600;
+}
+
+.submit-btn {
+  --background: var(--primary);
+  --border-radius: 8px;
+  font-weight: 600;
 }

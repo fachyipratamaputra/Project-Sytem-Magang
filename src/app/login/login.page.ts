@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
+import { AuthService } from '../services/auth.service'; // sesuaikan path sesuai lokasi file kamu
 
 @Component({
   selector: 'app-login',
@@ -21,53 +22,44 @@ export class LoginPage implements OnInit {
   isLoading = false;
   errorMessage = '';
 
-  // Data dummy role (Admin, Teknisi, Users)
-  private dummyUsers = [
-    { username: 'admin', password: '123456', role: 'admin', nama: 'Admin Helpdesk' },
-    { username: 'teknisi', password: '123456', role: 'teknisi', nama: 'Muhlison' },
-    { username: 'user', password: '123456', role: 'users', nama: 'Desi' },
-  ];
-
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   ngOnInit() {}
 
   login() {
     this.errorMessage = '';
+
+    if (!this.loginData.username || !this.loginData.password) {
+      this.errorMessage = 'Username dan password wajib diisi!';
+      return;
+    }
+
     this.isLoading = true;
 
-    // Simulasi proses login
-    setTimeout(() => {
-      const user = this.dummyUsers.find(
-        u => u.username === this.loginData.username && u.password === this.loginData.password
-      );
-
-      if (user) {
-        // Simpan data user dan token ke LocalStorage
-        localStorage.setItem('token', 'fake-jwt-token-' + user.role);
-        localStorage.setItem('user', JSON.stringify({
-          nama: user.nama,
-          role: user.role,
-          username: user.username
-        }));
-
+    this.authService.login(this.loginData.username, this.loginData.password).subscribe({
+      next: (res) => {
         this.isLoading = false;
         this.loginData.password = '';
 
-        // 🔥 PERHATIKAN BAGIAN INI (SUDAH DIPERBAIKI)
-        if (user.role === 'admin') {
-          this.router.navigate(['/dashboard']); // Admin masuk Dashboard Admin
-        } else if (user.role === 'teknisi') {
-          this.router.navigate(['/teknisi/dashboard']); // Teknisi masuk Dashboard Teknisi
-        } else if (user.role === 'users') {
-          // ✅ UBAH PATH INI MENJADI '/users/dashboard' (jamak, sesuai route yang kita buat)
-          this.router.navigate(['/users/dashboard']); 
+        if (!res?.data?.token || !res?.data?.user) {
+          this.errorMessage = 'Respons server tidak sesuai format yang diharapkan.';
+          return;
         }
 
-      } else {
+        const { token, user } = res.data;
+        this.authService.saveSession(token, user);
+
+        const targetRoute = this.authService.getDashboardRouteByLevel(user.level);
+        this.router.navigate([targetRoute]);
+      },
+      error: (err) => {
         this.isLoading = false;
-        this.errorMessage = 'Username atau Password salah!';
+        // Backend mengirim pesan error lewat fail(res, message, statusCode)
+        this.errorMessage = err?.error?.message || 'Username atau password salah!';
       }
-    }, 1000);
+    });
   }
 }

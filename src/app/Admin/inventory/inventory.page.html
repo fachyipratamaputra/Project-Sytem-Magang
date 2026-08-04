@@ -176,7 +176,7 @@
                   <td class="text-muted">{{ item.merkModel }}</td>
                   <td><span class="dept-badge">{{ item.dept }}</span></td>
                   <td><span class="kategori-badge">{{ item.kategori }}</span></td>
-                  <td>{{ item.pemegang }}</td>
+                  <td>{{ item.pemegang || '-' }}</td>
                   <td>
                     <div class="action-buttons">
                       <ion-button fill="clear" size="small" class="edit-btn" (click)="openEditModal(item)">
@@ -235,45 +235,48 @@
     <ion-content class="modal-content">
       <div class="modal-body">
         
-        <!-- Kode Asset dihapus! -->
-        <!-- User hanya mengisi 5 field di bawah ini -->
-
         <!-- Nama Barang -->
         <div class="form-group">
           <label class="form-label">Nama Barang <span class="required">*</span></label>
-          <ion-input type="text" placeholder="Contoh: Switch Jaringan" [(ngModel)]="formData.namaBarang" class="form-input"></ion-input>
+          <ion-input type="text" placeholder="Contoh: Switch Jaringan" [(ngModel)]="formData.nama_barang" class="form-input"></ion-input>
         </div>
 
         <!-- Merk/Model -->
         <div class="form-group">
           <label class="form-label">Merk / Model</label>
-          <ion-input type="text" placeholder="Contoh: Cisco 24 Port" [(ngModel)]="formData.merkModel" class="form-input"></ion-input>
+          <ion-input type="text" placeholder="Contoh: Cisco 24 Port" [(ngModel)]="formData.merk_model" class="form-input"></ion-input>
         </div>
 
-        <!-- Departemen -->
+        <!-- Departemen (Dropdown) -->
         <div class="form-group">
-          <label class="form-label">Departemen</label>
-          <ion-input type="text" placeholder="Contoh: IT, HR, Finance" [(ngModel)]="formData.dept" class="form-input"></ion-input>
+          <label class="form-label">Departemen <span class="required">*</span></label>
+          <ion-select [(ngModel)]="formData.id_departemen" interface="action-sheet" class="form-select" placeholder="Pilih Departemen">
+            <ion-select-option *ngFor="let d of departemenList" [value]="d.idDepartemen">{{ d.namaDepartemen }}</ion-select-option>
+          </ion-select>
         </div>
 
-        <!-- Kategori -->
+        <!-- Kategori (Dropdown) -->
         <div class="form-group">
-          <label class="form-label">Kategori</label>
-          <ion-input type="text" placeholder="Contoh: Hardware, Jaringan" [(ngModel)]="formData.kategori" class="form-input"></ion-input>
+          <label class="form-label">Kategori <span class="required">*</span></label>
+          <ion-select [(ngModel)]="formData.id_kategori" interface="action-sheet" class="form-select" placeholder="Pilih Kategori">
+            <ion-select-option *ngFor="let kat of kategoriList" [value]="kat.idKategori">{{ kat.namaKategori }}</ion-select-option>
+          </ion-select>
         </div>
 
-        <!-- Pemegang -->
+        <!-- Pemegang Asset (Dropdown) -->
         <div class="form-group">
           <label class="form-label">Pemegang Asset</label>
-          <ion-input type="text" placeholder="Contoh: Nama Karyawan" [(ngModel)]="formData.pemegang" class="form-input"></ion-input>
+          <ion-select [(ngModel)]="formData.nik_pemegang" interface="action-sheet" class="form-select" placeholder="Pilih Karyawan / Pemegang">
+            <ion-select-option *ngFor="let k of karyawanList" [value]="k.nik">{{ k.namaKaryawan }}</ion-select-option>
+          </ion-select>
         </div>
 
-        <!-- Tombol -->
+        <!-- Tombol Aksi -->
         <div class="modal-actions">
           <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
             Batal
           </ion-button>
-          <ion-button class="submit-modal-btn" (click)="simpanInventory()" [disabled]="!formData.namaBarang">
+          <ion-button class="submit-modal-btn" (click)="simpanInventory()" [disabled]="!formData.nama_barang || !formData.id_departemen || !formData.id_kategori">
             <ion-icon name="save-outline" slot="start"></ion-icon>
             {{ isEditing ? 'Update' : 'Simpan' }}
           </ion-button>

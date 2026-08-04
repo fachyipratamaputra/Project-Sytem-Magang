@@ -218,7 +218,7 @@
 </ion-content>
 
 <!-- ========================================== -->
-<!-- 🔥 MODAL TAMBAH/EDIT TEKNISI               -->
+<!-- 🔥 MODAL TAMBAH/EDIT TEKNISI              -->
 <!-- ========================================== -->
 <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
   <ng-template>
@@ -234,17 +234,29 @@
     </ion-header>
     <ion-content class="modal-content">
       <div class="modal-body">
-        
-        <!-- Nama -->
-        <div class="form-group">
-          <label class="form-label">Nama <span class="required">*</span></label>
-          <ion-input type="text" placeholder="Masukkan nama teknisi" [(ngModel)]="formData.nama" class="form-input"></ion-input>
+
+        <!-- User/Akun: Diubah mengambil dari userList (hanya muncul saat Tambah) -->
+        <div class="form-group" *ngIf="!isEditing">
+          <label class="form-label">User / Akun <span class="required">*</span></label>
+          <ion-select [(ngModel)]="formData.nik" interface="action-sheet" class="form-select" placeholder="Pilih User">
+            <ion-select-option *ngFor="let u of userList" [value]="u.nik">
+              {{ u.nama }} ({{ u.username }} - {{ u.level }})
+            </ion-select-option>
+          </ion-select>
         </div>
 
-        <!-- 🔥 Kategori Spesialis: Diubah menjadi input teks manual -->
+        <!-- Nama: read-only, cuma muncul saat Edit -->
+        <div class="form-group" *ngIf="isEditing">
+          <label class="form-label">Nama</label>
+          <ion-input type="text" [value]="editingNamaDisplay" [disabled]="true" class="form-input"></ion-input>
+        </div>
+
+        <!-- Kategori Spesialis: dropdown dari Kategori.service.ts -->
         <div class="form-group">
           <label class="form-label">Kategori Spesialis <span class="required">*</span></label>
-          <ion-input type="text" placeholder="Contoh: Hardware, Jaringan, Software" [(ngModel)]="formData.kategoriSpesialis" class="form-input"></ion-input>
+          <ion-select [(ngModel)]="formData.idKategori" interface="action-sheet" class="form-select" placeholder="Pilih Kategori">
+            <ion-select-option *ngFor="let k of kategoriList" [value]="k.id">{{ k.nama }}</ion-select-option>
+          </ion-select>
         </div>
 
         <!-- Status -->
@@ -261,7 +273,11 @@
           <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
             Batal
           </ion-button>
-          <ion-button class="submit-modal-btn" (click)="simpanTeknisi()" [disabled]="!formData.nama || !formData.kategoriSpesialis">
+          <ion-button
+            class="submit-modal-btn"
+            (click)="simpanTeknisi()"
+            [disabled]="isEditing ? !formData.idKategori : (!formData.nik || !formData.idKategori)"
+          >
             <ion-icon name="save-outline" slot="start"></ion-icon>
             {{ isEditing ? 'Update' : 'Simpan' }}
           </ion-button>

@@ -112,16 +112,20 @@ export const routes: Routes = [
     loadComponent: () => import('./Users/dashboard/dashboard.page').then(m => m.UsersDashboardPage),
     canActivate: [AuthGuard]
   },
-  // ✅ Route My Ticket + New Ticket (dengan prefix /users/)
   {
     path: 'users/my-ticket',
     loadComponent: () => import('./Users/myticket/myticket.page').then(m => m.MyTicketPage),
     canActivate: [AuthGuard]
   },
-  // ✅ Route Feedback (dengan prefix /users/)
   {
     path: 'users/feedback',
     loadComponent: () => import('./Users/feedback/feedback.page').then(m => m.FeedbackPage),
+    canActivate: [AuthGuard]
+  },
+  // ✅ ROUTE ASET USER DIPERBAIKI (sesuai dengan navigasi goToInputAset)
+  {
+    path: 'users/input-aset',
+    loadComponent: () => import('./Users/asset/asset.page').then(m => m.AssetPage),
     canActivate: [AuthGuard]
   },
 

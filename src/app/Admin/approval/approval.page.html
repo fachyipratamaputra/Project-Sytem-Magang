@@ -169,7 +169,7 @@
                   <th>Kategori</th>
                   <th>Sub Kategori</th>
                   <th>Tanggal</th>
-                  <th class="deskripsi-header">Deskripsi</th> <!-- Kolom Deskripsi ditambahkan -->
+                  <th class="deskripsi-header">Deskripsi</th>
                   <th>Lampiran</th>
                   <th>Status</th>
                   <th>Aksi</th>
@@ -184,12 +184,13 @@
                   <td>{{ t.kategori }}</td>
                   <td>{{ t.subKategori }}</td>
                   <td class="nowrap">{{ t.tanggal }}</td>
-                  <td class="deskripsi-col">{{ t.deskripsi }}</td> <!-- Isi Deskripsi -->
+                  <td class="deskripsi-col">{{ t.deskripsi }}</td>
                   <td>
-                    <span class="lampiran-badge" *ngIf="t.lampiran">
+                    <!-- Dibuat clickable link ke URL gambar backend -->
+                    <a *ngIf="t.lampiranPath" [href]="getLampiranUrl(t.lampiranPath)" target="_blank" class="lampiran-badge">
                       <ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}
-                    </span>
-                    <span *ngIf="!t.lampiran">-</span>
+                    </a>
+                    <span *ngIf="!t.lampiranPath">-</span>
                   </td>
                   <td>
                     <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span>

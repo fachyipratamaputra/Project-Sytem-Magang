@@ -8,7 +8,7 @@ import { IonContent, IonButton, IonIcon, IonBadge, IonSpinner } from '@ionic/ang
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonContent, IonButton, IonIcon, IonBadge, IonSpinner],
+  imports: [CommonModule, IonContent, IonButton, IonIcon, IonSpinner],
 })
 export class UsersDashboardPage implements OnInit {
   
@@ -58,14 +58,19 @@ export class UsersDashboardPage implements OnInit {
   constructor(private router: Router) {}
 
   ngOnInit() {
-    // Ambil data user dari localStorage saat login
+    // Reset menu aktif setiap kali halaman dimuat (mencegah klik dua kali)
+    this.activeMenu = 'dashboard-user';
+
+    // Ambil data user dari localStorage
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
         this.user.nama = parsed.nama || 'User';
         this.user.role = parsed.role || 'users';
-      } catch (e) { /* fallback */ }
+      } catch (e) {
+        // fallback
+      }
     }
   }
 

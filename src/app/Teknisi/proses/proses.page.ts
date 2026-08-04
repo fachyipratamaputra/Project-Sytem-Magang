@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
+import { TicketService, AssignedTicketApiRow } from '../../services/ticket.service'; // TODO: sesuaikan path
+import { environment } from '../../../environments/environment'; // TODO: sesuaikan path
 
 export interface ProsesTicket {
   idTicket: string;
@@ -11,10 +13,12 @@ export interface ProsesTicket {
   subKategori: string;
   asset: string;
   lampiran: string;
+  lampiranUrl: string | null;
   deskripsi: string;
   progress: number;
   catatan: string;
-  status: 'Proses' | 'Selesai';
+  status: 'Menunggu Diproses' | 'Proses' | 'Selesai';
+  isSaving?: boolean;
 }
 
 @Component({
@@ -33,55 +37,19 @@ export class ProsesTiketPage implements OnInit {
     role: 'teknisi',
   };
 
-  // ===== DATA TIKET YANG SEDANG DIPROSES =====
-  tickets: ProsesTicket[] = [
-    {
-      idTicket: 'T202612020001',
-      reportedBy: 'Desi',
-      kategori: 'Hardware',
-      subKategori: 'Kerusakan monitor',
-      asset: 'Laptop',
-      lampiran: 'Foto',
-      deskripsi: 'Monitor layar gelap tidak menampilkan gambar sama sekali setelah listrik padam.',
-      progress: 75,
-      catatan: 'Sedang mengganti panel LCD',
-      status: 'Proses',
-    },
-    {
-      idTicket: 'T202612020002',
-      reportedBy: 'Dewi',
-      kategori: 'Hardware',
-      subKategori: 'Kerusakan komponen monitor',
-      asset: '-',
-      lampiran: 'Foto',
-      deskripsi: 'Layar monitor berkedip-kedip terus dan muncul garis vertikal hitam di layar.',
-      progress: 100,
-      catatan: 'Monitor sudah berfungsi normal, tinggal melakukan pengetesan akhir',
-      status: 'Selesai',
-    },
-    {
-      idTicket: 'T202612020003',
-      reportedBy: 'Yulita',
-      kategori: 'Software',
-      subKategori: 'Aplikasi error',
-      asset: '-',
-      lampiran: 'Foto',
-      deskripsi: 'Aplikasi tidak bisa login, muncul pesan error "Database connection failed".',
-      progress: 30,
-      catatan: 'Menunggu update patch dari vendor',
-      status: 'Proses',
-    },
-  ];
+  // ===== DATA TIKET YANG SEDANG DIPROSES (dari backend) =====
+  tickets: ProsesTicket[] = [];
+  isLoading = false;
+  loadError = '';
 
   // ===== FILTER & PAGINATION =====
   searchTerm = '';
   currentPage = 1;
   pageSize = 10;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private ticketService: TicketService) {}
 
   ngOnInit() {
-    // Ambil data user dari localStorage saat login
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
@@ -89,13 +57,52 @@ export class ProsesTiketPage implements OnInit {
         this.user.nama = parsed.nama || 'Teknisi';
       } catch (e) { /* fallback */ }
     }
+
+    this.loadTickets();
+  }
+
+  loadTickets() {
+    this.isLoading = true;
+    this.loadError = '';
+    this.ticketService.getAssignedMe().subscribe({
+      next: (data: AssignedTicketApiRow[]) => {
+        // Halaman Proses Tiket cuma nampilin tiket yang sudah mulai dikerjakan / baru selesai,
+        // bukan yang masih "Menunggu Diproses" (itu ranahnya halaman Ticket)
+        this.tickets = data
+          .filter((row) => row.status_pengerjaan !== 'Menunggu Diproses')
+          .map(this.mapToProsesTicket);
+        this.isLoading = false;
+      },
+      error: (err: any) => {
+        console.error('Gagal mengambil data tiket', err);
+        this.loadError = err?.error?.message || 'Gagal memuat data tiket, coba lagi.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  private mapToProsesTicket(row: AssignedTicketApiRow): ProsesTicket {
+    const uploadsBase = environment.apiUrl.replace(/\/api\/?$/, '');
+    return {
+      idTicket: row.id_ticket,
+      reportedBy: row.nama_pelapor,
+      kategori: row.nama_kategori,
+      subKategori: row.nama_sub_kategori || '-',
+      asset: row.aset || '-',
+      lampiran: row.lampiran ? 'Foto' : '-',
+      lampiranUrl: row.lampiran ? `${uploadsBase}${row.lampiran}` : null,
+      deskripsi: row.deskripsi,
+      progress: row.progress,
+      catatan: row.catatan_penyelesaian || '',
+      status: row.status_pengerjaan as 'Menunggu Diproses' | 'Proses' | 'Selesai',
+    };
   }
 
   get filteredTickets(): ProsesTicket[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) return this.tickets;
-    return this.tickets.filter(t => 
-      t.idTicket.toLowerCase().includes(term) || 
+    return this.tickets.filter(t =>
+      t.idTicket.toLowerCase().includes(term) ||
       t.reportedBy.toLowerCase().includes(term)
     );
   }
@@ -114,20 +121,43 @@ export class ProsesTiketPage implements OnInit {
   prevPage() { if (this.currentPage > 1) this.currentPage--; }
   nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
 
-  // ===== FUNGSI UPDATE DATA =====
+  // ===== FUNGSI UPDATE DATA (sekarang beneran manggil backend) =====
   updateStatus(ticket: ProsesTicket, status: 'Proses' | 'Selesai') {
-    ticket.status = status;
     if (status === 'Selesai' && ticket.progress < 100) {
       ticket.progress = 100;
     }
-    console.log(`✅ Tiket ${ticket.idTicket} status diubah menjadi ${status}`);
+    this.simpanKeBackend(ticket, status);
   }
 
   updateProgress(ticket: ProsesTicket) {
     if (ticket.progress > 100) ticket.progress = 100;
     if (ticket.progress < 0) ticket.progress = 0;
-    // Jika progress 100%, status otomatis Selesai (opsional, tapi biarkan user yang menentukan)
-    console.log(`📊 Tiket ${ticket.idTicket} progress diupdate ke ${ticket.progress}%`);
+  }
+
+  simpanKeBackend(ticket: ProsesTicket, status?: 'Proses' | 'Selesai') {
+    const statusPengerjaan = status || ticket.status;
+    ticket.isSaving = true;
+
+    this.ticketService
+      .updateProgress(ticket.idTicket, {
+        progress: ticket.progress,
+        catatan_penyelesaian: ticket.catatan,
+        status_pengerjaan: statusPengerjaan,
+      })
+      .subscribe({
+        next: () => {
+          ticket.status = statusPengerjaan;
+          ticket.isSaving = false;
+          if (statusPengerjaan === 'Selesai') {
+            // Sudah selesai, hilangkan dari daftar Proses Tiket (pindah ke Riwayat)
+            this.tickets = this.tickets.filter((t) => t.idTicket !== ticket.idTicket);
+          }
+        },
+        error: (err: any) => {
+          ticket.isSaving = false;
+          alert(err?.error?.message || 'Gagal menyimpan perubahan');
+        },
+      });
   }
 
   // ===== NAVIGASI =====

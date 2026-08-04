@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
+import { TicketService, AssignedTicketApiRow } from '../../services/ticket.service'; // TODO: sesuaikan path
 
 export interface RiwayatTicket {
   idTicket: string;
@@ -29,43 +30,19 @@ export class RiwayatTiketPage implements OnInit {
     role: 'teknisi',
   };
 
-  // ===== DATA RIWAYAT TIKET (DUMMY) =====
-  riwayatList: RiwayatTicket[] = [
-    {
-      idTicket: 'T202612020001',
-      reportedBy: 'Desi',
-      kategori: 'Hardware',
-      tanggalSelesai: '2026-12-05 14:30:00',
-      progress: 100,
-      status: 'Selesai',
-    },
-    {
-      idTicket: 'T202612020002',
-      reportedBy: 'Dewi',
-      kategori: 'Hardware',
-      tanggalSelesai: '2026-12-04 10:15:00',
-      progress: 100,
-      status: 'Selesai',
-    },
-    {
-      idTicket: 'T202612020003',
-      reportedBy: 'Yulita',
-      kategori: 'Software',
-      tanggalSelesai: '2026-12-03 16:45:00',
-      progress: 100,
-      status: 'Selesai',
-    },
-  ];
+  // ===== DATA RIWAYAT TIKET (dari backend) =====
+  riwayatList: RiwayatTicket[] = [];
+  isLoading = false;
+  loadError = '';
 
   // ===== FILTER & PAGINATION =====
   searchTerm = '';
   currentPage = 1;
   pageSize = 10;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private ticketService: TicketService) {}
 
   ngOnInit() {
-    // Ambil data user dari localStorage
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
@@ -73,13 +50,42 @@ export class RiwayatTiketPage implements OnInit {
         this.user.nama = parsed.nama || 'Teknisi';
       } catch (e) { /* fallback */ }
     }
+
+    this.loadRiwayat();
+  }
+
+  loadRiwayat() {
+    this.isLoading = true;
+    this.loadError = '';
+    this.ticketService.getRiwayatMe().subscribe({
+      next: (data: AssignedTicketApiRow[]) => {
+        this.riwayatList = data.map(this.mapToRiwayatTicket);
+        this.isLoading = false;
+      },
+      error: (err: any) => {
+        console.error('Gagal mengambil riwayat tiket', err);
+        this.loadError = err?.error?.message || 'Gagal memuat riwayat tiket, coba lagi.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  private mapToRiwayatTicket(row: AssignedTicketApiRow): RiwayatTicket {
+    return {
+      idTicket: row.id_ticket,
+      reportedBy: row.nama_pelapor,
+      kategori: row.nama_kategori,
+      tanggalSelesai: row.tanggal_selesai || '-',
+      progress: row.progress,
+      status: row.status_pengerjaan,
+    };
   }
 
   get filteredRiwayat(): RiwayatTicket[] {
     const term = this.searchTerm.trim().toLowerCase();
     if (!term) return this.riwayatList;
-    return this.riwayatList.filter(r => 
-      r.idTicket.toLowerCase().includes(term) || 
+    return this.riwayatList.filter(r =>
+      r.idTicket.toLowerCase().includes(term) ||
       r.reportedBy.toLowerCase().includes(term)
     );
   }

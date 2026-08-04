@@ -154,6 +154,7 @@
               <tbody>
                 <tr *ngFor="let k of pagedKategori; let i = index">
                   <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                 <!-- Menjadi ini -->
                   <td class="fw-bold">{{ k.nama }}</td>
                   <td>
                     <div class="action-buttons">
@@ -216,7 +217,7 @@
         <!-- Nama Kategori -->
         <div class="form-group">
           <label class="form-label">Nama Kategori <span class="required">*</span></label>
-          <ion-input type="text" placeholder="Contoh: Hardware, Software..." [(ngModel)]="formData.nama" class="form-input"></ion-input>
+          <ion-input type="text" placeholder="Contoh: Hardware, Software..." [(ngModel)]="formData.nama_kategori" class="form-input"></ion-input>
         </div>
 
         <!-- Tombol -->
@@ -224,7 +225,7 @@
           <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
             Batal
           </ion-button>
-          <ion-button class="submit-modal-btn" (click)="simpanKategori()" [disabled]="!formData.nama">
+          <ion-button class="submit-modal-btn" (click)="simpanKategori()" [disabled]="!formData.nama_kategori">
             <ion-icon name="save-outline" slot="start"></ion-icon>
             {{ isEditing ? 'Update' : 'Simpan' }}
           </ion-button>

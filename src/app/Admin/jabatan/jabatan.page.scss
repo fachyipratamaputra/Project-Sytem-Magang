@@ -363,11 +363,12 @@
 
 .table-footer {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
-  padding: 14px 18px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 1px solid var(--border-color);
 }
 
@@ -392,14 +393,75 @@
   font-size: 12.5px;
   color: var(--text-muted);
   cursor: pointer;
+}
 
-  &:hover {
-    background: var(--content-bg);
-  }
+.page-number:hover {
+  background: var(--content-bg);
+}
 
-  &.active {
-    background: var(--primary);
-    color: #fff;
-    font-weight: 600;
-  }
+.page-number.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ========================================== */
+/* MODAL STYLING                               */
+/* ========================================== */
+.modal-content {
+  --background: #f9fafb;
+}
+
+.modal-body {
+  padding: 24px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.required {
+  color: var(--danger);
+}
+
+.form-input {
+  --background: #ffffff;
+  --border-radius: 8px;
+  --border-color: var(--border-color);
+  --padding-start: 14px;
+  --padding-end: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.cancel-btn {
+  --border-radius: 8px;
+  font-weight: 600;
+}
+
+.submit-btn {
+  --background: var(--primary);
+  --border-radius: 8px;
+  font-weight: 600;
 }

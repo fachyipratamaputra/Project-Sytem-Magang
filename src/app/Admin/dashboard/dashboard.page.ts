@@ -73,7 +73,6 @@ export class DashboardPage implements OnInit, AfterViewInit {
   constructor(private router: Router) {}
 
   ngOnInit() {
-    // Reset menu aktif setiap kali halaman dashboard dibuka ulang
     this.activeMenu = 'dashboard';
   }
 
