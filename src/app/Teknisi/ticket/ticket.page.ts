@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -18,6 +18,9 @@ export interface TeknisiTicket {
   tanggalAssign: string;
   status: string;
   isProsesing?: boolean;
+  // 🔥 Tambahkan field baru
+  prioritas?: 'Low' | 'Normal' | 'Urgent';
+  deadline?: string | null;
 }
 
 @Component({
@@ -27,7 +30,7 @@ export interface TeknisiTicket {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-export class TeknisiTicketPage implements OnInit {
+export class TeknisiTicketPage implements OnInit, OnDestroy {
   isSidebarOpen = false;
   activeMenu = 'ticket';
 
@@ -45,6 +48,9 @@ export class TeknisiTicketPage implements OnInit {
   currentPage = 1;
   pageSize = 10;
 
+  // 🔥 Variabel Timer
+  private countdownInterval: any;
+
   constructor(private router: Router, private ticketService: TicketService) {}
 
   ngOnInit() {
@@ -60,11 +66,31 @@ export class TeknisiTicketPage implements OnInit {
     this.loadTickets();
   }
 
-  loadTickets() {
+  // 🔥 Jalankan timer saat halaman aktif
+  ionViewDidEnter() {
+    this.startTimer();
+  }
+
+  // 🔥 Hentikan timer saat halaman ditutup
+  ngOnDestroy() {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
+  startTimer() {
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    this.countdownInterval = setInterval(() => {
+      this.tickets = [...this.tickets];
+    }, 1000);
+  }
+
+loadTickets() {
     this.isLoading = true;
     this.loadError = '';
     this.ticketService.getAssignedMe().subscribe({
       next: (data: AssignedTicketApiRow[]) => {
+        // 🔥 Mapping data + ambil prioritas & deadline
         this.tickets = (data || []).map(this.mapToTeknisiTicket);
         this.isLoading = false;
       },
@@ -88,9 +114,41 @@ export class TeknisiTicketPage implements OnInit {
       lampiran: row.lampiran ? 'Foto' : '-',
       lampiranUrl: row.lampiran ? `${uploadsBase}${row.lampiran}` : null,
       tanggalAssign: row.tanggal_assign || '-',
-      // Fallback pengecekan status dari berbagai kemungkinan key backend
       status: row.status_pengerjaan || row.status || 'Menunggu Diproses',
+      // 🔥 Perbaikan: Ambil prioritas & deadline dengan proteksi variasi penulisan key dari API
+      prioritas: row.prioritas || row.priority || row.PRIORITAS || row.Prioritas || 'Normal',
+      deadline: row.deadline || row.DEADLINE || row.Deadline || null,
     };
+  }
+
+  // ==========================================
+  // 🔥 HELPER TIMER & PRIORITAS
+  // ==========================================
+  getCountdownText(deadline: string | null): string {
+    if (!deadline) return '-';
+    const now = new Date().getTime();
+    const target = new Date(deadline).getTime();
+    const diff = target - now;
+
+    if (diff <= 0) return '⚠️ TELAT';
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  isDeadlineLate(deadline: string | null): boolean {
+    if (!deadline) return false;
+    return new Date().getTime() > new Date(deadline).getTime();
+  }
+
+  getPrioritasClass(prioritas: string): string {
+    const p = prioritas?.toLowerCase() || 'normal';
+    if (p === 'low') return 'prioritas-low';
+    if (p === 'urgent') return 'prioritas-urgent';
+    return 'prioritas-normal';
   }
 
   get filteredTickets(): TeknisiTicket[] {

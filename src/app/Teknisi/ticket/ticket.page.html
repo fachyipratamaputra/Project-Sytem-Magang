@@ -122,6 +122,8 @@
                   <th>Deskripsi</th>
                   <th>Lampiran</th>
                   <th>Tanggal Assign</th>
+                  <th>Prioritas</th> <!-- 🔥 Kolom Baru -->
+                  <th>Deadline</th>  <!-- 🔥 Kolom Baru -->
                   <th>Status</th>
                   <th>Aksi</th>
                 </tr>
@@ -142,6 +144,22 @@
                     <span *ngIf="!t.lampiranUrl">-</span>
                   </td>
                   <td class="nowrap">{{ t.tanggalAssign }}</td>
+                  
+                  <!-- 🔥 Badge Prioritas -->
+                  <td>
+                    <span class="prioritas-badge" [ngClass]="getPrioritasClass(t.prioritas || 'Normal')">
+                      {{ t.prioritas || 'Normal' }}
+                    </span>
+                  </td>
+                  
+                  <!-- 🔥 Timer Countdown -->
+                  <td>
+                    <div *ngIf="t.deadline && t.status !== 'Selesai'" class="countdown-timer" [ngClass]="{'is-late': isDeadlineLate(t.deadline)}">
+                      <ion-icon name="timer-outline"></ion-icon> {{ getCountdownText(t.deadline) }}
+                    </div>
+                    <span *ngIf="!t.deadline || t.status === 'Selesai'">-</span>
+                  </td>
+
                   <td>
                     <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span>
                   </td>
@@ -163,7 +181,7 @@
                 </tr>
 
                 <tr *ngIf="filteredTickets.length === 0">
-                  <td colspan="11" class="empty-row">Tidak ada data ticket</td>
+                  <td colspan="13" class="empty-row">Tidak ada data ticket</td>
                 </tr>
               </tbody>
             </table>

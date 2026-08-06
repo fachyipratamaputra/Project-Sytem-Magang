@@ -178,6 +178,8 @@
                   <th>Lampiran</th>
                   <th>Teknisi</th>
                   <th>Status</th>
+                  <!-- 🔥 KOLOM BARU DEADLINE -->
+                  <th style="min-width: 110px;">Deadline</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -192,7 +194,7 @@
                   <td>{{ t.nama_sub_kategori }}</td>
                   <td>{{ t.aset || '-' }}</td>
                   <td>
-                    <!-- TAMPILAN DISAMAKAN DENGAN APPROVAL: Tombol 'Lihat Foto' -->
+                    <!-- TAMPILAN LAMPIRAN -->
                     <a *ngIf="t.lampiran" [href]="getLampiranUrl(t.lampiran)" target="_blank" class="lampiran-badge" style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
                       Lihat Foto
                     </a>
@@ -201,6 +203,13 @@
                   <td>{{ t.teknisi || '-' }}</td>
                   <td>
                     <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span>
+                  </td>
+                  <!-- 🔥 TIMER COUNTDOWN -->
+                  <td>
+                    <div *ngIf="t.deadline && t.status !== 'Solved'" class="countdown-timer" [ngClass]="{'is-late': isDeadlineLate(t.deadline)}">
+                      <ion-icon name="timer-outline"></ion-icon> {{ getCountdownText(t.deadline) }}
+                    </div>
+                    <span *ngIf="!t.deadline || t.status === 'Solved'">-</span>
                   </td>
                   <td>
                     <div class="action-buttons">
@@ -218,7 +227,7 @@
                 </tr>
 
                 <tr *ngIf="filteredTickets.length === 0">
-                  <td colspan="12" class="empty-row">Tidak ada data ticket yang cocok</td>
+                  <td colspan="13" class="empty-row">Tidak ada data ticket yang cocok</td>
                 </tr>
               </tbody>
             </table>

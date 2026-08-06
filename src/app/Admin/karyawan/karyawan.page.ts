@@ -2,11 +2,12 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http'; 
-import { 
-  IonContent, IonButton, IonIcon, IonModal, IonHeader, IonToolbar, 
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import {
+  IonContent, IonButton, IonIcon, IonModal, IonHeader, IonToolbar,
   IonTitle, IonButtons, IonInput, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
+import { JabatanService } from '../../services/Jabatan.service';
 
 export interface Karyawan {
   id: number;
@@ -25,7 +26,7 @@ export interface Karyawan {
   styleUrls: ['./karyawan.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule, 
+    CommonModule, FormsModule,
     IonContent, IonButton, IonIcon, IonModal, IonHeader, IonToolbar,
     IonTitle, IonButtons, IonInput, IonSelect, IonSelectOption
   ],
@@ -35,14 +36,14 @@ export class KaryawanPage implements OnInit {
   activeMenu = 'karyawan';
 
   private apiUrl = 'http://localhost:5000/api/karyawan';
-  private apiDepartemenUrl = 'http://localhost:5000/api/departemen';
-  private apiBagianUrl = 'http://localhost:5000/api/bagian-departemen';
+  private apiDepartemenUrl = 'http://localhost:5000/api/master/departemen';
+  private apiBagianUrl = 'http://localhost:5000/api/master/bagian-departemen';
 
   karyawanList: Karyawan[] = [];
-  
-  // Opsi master dinamis dari database
+
   departemenMasterList: any[] = [];
   bagianMasterList: any[] = [];
+  jabatanMasterList: any[] = [];
 
   get totalKaryawan(): number { return this.karyawanList.length; }
   get totalIT(): number { return this.karyawanList.filter(k => k.departemen === 'IT').length; }
@@ -52,15 +53,32 @@ export class KaryawanPage implements OnInit {
   filterDepartemen = '';
   filterBagian = '';
 
+  // DEPARTEMEN: Data diambil dari tabel departemen
   get departemenOptions(): string[] {
     const fromMaster = this.departemenMasterList.map(d => d.nama_departemen);
     const fromKaryawan = this.karyawanList.map(k => k.departemen);
     return [...new Set([...fromMaster, ...fromKaryawan])].filter(Boolean);
   }
-  
+
+  // BAGIAN (SEMUA, untuk filter toolbar tabel utama)
   get bagianOptions(): string[] {
     const fromMaster = this.bagianMasterList.map(b => b.nama_bagian);
     const fromKaryawan = this.karyawanList.map(k => k.bagian);
+    return [...new Set([...fromMaster, ...fromKaryawan])].filter(Boolean);
+  }
+
+  // 🔥 BAGIAN UNTUK MODAL: ter-filter sesuai Departemen yang dipilih di form
+  get filteredBagianOptions(): string[] {
+    if (!this.formData.departemen) return [];
+    return this.bagianMasterList
+      .filter(b => b.departemen === this.formData.departemen)
+      .map(b => b.nama_bagian);
+  }
+
+  // JABATAN: Data diambil dari tabel jabatan
+  get jabatanOptions(): string[] {
+    const fromMaster = this.jabatanMasterList.map(j => j.nama_jabatan);
+    const fromKaryawan = this.karyawanList.map(k => k.jabatan);
     return [...new Set([...fromMaster, ...fromKaryawan])].filter(Boolean);
   }
 
@@ -81,11 +99,14 @@ export class KaryawanPage implements OnInit {
     jabatan: 'Operator'
   };
   jenisKelaminOptions = ['Laki-laki', 'Perempuan'];
-  jabatanOptions = ['Kepala Departemen', 'Operator', 'Kepala Regu'];
 
   isLoading = false;
 
-  constructor(private router: Router, private http: HttpClient) {}
+  constructor(
+    private router: Router,
+    private http: HttpClient,
+    private jabatanService: JabatanService
+  ) {}
 
   ngOnInit() {
     this.loadDataKaryawan();
@@ -99,7 +120,6 @@ export class KaryawanPage implements OnInit {
 
     this.http.get<any>(this.apiUrl, { headers }).subscribe({
       next: (res) => {
-        // Mendukung format respons array langsung atau terbungkus objek {success, data}
         this.karyawanList = Array.isArray(res) ? res : (res.data || []);
         this.isLoading = false;
       },
@@ -110,7 +130,6 @@ export class KaryawanPage implements OnInit {
     });
   }
 
-  // Ambil data Master Departemen dan Bagian terbaru dari backend
   loadMasterData() {
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
@@ -128,12 +147,19 @@ export class KaryawanPage implements OnInit {
       },
       error: (err) => console.error('Gagal memuat master bagian departemen:', err)
     });
+
+    this.jabatanService.getAll().subscribe({
+      next: (res) => {
+        this.jabatanMasterList = Array.isArray(res) ? res : (res.data || []);
+      },
+      error: (err) => console.error('Gagal memuat master jabatan:', err)
+    });
   }
 
   get filteredKaryawan(): Karyawan[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.karyawanList.filter(k => {
-      const matchSearch = !term || 
+      const matchSearch = !term ||
         (k.nik && k.nik.toLowerCase().includes(term)) ||
         (k.nama && k.nama.toLowerCase().includes(term)) ||
         (k.alamat && k.alamat.toLowerCase().includes(term));
@@ -146,11 +172,9 @@ export class KaryawanPage implements OnInit {
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredKaryawan.length / this.pageSize));
   }
-  
   get totalPagesArray(): number[] {
     return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
-
   get pagedKaryawan(): Karyawan[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredKaryawan.slice(start, start + this.pageSize);
@@ -173,7 +197,6 @@ export class KaryawanPage implements OnInit {
       bagian: '',
       jabatan: 'Operator'
     };
-    // Refresh master data saat modal dibuka agar departemen baru langsung muncul di dropdown
     this.loadMasterData();
     this.isModalOpen = true;
   }
@@ -189,9 +212,14 @@ export class KaryawanPage implements OnInit {
     this.isModalOpen = false;
   }
 
+  // 🔥 Reset pilihan Bagian setiap kali Departemen di modal diganti
+  onDepartemenModalChange() {
+    this.formData.bagian = '';
+  }
+
   simpanKaryawan() {
-    if (!this.formData.nik || !this.formData.nama) {
-      alert('NIK dan Nama wajib diisi!');
+    if (!this.formData.nama) {
+      alert('Nama wajib diisi!');
       return;
     }
 
@@ -229,7 +257,7 @@ export class KaryawanPage implements OnInit {
           alert('Karyawan berhasil dihapus!');
           this.loadDataKaryawan();
         },
-        error: (err) => alert('Gagal menghapus data: ' + (err.error?.message || err.message))
+        error: (err) => alert(err.error?.error || err.error?.message || 'Gagal menghapus data.')
       });
     }
   }

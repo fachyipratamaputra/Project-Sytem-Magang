@@ -234,7 +234,7 @@
     </ion-header>
     <ion-content class="modal-content">
       <div class="modal-body">
-        
+
         <!-- Nama Barang -->
         <div class="form-group">
           <label class="form-label">Nama Barang <span class="required">*</span></label>
@@ -247,12 +247,29 @@
           <ion-input type="text" placeholder="Contoh: Cisco 24 Port" [(ngModel)]="formData.merk_model" class="form-input"></ion-input>
         </div>
 
-        <!-- Departemen (Dropdown) -->
+        <!-- Pemegang Asset (Dropdown) - dipilih duluan, jadi trigger -->
+        <div class="form-group">
+          <label class="form-label">Pemegang Asset</label>
+          <ion-select
+            [(ngModel)]="formData.nik_pemegang"
+            (ionChange)="onPemegangChange()"
+            interface="action-sheet"
+            class="form-select"
+            placeholder="Pilih Karyawan / Pemegang">
+            <ion-select-option *ngFor="let k of karyawanList" [value]="k.nik">{{ k.namaKaryawan }}</ion-select-option>
+          </ion-select>
+        </div>
+
+        <!-- Departemen (Otomatis, read-only) -->
         <div class="form-group">
           <label class="form-label">Departemen <span class="required">*</span></label>
-          <ion-select [(ngModel)]="formData.id_departemen" interface="action-sheet" class="form-select" placeholder="Pilih Departemen">
-            <ion-select-option *ngFor="let d of departemenList" [value]="d.idDepartemen">{{ d.namaDepartemen }}</ion-select-option>
-          </ion-select>
+          <ion-input
+            type="text"
+            [value]="selectedDepartemenNama || '-'"
+            readonly
+            class="form-input"
+            style="--background: #f1f5f9; opacity: 0.8;"
+          ></ion-input>
         </div>
 
         <!-- Kategori (Dropdown) -->
@@ -260,14 +277,6 @@
           <label class="form-label">Kategori <span class="required">*</span></label>
           <ion-select [(ngModel)]="formData.id_kategori" interface="action-sheet" class="form-select" placeholder="Pilih Kategori">
             <ion-select-option *ngFor="let kat of kategoriList" [value]="kat.idKategori">{{ kat.namaKategori }}</ion-select-option>
-          </ion-select>
-        </div>
-
-        <!-- Pemegang Asset (Dropdown) -->
-        <div class="form-group">
-          <label class="form-label">Pemegang Asset</label>
-          <ion-select [(ngModel)]="formData.nik_pemegang" interface="action-sheet" class="form-select" placeholder="Pilih Karyawan / Pemegang">
-            <ion-select-option *ngFor="let k of karyawanList" [value]="k.nik">{{ k.namaKaryawan }}</ion-select-option>
           </ion-select>
         </div>
 

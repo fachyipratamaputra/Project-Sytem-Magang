@@ -1,30 +1,32 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Karyawan } from '../Admin/karyawan/karyawan.page';
+import { environment } from '../../environments/environment';
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface AvailableKaryawan {
+  nik: string;
+  nama: string;
+  departemen: string;
+}
+
+@Injectable({ providedIn: 'root' })
 export class KaryawanService {
-  // Sesuaikan URL endpoint backend Anda (misal port 3000 atau 5000)
-  private apiUrl = 'http://localhost:5000/api/karyawan';
+  private apiUrl = `${environment.apiUrl}/karyawan`;
 
   constructor(private http: HttpClient) {}
 
-  getKaryawan(): Observable<Karyawan[]> {
-    return this.http.get<Karyawan[]>(this.apiUrl);
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({ Authorization: `Bearer ${token || ''}` });
   }
 
-  tambahKaryawan(data: Karyawan): Observable<any> {
-    return this.http.post(this.apiUrl, data);
+  // 🔥 Method getAll() inilah yang dipanggil oleh inventory.page.ts
+  getAll(): Observable<any> {
+    return this.http.get(this.apiUrl, { headers: this.getHeaders() });
   }
 
-  updateKaryawan(id: number, data: Karyawan): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, data);
-  }
-
-  hapusKaryawan(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+  // Method khusus mengambil karyawan yang belum punya akun user
+  getAvailable(): Observable<AvailableKaryawan[]> {
+    return this.http.get<AvailableKaryawan[]>(`${this.apiUrl}/available`, { headers: this.getHeaders() });
   }
 }

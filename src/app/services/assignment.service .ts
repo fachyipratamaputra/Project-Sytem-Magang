@@ -23,10 +23,15 @@ export class AssignmentService {
     return this.http.get(`${this.teknisiUrl}/by-kategori/${idKategori}`, { headers: this.getHeaders() });
   }
 
-  assignTicket(idTicket: string, idTeknisi: number | string): Observable<any> {
+  // 🔥 Update fungsi assignTicket untuk menerima prioritas
+  assignTicket(idTicket: string, idTeknisi: number | string, prioritas?: 'Low' | 'Normal' | 'Urgent'): Observable<any> {
+    const payload: any = { id_teknisi: idTeknisi };
+    if (prioritas) {
+      payload.prioritas = prioritas;
+    }
     return this.http.post(
       `${this.baseUrl}/${idTicket}`,
-      { id_teknisi: idTeknisi },
+      payload,
       { headers: this.getHeaders() }
     );
   }

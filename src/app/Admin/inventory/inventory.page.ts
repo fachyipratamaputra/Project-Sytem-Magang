@@ -6,8 +6,6 @@ import { IonicModule } from '@ionic/angular';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { DepartemenService } from 'src/app/services/departemen.services';
 import { KaryawanService } from 'src/app/services/karyawan.service';
-// Jika Anda punya kategori.service.ts, import di sini:
-// import { KategoriService } from 'src/app/services/kategori.service';
 
 export interface Inventory {
   kodeAsset: string;
@@ -33,8 +31,7 @@ export class InventoryPage implements OnInit {
   activeMenu = 'inventory';
 
   inventoryList: Inventory[] = [];
-  
-  // ===== DATA MASTER UNTUK DROPDOWN =====
+
   departemenList: any[] = [];
   karyawanList: any[] = [];
   kategoriList: any[] = [];
@@ -51,7 +48,10 @@ export class InventoryPage implements OnInit {
   isModalOpen = false;
   isEditing = false;
   selectedKode: string | null = null;
-  
+
+  // 🔥 Nama departemen untuk ditampilkan sebagai teks read-only di form
+  selectedDepartemenNama: string = '';
+
   formData: any = {
     nama_barang: '',
     merk_model: '',
@@ -61,11 +61,10 @@ export class InventoryPage implements OnInit {
   };
 
   constructor(
-    private router: Router, 
+    private router: Router,
     private http: HttpClient,
     private departemenService: DepartemenService,
-    private karyawanService: KaryawanService,
-    // private kategoriService: KategoriService // Uncomment jika sudah membuat service Kategori
+    private karyawanService: KaryawanService
   ) {}
 
   ngOnInit() {
@@ -115,12 +114,13 @@ export class InventoryPage implements OnInit {
   }
 
   private loadKaryawanList() {
-    this.karyawanService.getKaryawan().subscribe({
+    this.karyawanService.getAll().subscribe({
       next: (res: any) => {
         const rows = res?.data ?? res ?? [];
         this.karyawanList = rows.map((k: any) => ({
           nik: k.nik ?? k.NIK ?? k.id_karyawan,
           namaKaryawan: k.nama_karyawan ?? k.namaKaryawan ?? k.nama,
+          departemen: k.departemen ?? k.nama_departemen ?? '',
         }));
       },
       error: (err) => console.error('Gagal memuat karyawan:', err)
@@ -131,8 +131,6 @@ export class InventoryPage implements OnInit {
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
-    // 🔥 PERBAIKAN: Ubah URL jika backend Anda menggunakan prefix tambahan (misal: /api/master/kategori)
-    // Atau jika Anda menggunakan KategoriService, ubah menjadi: this.kategoriService.getAll()...
     this.http.get<any>('http://localhost:5000/api/master/kategori', { headers }).subscribe({
       next: (res: any) => {
         const rows = res?.data ?? res ?? [];
@@ -140,21 +138,8 @@ export class InventoryPage implements OnInit {
           idKategori: k.id_kategori ?? k.idKategori,
           namaKategori: k.nama_kategori ?? k.namaKategori,
         }));
-        console.log('Kategori berhasil dimuat:', this.kategoriList);
       },
-      error: (err) => {
-        // Fallback coba endpoint alternatif jika /api/master/kategori gagal
-        this.http.get<any>('http://localhost:5000/api/kategori', { headers }).subscribe({
-          next: (fallbackRes: any) => {
-            const rows = fallbackRes?.data ?? fallbackRes ?? [];
-            this.kategoriList = rows.map((k: any) => ({
-              idKategori: k.id_kategori ?? k.idKategori,
-              namaKategori: k.nama_kategori ?? k.namaKategori,
-            }));
-          },
-          error: (fallbackErr) => console.error('Gagal memuat kategori dari semua endpoint:', fallbackErr)
-        });
-      }
+      error: (err) => console.error('Gagal memuat kategori:', err)
     });
   }
 
@@ -194,28 +179,30 @@ export class InventoryPage implements OnInit {
   openTambahModal() {
     this.isEditing = false;
     this.selectedKode = null;
-    this.formData = { 
-      nama_barang: '', 
-      merk_model: '', 
-      id_departemen: null, 
-      id_kategori: null, 
-      nik_pemegang: null 
+    this.formData = {
+      nama_barang: '',
+      merk_model: '',
+      id_departemen: null,
+      id_kategori: null,
+      nik_pemegang: null
     };
-    this.loadKategoriList(); // Pastikan data direfresh saat modal dibuka
+    this.selectedDepartemenNama = '';
+    this.loadKategoriList();
     this.isModalOpen = true;
   }
 
   openEditModal(item: Inventory) {
     this.isEditing = true;
     this.selectedKode = item.kodeAsset;
-    this.formData = { 
-      nama_barang: item.namaBarang, 
-      merk_model: item.merkModel, 
-      id_departemen: item.idDepartemen, 
-      id_kategori: item.idKategori, 
-      nik_pemegang: item.nikPemegang 
-    }; 
-    this.loadKategoriList(); // Pastikan data direfresh saat modal dibuka
+    this.formData = {
+      nama_barang: item.namaBarang,
+      merk_model: item.merkModel,
+      id_departemen: item.idDepartemen,
+      id_kategori: item.idKategori,
+      nik_pemegang: item.nikPemegang
+    };
+    this.selectedDepartemenNama = item.dept || '';
+    this.loadKategoriList();
     this.isModalOpen = true;
   }
 
@@ -223,9 +210,38 @@ export class InventoryPage implements OnInit {
     this.isModalOpen = false;
   }
 
+  // 🔥 Auto-isi Departemen (id + nama untuk display) begitu Pemegang Asset dipilih
+  onPemegangChange() {
+    const selectedNik = this.formData.nik_pemegang;
+    if (!selectedNik) {
+      this.formData.id_departemen = null;
+      this.selectedDepartemenNama = '';
+      return;
+    }
+
+    const karyawan = this.karyawanList.find((k: any) => k.nik === selectedNik);
+    if (!karyawan || !karyawan.departemen) {
+      this.formData.id_departemen = null;
+      this.selectedDepartemenNama = '';
+      return;
+    }
+
+    const matchedDept = this.departemenList.find(
+      (d: any) => d.namaDepartemen === karyawan.departemen
+    );
+
+    if (matchedDept) {
+      this.formData.id_departemen = matchedDept.idDepartemen;
+      this.selectedDepartemenNama = matchedDept.namaDepartemen;
+    } else {
+      this.formData.id_departemen = null;
+      this.selectedDepartemenNama = '';
+    }
+  }
+
   simpanInventory() {
     if (!this.formData.nama_barang || !this.formData.id_departemen || !this.formData.id_kategori) {
-      alert('Nama Barang, Departemen, dan Kategori wajib diisi!');
+      alert('Nama Barang, Pemegang Asset (untuk menentukan Departemen), dan Kategori wajib diisi!');
       return;
     }
 
@@ -286,5 +302,5 @@ export class InventoryPage implements OnInit {
   goToInventory() { this.activeMenu = 'inventory'; this.router.navigate(['/inventory']); }
   goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
   goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
-  goToProfile() { this.setActiveMenu('profile'); this.router.navigate(['/profile']); }
+  goToProfile() { this.activeMenu = 'profile'; this.router.navigate(['/profile']); }
 }

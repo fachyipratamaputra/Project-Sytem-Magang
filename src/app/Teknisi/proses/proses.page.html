@@ -16,11 +16,7 @@
 
       <div class="sidebar-user">
         <div class="avatar-wrapper">
-          <img
-            [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=128&bold=true'"
-            alt="Avatar"
-            class="sidebar-avatar"
-          />
+          <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=128&bold=true'" alt="Avatar" class="sidebar-avatar" />
           <div class="online-status"></div>
         </div>
         <div class="sidebar-user-info">
@@ -77,10 +73,7 @@
         </div>
         <div class="header-right">
           <div class="header-avatar" (click)="goToProfile()">
-            <img
-              [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=64&bold=true'"
-              alt="Avatar"
-            />
+            <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=64&bold=true'" alt="Avatar" />
             <span class="header-avatar-name">{{ user.nama }}</span>
           </div>
         </div>
@@ -97,12 +90,7 @@
         <div class="list-toolbar">
           <div class="search-box">
             <ion-icon name="search-outline" class="search-icon"></ion-icon>
-            <input
-              type="text"
-              placeholder="Cari ID Ticket / Pelapor..."
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="onFilterChange()"
-            />
+            <input type="text" placeholder="Cari ID Ticket / Pelapor..." [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" />
           </div>
         </div>
 
@@ -119,79 +107,88 @@
                   <th style="min-width: 140px;">Sub Kategori</th>
                   <th>Asset</th>
                   <th>Lampiran</th>
-                  <th style="min-width: 150px;">Deskripsi</th> <!-- Kolom Deskripsi -->
+                  <th style="min-width: 150px;">Deskripsi</th>
                   <th style="min-width: 100px;">Progress (%)</th>
                   <th style="min-width: 180px;">Catatan Penyelesaian</th>
                   <th style="min-width: 130px;">Update Status</th>
+                  <th style="min-width: 110px;">Sisa Waktu</th>
+                  <th style="min-width: 140px;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let t of pagedTickets; let i = index">
-                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
-                  <td class="ticket-id">{{ t.idTicket }}</td>
-                  <td class="fw-bold">{{ t.reportedBy }}</td>
-                  <td>{{ t.kategori }}</td>
-                  <td>{{ t.subKategori }}</td>
-                  <td>{{ t.asset || '-' }}</td>
-                  <td>
-                    <span class="lampiran-badge" *ngIf="t.lampiran">
-                      <ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}
-                    </span>
-                    <span *ngIf="!t.lampiran">-</span>
-                  </td>
-                  <td class="deskripsi-col">{{ t.deskripsi }}</td>
-                  <td>
-                    <div class="progress-input-wrap">
-                      <ion-input
-                        type="number"
-                        min="0"
-                        max="100"
-                        [(ngModel)]="t.progress"
-                        (ionChange)="updateProgress(t)"
-                        class="progress-input"
-                      ></ion-input>
-                      <span class="progress-symbol">%</span>
-                    </div>
-                  </td>
-                  <td>
-                    <ion-input
-                      type="text"
-                      placeholder="Isi catatan..."
-                      [(ngModel)]="t.catatan"
-                      class="catatan-input"
-                    ></ion-input>
-                  </td>
-                  <td>
-                    <div class="status-action">
-                      <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span>
-                      <div class="action-buttons">
-                        <ion-button
-                          fill="solid"
-                          color="warning"
-                          size="small"
-                          class="btn-proses"
-                          [disabled]="t.status === 'Proses'"
-                          (click)="updateStatus(t, 'Proses')"
-                        >
-                          Proses
-                        </ion-button>
-                        <ion-button
-                          fill="solid"
-                          color="success"
-                          size="small"
-                          class="btn-selesai"
-                          [disabled]="t.status === 'Selesai'"
-                          (click)="updateStatus(t, 'Selesai')"
-                        >
-                          Selesai
-                        </ion-button>
+                <ng-container *ngFor="let t of pagedTickets; let i = index">
+                  <tr>
+                    <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                    <td class="ticket-id">{{ t.idTicket }}</td>
+                    <td class="fw-bold">{{ t.reportedBy }}</td>
+                    <td>{{ t.kategori }}</td>
+                    <td>{{ t.subKategori }}</td>
+                    <td>{{ t.asset || '-' }}</td>
+                    <td>
+                      <a *ngIf="t.lampiranUrl" [href]="t.lampiranUrl" target="_blank" rel="noopener noreferrer" class="lampiran-badge"><ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}</a>
+                      <span *ngIf="!t.lampiranUrl">-</span>
+                    </td>
+                    <td class="deskripsi-col">{{ t.deskripsi }}</td>
+                    <td>
+                      <div class="progress-input-wrap">
+                        <ion-input type="number" min="0" max="100" [(ngModel)]="t.progress" (ionChange)="updateProgress(t)" class="progress-input"></ion-input>
+                        <span class="progress-symbol">%</span>
                       </div>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                    <td>
+                      <ion-input type="text" placeholder="Isi catatan..." [(ngModel)]="t.catatan" class="catatan-input"></ion-input>
+                    </td>
+                    <td>
+                      <div class="status-action">
+                        <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span>
+                        <div class="action-buttons">
+                          <!-- 🔥 PERBAIKAN: Tombol Proses berubah jadi Update jika statusnya sudah Proses -->
+                          <ion-button fill="solid" color="warning" size="small" class="btn-proses" (click)="updateStatus(t, 'Proses')">
+                            {{ t.status === 'Proses' ? 'Update' : 'Proses' }}
+                          </ion-button>
+                          <ion-button fill="solid" color="success" size="small" class="btn-selesai" [disabled]="t.status === 'Selesai'" (click)="updateStatus(t, 'Selesai')">Selesai</ion-button>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div *ngIf="t.deadline" class="countdown-timer" [ngClass]="{'is-late': isDeadlineLate(t.deadline)}">
+                        <ion-icon name="timer-outline"></ion-icon> {{ getCountdownText(t.deadline) }}
+                      </div>
+                      <span *ngIf="!t.deadline">-</span>
+                    </td>
+                    <td>
+                      <ion-button fill="clear" size="small" (click)="togglePause(t)" [color]="t.isPaused ? 'success' : 'warning'">
+                        <ion-icon [name]="t.isPaused ? 'play-circle-outline' : 'pause-circle-outline'"></ion-icon>
+                        {{ t.isPaused ? 'Lanjutkan' : 'Jeda' }}
+                      </ion-button>
+                      <ion-button fill="clear" size="small" (click)="openChatModal(t.idTicket)">
+                        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small" (click)="toggleHistory(t)">
+                        <ion-icon name="time-outline"></ion-icon>
+                      </ion-button>
+                    </td>
+                  </tr>
+                  <!-- 🔥 BARIS HISTORI PROGRES -->
+                  <tr *ngIf="t.isHistoryOpen">
+                    <td colspan="13" style="background: #f8fafc; padding: 12px 16px;">
+                      <div class="history-container">
+                        <strong>Histori Progres:</strong>
+                        <div *ngIf="t.history.length === 0" class="history-empty">Belum ada progres tercatat</div>
+                        <div class="history-item" *ngFor="let h of t.history">
+                          <div class="history-badge">{{ h.progress }}%</div>
+                          <div class="history-text">
+                            <span class="history-note">{{ h.catatan || '-' }}</span>
+                            <span class="history-date">{{ h.created_at | date:'dd-MM-yyyy HH:mm' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
 
                 <tr *ngIf="filteredTickets.length === 0">
-                  <td colspan="11" class="empty-row">Tidak ada tiket yang sedang diproses</td>
+                  <td colspan="13" class="empty-row">Tidak ada tiket yang sedang diproses</td>
                 </tr>
               </tbody>
             </table>
@@ -210,3 +207,49 @@
     </div>
   </div>
 </ion-content>
+
+<!-- ===== MODAL CHAT TEKNISI ===== -->
+<ion-modal [isOpen]="isChatModalOpen" (didDismiss)="closeChatModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Chat Tiket #{{ selectedTicketId }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeChatModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="chat-container" #chatContainer>
+        <div class="chat-messages">
+          <div *ngIf="isChatLoading" class="chat-loading">Memuat percakapan...</div>
+          <div *ngIf="!isChatLoading && chatMessages.length === 0" class="chat-empty">Belum ada pesan. Mulai diskusi!</div>
+          <div *ngFor="let msg of chatMessages" class="chat-bubble" [class.bubble-me]="msg.sender_role?.toLowerCase() === user.role?.toLowerCase()">
+            <div class="bubble-header">
+              <span class="sender-name">{{ msg.sender_name }}</span>
+              <span class="time">{{ msg.created_at | date:'shortTime' }}</span>
+            </div>
+            <div *ngIf="msg.attachment_url" class="bubble-image">
+              <img [src]="chatService.getAttachmentUrl(msg.attachment_url)" alt="Lampiran" (click)="openImagePreview(chatService.getAttachmentUrl(msg.attachment_url))" />
+            </div>
+            <div class="bubble-text" *ngIf="msg.message">{{ msg.message }}</div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="file" #chatFileInput accept="image/*" style="display:none" (change)="onChatFileSelected($event)" />
+          <ion-button fill="clear" size="small" (click)="chatFileInput.click()" class="attach-btn"><ion-icon name="attach-outline"></ion-icon></ion-button>
+          <ion-input type="text" [(ngModel)]="newChatMessage" placeholder="Tulis pesan..." class="chat-input"></ion-input>
+          <ion-button fill="solid" color="primary" (click)="sendChat()" [disabled]="!newChatMessage.trim() && !selectedChatFile" class="send-btn"><ion-icon name="send-outline"></ion-icon></ion-button>
+        </div>
+        <div class="chat-preview" *ngIf="selectedChatFile">
+          <div class="preview-wrapper">
+            <img [src]="selectedChatFilePreview" alt="Preview" />
+            <ion-button fill="clear" size="small" (click)="selectedChatFile = null; selectedChatFilePreview = ''" class="remove-preview"><ion-icon name="close-circle-outline"></ion-icon></ion-button>
+          </div>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

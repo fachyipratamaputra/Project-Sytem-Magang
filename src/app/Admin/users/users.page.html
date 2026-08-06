@@ -230,7 +230,7 @@
 </ion-content>
 
 <!-- ========================================== -->
-<!-- 🔥 MODAL TAMBAH/EDIT USER                  -->
+<!-- 🔥 MODAL TAMBAH/EDIT USER (UBAH BAGIAN INI) -->
 <!-- ========================================== -->
 <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
   <ng-template>
@@ -247,30 +247,49 @@
     <ion-content class="modal-content">
       <div class="modal-body">
         
-        <!-- NIK (Wajib untuk relasi Karyawan) -->
+        <!-- 🔥 NIK Karyawan (Dropdown) -->
         <div class="form-group" *ngIf="!isEditing">
           <label class="form-label">NIK Karyawan <span class="required">*</span></label>
-          <ion-input type="text" placeholder="Masukkan NIK Karyawan yang terdaftar" [(ngModel)]="formData.nik" class="form-input"></ion-input>
+          <ion-select 
+            [(ngModel)]="formData.nik" 
+            (ionChange)="onNikChange()"
+            interface="action-sheet" 
+            class="form-select" 
+            placeholder="Pilih NIK Karyawan">
+            <ion-select-option *ngFor="let k of availableKaryawan" [value]="k.nik">
+              {{ k.nik }} - {{ k.nama }}
+            </ion-select-option>
+          </ion-select>
+        </div>
+
+        <!-- 🔥 Nama (Otomatis terisi, readonly) -->
+        <div class="form-group" *ngIf="!isEditing">
+          <label class="form-label">Nama Karyawan <span class="required">*</span></label>
+          <ion-input 
+            type="text" 
+            [(ngModel)]="formData.nama" 
+            class="form-input" 
+            readonly="true"
+            placeholder="Akan terisi otomatis">
+          </ion-input>
+        </div>
+
+        <!-- 🔥 Departemen (Otomatis terisi, readonly) -->
+        <div class="form-group" *ngIf="!isEditing">
+          <label class="form-label">Departemen <span class="required">*</span></label>
+          <ion-input 
+            type="text" 
+            [(ngModel)]="formData.departemen" 
+            class="form-input" 
+            readonly="true"
+            placeholder="Akan terisi otomatis">
+          </ion-input>
         </div>
 
         <!-- Username -->
         <div class="form-group" *ngIf="!isEditing">
           <label class="form-label">Username <span class="required">*</span></label>
           <ion-input type="text" placeholder="Masukkan username login" [(ngModel)]="formData.username" class="form-input"></ion-input>
-        </div>
-
-        <!-- Nama -->
-        <div class="form-group" *ngIf="!isEditing">
-          <label class="form-label">Nama Karyawan <span class="required">*</span></label>
-          <ion-input type="text" placeholder="Masukkan nama lengkap" [(ngModel)]="formData.nama" class="form-input"></ion-input>
-        </div>
-
-        <!-- Departemen -->
-        <div class="form-group" *ngIf="!isEditing">
-          <label class="form-label">Departemen <span class="required">*</span></label>
-          <ion-select [(ngModel)]="formData.departemen" interface="action-sheet" class="form-select" placeholder="Pilih departemen">
-            <ion-select-option *ngFor="let d of departemenOptions" [value]="d">{{ d }}</ion-select-option>
-          </ion-select>
         </div>
 
         <!-- Level -->
@@ -297,7 +316,7 @@
           <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
             Batal
           </ion-button>
-          <ion-button class="submit-modal-btn" (click)="simpanUser()">
+          <ion-button class="submit-modal-btn" (click)="simpanUser()" [disabled]="!formData.username || !formData.password || (!isEditing && !formData.nik)">
             <ion-icon name="save-outline" slot="start"></ion-icon>
             {{ isEditing ? 'Update' : 'Simpan' }}
           </ion-button>

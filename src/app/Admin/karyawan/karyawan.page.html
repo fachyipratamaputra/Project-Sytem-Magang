@@ -254,7 +254,7 @@
 </ion-content>
 
 <!-- ========================================== -->
-<!-- 🔥 MODAL TAMBAH / EDIT KARYAWAN           -->
+<!-- 🔥 MODAL TAMBAH / EDIT KARYAWAN            -->
 <!-- ========================================== -->
 <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
   <ng-template>
@@ -270,34 +270,22 @@
     </ion-header>
     <ion-content class="modal-content">
       <div class="modal-body">
-        
-        <!-- NIK & Nama -->
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">NIK <span class="required">*</span></label>
-            <ion-input 
-              type="text" 
-              placeholder="Contoh: KRY-004"
-              [(ngModel)]="formData.nik"
-              class="form-input"
-            ></ion-input>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nama Lengkap <span class="required">*</span></label>
-            <ion-input 
-              type="text" 
-              placeholder="Contoh: Andi Saputra"
-              [(ngModel)]="formData.nama"
-              class="form-input"
-            ></ion-input>
-          </div>
+        <!-- Nama Lengkap -->
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap <span class="required">*</span></label>
+          <ion-input
+            type="text"
+            placeholder="Contoh: Andi Saputra"
+            [(ngModel)]="formData.nama"
+            class="form-input"
+          ></ion-input>
         </div>
 
         <!-- Alamat -->
         <div class="form-group">
           <label class="form-label">Alamat</label>
-          <ion-input 
-            type="text" 
+          <ion-input
+            type="text"
             placeholder="Contoh: Jakarta Selatan"
             [(ngModel)]="formData.alamat"
             class="form-input"
@@ -314,14 +302,22 @@
           </div>
           <div class="form-group">
             <label class="form-label">Departemen</label>
-            <ion-select [(ngModel)]="formData.departemen" class="form-select" placeholder="Pilih Departemen">
+            <ion-select
+              [(ngModel)]="formData.departemen"
+              (ngModelChange)="onDepartemenModalChange()"
+              class="form-select"
+              placeholder="Pilih Departemen">
               <ion-select-option *ngFor="let d of departemenOptions" [value]="d">{{ d }}</ion-select-option>
             </ion-select>
           </div>
           <div class="form-group">
             <label class="form-label">Bagian</label>
-            <ion-select [(ngModel)]="formData.bagian" class="form-select" placeholder="Pilih Bagian">
-              <ion-select-option *ngFor="let b of bagianOptions" [value]="b">{{ b }}</ion-select-option>
+            <ion-select
+              [(ngModel)]="formData.bagian"
+              class="form-select"
+              placeholder="Pilih Bagian"
+              [disabled]="!formData.departemen">
+              <ion-select-option *ngFor="let b of filteredBagianOptions" [value]="b">{{ b }}</ion-select-option>
             </ion-select>
           </div>
         </div>
@@ -339,16 +335,15 @@
           <ion-button class="cancel-btn" fill="outline" (click)="closeModal()">
             Batal
           </ion-button>
-          <ion-button 
-            class="submit-btn" 
+          <ion-button
+            class="submit-btn"
             (click)="simpanKaryawan()"
-            [disabled]="!formData.nik || !formData.nama"
+            [disabled]="!formData.nama"
           >
             <ion-icon name="save-outline" slot="start"></ion-icon>
             {{ isEditing ? 'Update' : 'Simpan' }}
           </ion-button>
         </div>
-
       </div>
     </ion-content>
   </ng-template>

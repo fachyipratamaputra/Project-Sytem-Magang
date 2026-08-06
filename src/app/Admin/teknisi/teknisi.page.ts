@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { HttpErrorResponse } from '@angular/common/http';
 import { TeknisiService } from 'src/app/services/teknisi.service';
-import { UserService } from 'src/app/services/user.service'; // Menggunakan UserService
+import { UserService } from 'src/app/services/user.service';
 import { Kategori, KategoriService } from 'src/app/services/kategori.service';
 import { Teknisi } from 'src/app/models/teknisi.model';
 
@@ -27,7 +27,7 @@ export class TeknisiPage implements OnInit {
   activeMenu = 'teknisi';
 
   teknisiList: Teknisi[] = [];
-  userList: any[] = []; // Menampung data user
+  userList: any[] = [];
   kategoriList: Kategori[] = [];
 
   searchTerm = '';
@@ -42,7 +42,7 @@ export class TeknisiPage implements OnInit {
   isModalOpen = false;
   isEditing = false;
   selectedId: string | null = null;
-  editingNamaDisplay = ''; 
+  editingNamaDisplay = '';
   formData: TeknisiFormData = {
     nik: '',
     idKategori: null,
@@ -52,13 +52,13 @@ export class TeknisiPage implements OnInit {
   constructor(
     private router: Router,
     private teknisiService: TeknisiService,
-    private userService: UserService, // Inject UserService di sini
+    private userService: UserService,
     private kategoriService: KategoriService
   ) {}
 
   ngOnInit() {
     this.loadTeknisi();
-    this.loadUsers(); // Memanggil data user
+    this.loadUsers();
     this.loadKategori();
   }
 
@@ -74,8 +74,8 @@ export class TeknisiPage implements OnInit {
 
   private loadUsers() {
     this.userService.getUsers().subscribe({
-      next: (res: any) => { 
-        this.userList = res?.data ?? res ?? []; 
+      next: (res: any) => {
+        this.userList = res?.data ?? res ?? [];
       },
       error: (err: HttpErrorResponse) => console.error('Gagal mengambil data user:', err),
     });
@@ -83,8 +83,8 @@ export class TeknisiPage implements OnInit {
 
   private loadKategori() {
     this.kategoriService.getAll().subscribe({
-      next: (res: any) => { 
-        this.kategoriList = res?.data ?? res ?? []; 
+      next: (res: any) => {
+        this.kategoriList = res?.data ?? res ?? [];
       },
       error: (err: HttpErrorResponse) => console.error('Gagal mengambil data kategori:', err),
     });
@@ -135,7 +135,7 @@ export class TeknisiPage implements OnInit {
     const matched = this.kategoriList.find((k: any) => k.nama === t.kategoriSpesialis || k.nama_kategori === t.kategoriSpesialis);
 
     this.formData = {
-      nik: '', 
+      nik: '',
       idKategori: matched ? (matched.id ?? (matched as any).id_kategori) : null,
       status: t.status,
     };
@@ -156,7 +156,10 @@ export class TeknisiPage implements OnInit {
           this.closeModal();
           alert('Data teknisi berhasil diperbarui!');
         },
-        error: () => alert('Gagal memperbarui data.'),
+        error: (err: HttpErrorResponse) => {
+          console.error('Gagal memperbarui teknisi:', err);
+          alert(err.error?.message || 'Gagal memperbarui data.');
+        },
       });
     } else {
       if (!this.formData.nik || !this.formData.idKategori) {
@@ -170,7 +173,10 @@ export class TeknisiPage implements OnInit {
           this.closeModal();
           alert('Teknisi berhasil ditambahkan!');
         },
-        error: () => alert('Gagal menambah data.'),
+        error: (err: HttpErrorResponse) => {
+          console.error('Gagal menambah teknisi:', err);
+          alert(err.error?.message || 'Gagal menambah data.');
+        },
       });
     }
   }
@@ -178,8 +184,13 @@ export class TeknisiPage implements OnInit {
   hapusTeknisi(t: Teknisi) {
     if (!confirm(`Apakah Anda yakin ingin menghapus teknisi "${t.nama}"?`)) return;
     this.teknisiService.remove(t.idTeknisi).subscribe({
-      next: () => this.loadTeknisi(),
-      error: () => alert('Gagal menghapus data.'),
+      next: () => {
+        this.loadTeknisi();
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Gagal menghapus teknisi:', err);
+        alert(err.error?.message || 'Gagal menghapus data.');
+      },
     });
   }
 

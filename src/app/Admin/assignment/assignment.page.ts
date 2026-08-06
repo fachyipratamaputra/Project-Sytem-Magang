@@ -18,6 +18,9 @@ export interface AssignmentTicket {
   teknisiTerpilih: number | null;
   teknisiOptions: TeknisiOption[];
   loadingTeknisi: boolean;
+  // 🔥 Tambahan field prioritas & deadline
+  prioritas?: 'Low' | 'Normal' | 'Urgent';
+  deadline?: string | null;
 }
 
 @Component({
@@ -51,7 +54,7 @@ export class AssignmentTicketPage implements OnInit {
     this.loadAssignableTickets();
   }
 
-  loadAssignableTickets() {
+ loadAssignableTickets() {
     this.isLoading = true;
     this.errorMessage = '';
 
@@ -70,6 +73,9 @@ export class AssignmentTicketPage implements OnInit {
           teknisiTerpilih: null,
           teknisiOptions: [],
           loadingTeknisi: false,
+          // 🔥 Ambil prioritas & deadline dengan pengecekan variasi key dari respons backend
+          prioritas: row.prioritas || row.priority || row.PRIORITAS || row.Prioritas || 'Normal',
+          deadline: row.deadline || row.DEADLINE || row.Deadline || null,
         }));
         
         this.buildFilterOptions();
@@ -148,15 +154,24 @@ export class AssignmentTicketPage implements OnInit {
     if (this.currentPage < this.totalPages) this.currentPage++;
   }
 
+  // 🔥 Helper untuk badge CSS prioritas (sesuai dengan Approval Ticket)
+  getPrioritasClass(prioritas: string): string {
+    const p = prioritas?.toLowerCase() || 'normal';
+    if (p === 'low') return 'prioritas-low';
+    if (p === 'urgent') return 'prioritas-urgent';
+    return 'prioritas-normal';
+  }
+
   onAssign(ticket: AssignmentTicket) {
     if (!ticket.teknisiTerpilih) {
       alert(`Silakan pilih teknisi terlebih dahulu untuk ticket ${ticket.idTicket}!`);
       return;
     }
 
-    this.assignmentService.assignTicket(ticket.idTicket, ticket.teknisiTerpilih).subscribe({
+    // 🔥 Kirim prioritas yang baru dipilih Admin ke Backend
+    this.assignmentService.assignTicket(ticket.idTicket, ticket.teknisiTerpilih, ticket.prioritas).subscribe({
       next: () => {
-        alert(`Tiket ${ticket.idTicket} berhasil di-assign!`);
+        alert(`Tiket ${ticket.idTicket} berhasil di-assign dengan prioritas ${ticket.prioritas}!`);
         this.loadAssignableTickets();
       },
       error: (err: any) => {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,6 +21,9 @@ export interface ListTicket {
   teknisi: string;
   status: string;
   deskripsi?: string;
+  // 🔥 Tambahkan field baru untuk Prioritas & Deadline
+  prioritas?: 'Low' | 'Normal' | 'Urgent';
+  deadline?: string | null;
 }
 
 @Component({
@@ -30,7 +33,7 @@ export interface ListTicket {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-export class ListTicketPage implements OnInit {
+export class ListTicketPage implements OnInit, OnDestroy {
   isSidebarOpen = false;
   activeMenu = 'list-ticket';
 
@@ -68,6 +71,9 @@ export class ListTicketPage implements OnInit {
   filteredSubKategoriOptions: any[] = [];
   filteredAssetOptions: any[] = [];
 
+  // 🔥 Variabel Timer
+  private countdownInterval: any;
+
   constructor(
     private router: Router,
     private ticketService: TicketService,
@@ -83,18 +89,33 @@ export class ListTicketPage implements OnInit {
     this.loadMasterDataModal();
   }
 
-  // Method helper untuk mengarahkan URL lampiran agar akurat menembus backend
+  // 🔥 Jalankan timer saat halaman dimuat
+  ionViewDidEnter() {
+    this.startTimer();
+  }
+
+  // 🔥 Hentikan timer saat halaman ditutup
+  ngOnDestroy() {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
+  startTimer() {
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    this.countdownInterval = setInterval(() => {
+      this.tickets = [...this.tickets];
+    }, 1000);
+  }
+
   getLampiranUrl(lampiranPath: string): string {
     if (!lampiranPath) return '';
     if (lampiranPath.startsWith('http')) {
       return lampiranPath;
     }
     const baseUrl = 'http://localhost:5000';
-    
-    // Bersihkan path jika mengandung duplikasi kata 'uploads' dari database
     let cleanPath = lampiranPath.replace(/^\/?uploads\/?/, '');
     cleanPath = cleanPath.replace(/^\/?lampiran\/?/, '');
-
     return `${baseUrl}/uploads/${cleanPath}`;
   }
 
@@ -102,6 +123,7 @@ export class ListTicketPage implements OnInit {
     this.isLoading = true;
     this.ticketService.getAll().subscribe({
       next: (data: ServiceTicket[]) => {
+        // 🔥 Mapping data, ambil prioritas & deadline dari service
         this.tickets = data.map(item => ({
           id_ticket: item.idTicket,
           reported: item.reportedBy,
@@ -113,7 +135,10 @@ export class ListTicketPage implements OnInit {
           lampiran: item.lampiran,
           teknisi: item.teknisi,
           status: item.status,
-          deskripsi: ''
+          deskripsi: '',
+          // 🔥 Tambahkan field baru (Jika tidak ada, default Normal & null)
+          prioritas: (item as any).prioritas || 'Normal',
+          deadline: (item as any).deadline || null
         }));
         this.buildFilterOptions();
         this.isLoading = false;
@@ -126,6 +151,27 @@ export class ListTicketPage implements OnInit {
         }
       }
     });
+  }
+
+  // 🔥 Helper Timer Countdown
+  getCountdownText(deadline: string | null): string {
+    if (!deadline) return '-';
+    const now = new Date().getTime();
+    const target = new Date(deadline).getTime();
+    const diff = target - now;
+
+    if (diff <= 0) return '⚠️ TELAT';
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  isDeadlineLate(deadline: string | null): boolean {
+    if (!deadline) return false;
+    return new Date().getTime() > new Date(deadline).getTime();
   }
 
   loadInventory() {
@@ -262,11 +308,14 @@ export class ListTicketPage implements OnInit {
 
   hapusTicket(ticket: ListTicket) {
     if (confirm(`Apakah Anda yakin ingin menghapus tiket "${ticket.id_ticket}"?`)) {
-      this.ticketService.getDetail(ticket.id_ticket).subscribe({
-        next: () => { this.loadTickets(); },
+      this.ticketService.remove(ticket.id_ticket).subscribe({
+        next: () => {
+          alert('Tiket berhasil dihapus.');
+          this.loadTickets();
+        },
         error: (err) => {
           console.error('Gagal menghapus tiket:', err);
-          alert('Gagal menghapus tiket.');
+          alert(err.error?.message || 'Gagal menghapus tiket.');
         }
       });
     }

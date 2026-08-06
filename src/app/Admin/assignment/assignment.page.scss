@@ -440,3 +440,17 @@
     font-weight: 600;
   }
 }
+
+/* ========================================== */
+/* 🔥 STYLING DROPDOWN PRIORITAS              */
+/* ========================================== */
+.prioritas-select {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  min-width: 90px;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #fafbfe;
+  font-size: 13px;
+}

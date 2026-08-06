@@ -18,6 +18,7 @@ export interface ApprovalTicket {
   lampiran: string;
   lampiranPath: string;
   status: string;
+  prioritas?: 'Low' | 'Normal' | 'Urgent'; // 🔥 Tambahan baru
 }
 
 @Component({
@@ -56,7 +57,7 @@ export class ApprovalTicketPage implements OnInit {
     this.loadApprovalList();
   }
 
-  loadApprovalList() {
+ loadApprovalList() {
     this.isLoading = true;
     this.errorMessage = '';
 
@@ -75,6 +76,8 @@ export class ApprovalTicketPage implements OnInit {
           lampiran: row.lampiran ? 'Lihat Foto' : '',
           lampiranPath: row.lampiran || '',
           status: row.status,
+          // 🔥 Perbaikan: Cek berbagai kemungkinan variasi key dari API backend
+          prioritas: row.prioritas || row.priority || row.PRIORITAS || row.Prioritas || 'Normal',
         }));
         this.buildFilterOptions();
         this.isLoading = false;
@@ -90,12 +93,9 @@ export class ApprovalTicketPage implements OnInit {
   getLampiranUrl(lampiranPath: string): string {
     if (!lampiranPath) return '';
     const backendBase = environment.apiUrl.replace(/\/api\/?$/, '');
-    
-    // Membersihkan path nested folder agar mengarah langsung ke nama file di folder uploads
     let cleanPath = lampiranPath.trim().replace(/\\/g, '/');
     const parts = cleanPath.split('/');
     const fileName = parts[parts.length - 1];
-
     return `${backendBase}/uploads/${fileName}`;
   }
 
@@ -150,15 +150,20 @@ export class ApprovalTicketPage implements OnInit {
 
   getStatusClass(status: string): string {
     if (!status) return 'status-default';
-
     const s = status.toLowerCase();
-
     if (s.includes('menunggu')) return 'status-pending';
     if (s.includes('disetujui') || s.includes('approve') || s.includes('selesai')) return 'status-approved';
     if (s.includes('ditolak') || s.includes('reject')) return 'status-rejected';
     if (s.includes('proses') || s.includes('progress')) return 'status-progress';
-
     return 'status-default';
+  }
+
+  // 🔥 Helper untuk badge prioritas
+  getPrioritasClass(prioritas: string): string {
+    const p = prioritas?.toLowerCase() || 'normal';
+    if (p === 'low') return 'prioritas-low';
+    if (p === 'urgent') return 'prioritas-urgent';
+    return 'prioritas-normal';
   }
 
   onApprove(ticket: ApprovalTicket) {

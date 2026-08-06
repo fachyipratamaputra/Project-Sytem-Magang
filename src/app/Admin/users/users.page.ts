@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { KaryawanService, AvailableKaryawan } from '../../services/karyawan.service';
 
 export interface User {
   id_user?: number;
@@ -30,6 +31,7 @@ export class UsersPage implements OnInit {
 
   userList: User[] = [];
   departemenMasterList: any[] = [];
+  availableKaryawan: AvailableKaryawan[] = []; // 🔥 Data dropdown
 
   get totalUsers() { return this.userList.length; }
   get totalAdmin() { return this.userList.filter(u => u.level && u.level.toLowerCase() === 'admin').length; }
@@ -41,7 +43,6 @@ export class UsersPage implements OnInit {
   filterDepartemen = '';
   levelOptions: string[] = ['Admin', 'Teknisi', 'Users'];
   
-  // Menggabungkan master departemen database dengan data user yang sudah ada
   get departemenOptions(): string[] {
     const fromMaster = this.departemenMasterList.map(d => d.nama_departemen);
     const fromUsers = this.userList.map(u => u.departemen);
@@ -63,7 +64,11 @@ export class UsersPage implements OnInit {
     password: '',
   };
 
-  constructor(private router: Router, private http: HttpClient) {}
+  constructor(
+    private router: Router,
+    private http: HttpClient,
+    private karyawanService: KaryawanService // 🔥 Inject
+  ) {}
 
   ngOnInit() {
     this.loadUsers();
@@ -93,7 +98,6 @@ export class UsersPage implements OnInit {
     });
   }
 
-  // Ambil data departemen langsung dari tabel master database
   loadDepartemenMaster() {
     const token = localStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
@@ -104,6 +108,28 @@ export class UsersPage implements OnInit {
       },
       error: (err) => console.error('Gagal memuat master departemen untuk user:', err)
     });
+  }
+
+  // 🔥 Load data karyawan yang tersedia untuk dropdown
+  loadAvailableKaryawan() {
+    this.karyawanService.getAvailable().subscribe({
+      next: (data) => {
+        this.availableKaryawan = data;
+      },
+      error: (err) => console.error('Gagal memuat daftar karyawan tersedia:', err)
+    });
+  }
+
+  // 🔥 Saat NIK dipilih, isi otomatis Nama dan Departemen
+  onNikChange() {
+    const selected = this.availableKaryawan.find(k => k.nik === this.formData.nik);
+    if (selected) {
+      this.formData.nama = selected.nama;
+      this.formData.departemen = selected.departemen;
+    } else {
+      this.formData.nama = '';
+      this.formData.departemen = '';
+    }
   }
 
   get filteredUsers(): User[] {
@@ -119,11 +145,9 @@ export class UsersPage implements OnInit {
   get totalPages(): number {
     return Math.max(1, Math.ceil(this.filteredUsers.length / this.pageSize));
   }
-  
   get totalPagesArray(): number[] { 
     return Array.from({ length: this.totalPages }, (_, i) => i + 1); 
   }
-
   get pagedUsers(): User[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredUsers.slice(start, start + this.pageSize);
@@ -145,8 +169,8 @@ export class UsersPage implements OnInit {
       level: 'Users', 
       password: '' 
     };
-    // Refresh master departemen saat modal tambah dibuka
     this.loadDepartemenMaster();
+    this.loadAvailableKaryawan(); // 🔥 Ambil data dropdown
     this.isModalOpen = true;
   }
 
@@ -176,6 +200,11 @@ export class UsersPage implements OnInit {
         error: (err) => alert('Gagal memperbarui: ' + (err.error?.message || err.message))
       });
     } else {
+      // 🔥 Saat tambah, pastikan formData.nik sudah terisi dari dropdown
+      if (!this.formData.nik) {
+        alert('Silakan pilih NIK Karyawan terlebih dahulu!');
+        return;
+      }
       this.http.post('http://localhost:5000/api/users', this.formData, { headers }).subscribe({
         next: () => {
           alert('User berhasil ditambahkan!');

@@ -164,6 +164,7 @@
                   <th>Sub Kategori</th>
                   <th>Asset</th>
                   <th>Tanggal</th>
+                  <th>Prioritas</th> <!-- 🔥 Kolom Baru -->
                   <th>Pilih Teknisi</th>
                   <th>Aksi</th>
                 </tr>
@@ -177,6 +178,18 @@
                   <td>{{ t.subKategori }}</td>
                   <td>{{ t.asset || '-' }}</td>
                   <td class="nowrap">{{ t.tanggal }}</td>
+                  <!-- 🔥 DROPDOWN PRIORITAS -->
+                  <td>
+                    <ion-select
+                      [(ngModel)]="t.prioritas"
+                      interface="popover"
+                      class="prioritas-select"
+                    >
+                      <ion-select-option value="Low">🟢 Low</ion-select-option>
+                      <ion-select-option value="Normal">🔵 Normal</ion-select-option>
+                      <ion-select-option value="Urgent">🔴 Urgent</ion-select-option>
+                    </ion-select>
+                  </td>
                   <td>
                     <ion-select
                       [(ngModel)]="t.teknisiTerpilih"
@@ -206,7 +219,7 @@
                 </tr>
 
                 <tr *ngIf="!isLoading && filteredTickets.length === 0">
-                  <td colspan="9" class="empty-row">Tidak ada data ticket untuk di-assign</td>
+                  <td colspan="10" class="empty-row">Tidak ada data ticket untuk di-assign</td>
                 </tr>
               </tbody>
             </table>

@@ -531,3 +531,50 @@
   color: #fff;
   font-weight: 600;
 }
+
+/* ========================================== */
+/* 🔥 BADGE PRIORITAS                         */
+/* ========================================== */
+.prioritas-badge {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.prioritas-badge.prioritas-low {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+
+.prioritas-badge.prioritas-normal {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.prioritas-badge.prioritas-urgent {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+/* ========================================== */
+/* 🔥 STYLING COUNTDOWN TIMER                 */
+/* ========================================== */
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-timer.is-late {
+  color: #ef4444 !important; /* Merah jika telat */
+}
+
+.countdown-timer ion-icon {
+  font-size: 14px;
+}

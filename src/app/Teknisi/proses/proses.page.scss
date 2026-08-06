@@ -569,3 +569,199 @@
   color: #fff;
   font-weight: 600;
 }
+
+/* ========================================== */
+/* 🔥 STYLING MODAL CHAT (WhatsApp Style)      */
+/* ========================================== */
+.modal-content {
+  --background: #f2f5f8;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f2f5f8;
+}
+
+/* Area Chat Messages */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Loading dan Empty State */
+.chat-loading, .chat-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+/* Gelembung Chat (Bubble) */
+.chat-bubble {
+  max-width: 80%;
+  padding: 10px 16px;
+  border-radius: 18px;
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  align-self: flex-start;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+/* Header Bubble (Nama & Waktu) */
+.bubble-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.sender-name {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Isi Pesan */
+.bubble-text {
+  font-size: 14px;
+  color: var(--text-dark);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* ===== BUBBLE MILIK SENDIRI (User / Teknisi) ===== */
+.chat-bubble.bubble-me {
+  align-self: flex-end;
+  background: var(--primary); /* Biru #2563eb */
+  color: #ffffff;
+  border-color: var(--primary);
+  border-bottom-right-radius: 4px; /* Sedikit runcing seperti WA */
+}
+
+.bubble-me .bubble-header {
+  color: rgba(1, 1, 1, 0.8);
+}
+
+.bubble-me .sender-name {
+  color: rgba(17, 17, 17, 0.9);
+}
+
+.bubble-me .bubble-text {
+  color: #000000;
+}
+
+/* ===== AREA INPUT CHAT ===== */
+.chat-input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  background: #ffffff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
+}
+
+/* Input text */
+.chat-input {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  background: #f3f4f6;
+  border-radius: 24px;
+  font-size: 14px;
+  flex: 1;
+}
+
+/* Tombol Kirim */
+.chat-input-area ion-button {
+  --border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  --padding-start: 0;
+  --padding-end: 0;
+  margin: 0;
+}
+
+/* Scrollbar Custom Chat */
+.chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* ========================================== */
+/* 🔥 STYLING COUNTDOWN TIMER                 */
+/* ========================================== */
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-timer.is-late {
+  color: #ef4444 !important; /* Merah jika telat */
+}
+
+.countdown-timer ion-icon {
+  font-size: 14px;
+}
+
+/* ========================================== */
+/* 🔥 STYLING HISTORI PROGRES                 */
+/* ========================================== */
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.history-item:last-child {
+  border-bottom: none;
+}
+.history-badge {
+  background: #e2e8f0;
+  color: #1e293b;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 13px;
+  min-width: 40px;
+  text-align: center;
+}
+.history-text {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+}
+.history-note {
+  color: #334155;
+  font-size: 13px;
+}
+.history-date {
+  color: var(--text-muted);
+  font-size: 12px;
+}
