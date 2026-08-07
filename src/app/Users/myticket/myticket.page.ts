@@ -23,7 +23,7 @@ export interface MyTicket {
   prioritas?: 'Low' | 'Normal' | 'Urgent';
   deadline?: string | null;
   isPaused?: number;
-  waktuSelesai?: string | null; // 🔥 Ganti durasi dengan waktu selesai
+  waktuSelesai?: string | null;
 }
 
 @Component({
@@ -39,6 +39,10 @@ export class MyTicketPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'my-ticket';
   private countdownInterval: any;
+  // 🔥 BARU: interval terpisah buat re-fetch data ticket dari backend secara berkala,
+  // supaya perubahan is_paused/status yang dilakukan Teknisi ikut kedeteksi
+  // tanpa User harus pindah halaman dulu.
+  private refreshInterval: any;
 
   user = {
     nama: 'User',
@@ -127,20 +131,29 @@ export class MyTicketPage implements OnInit {
   }
 
   ionViewWillLeave() {
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-    }
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    if (this.refreshInterval) clearInterval(this.refreshInterval);
   }
 
   startTimer() {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
+    if (this.refreshInterval) clearInterval(this.refreshInterval);
+
+    // Tampilan countdown "hidup" tiap detik (cuma re-render, bukan fetch ulang)
     this.countdownInterval = setInterval(() => {
       this.myTickets = [...this.myTickets];
     }, 1000);
+
+    // 🔥 BARU: ambil ulang data dari backend tiap 8 detik, biar status is_paused
+    // (atau progress/status lain) yang diubah Teknisi kelihatan di sini tanpa
+    // User harus keluar-masuk halaman ini dulu.
+    this.refreshInterval = setInterval(() => {
+      this.loadMyTickets(true);
+    }, 8000);
   }
 
-  loadMyTickets() {
-    this.isLoading = true;
+  loadMyTickets(isSilent = false) {
+    if (!isSilent) this.isLoading = true;
     this.loadError = '';
     this.ticketService.getMineRaw().subscribe({
       next: (data: TicketApiRow[]) => {
@@ -149,7 +162,9 @@ export class MyTicketPage implements OnInit {
       },
       error: (err: any) => {
         console.error('Gagal mengambil tiket saya', err);
-        this.loadError = err?.error?.message || 'Gagal memuat data tiket, coba lagi.';
+        if (!isSilent) {
+          this.loadError = err?.error?.message || 'Gagal memuat data tiket, coba lagi.';
+        }
         this.isLoading = false;
       },
     });
@@ -168,12 +183,11 @@ export class MyTicketPage implements OnInit {
       ? row.tanggal
       : `${String(tgl.getDate()).padStart(2, '0')}-${String(tgl.getMonth() + 1).padStart(2, '0')}-${tgl.getFullYear()}`;
 
-    // 🔥 Format Tanggal & Jam Selesai
     let waktuSelesai = null;
     if (row.tanggal_selesai) {
       const endDate = new Date(row.tanggal_selesai);
       if (!isNaN(endDate.getTime())) {
-        waktuSelesai = 
+        waktuSelesai =
           `${String(endDate.getDate()).padStart(2, '0')}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${endDate.getFullYear()} ` +
           `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
       }
@@ -191,7 +205,7 @@ export class MyTicketPage implements OnInit {
       prioritas: row.prioritas || 'Normal',
       deadline: row.deadline || null,
       isPaused: row.is_paused ?? 0,
-      waktuSelesai // 🔥 Simpan waktu selesai
+      waktuSelesai
     };
   }
 
@@ -227,7 +241,7 @@ export class MyTicketPage implements OnInit {
 
   getCountdownText(ticket: MyTicket): string {
     if (!ticket.deadline) return '-';
-    
+
     if (ticket.isPaused === 1) {
       return '⏸️ DITUNDA / DIJEDA';
     }

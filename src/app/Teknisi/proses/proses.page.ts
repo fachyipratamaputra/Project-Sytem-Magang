@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -41,7 +41,7 @@ export interface ProsesTicket {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-export class ProsesTiketPage implements OnInit {
+export class ProsesTiketPage implements OnInit, OnDestroy {
   @ViewChild('chatContainer') chatContainer!: ElementRef;
 
   isSidebarOpen = false;
@@ -53,6 +53,12 @@ export class ProsesTiketPage implements OnInit {
   isLoading = false;
   loadError = '';
 
+  // ===== RETURN MODAL =====
+  isReturnModalOpen = false;
+  returnTicket: ProsesTicket | null = null;
+  returnReason = '';
+
+  // ===== CHAT =====
   isChatModalOpen = false;
   selectedTicketId = '';
   chatMessages: ChatMessage[] = [];
@@ -64,6 +70,9 @@ export class ProsesTiketPage implements OnInit {
   searchTerm = '';
   currentPage = 1;
   pageSize = 10;
+
+  private tickInterval: any;
+  private refreshInterval: any;
 
   constructor(
     private router: Router,
@@ -81,10 +90,26 @@ export class ProsesTiketPage implements OnInit {
       } catch (e) {}
     }
     this.loadTickets();
+    this.startTicking();
   }
 
-  loadTickets() {
-    this.isLoading = true;
+  ngOnDestroy() {
+    if (this.tickInterval) clearInterval(this.tickInterval);
+    if (this.refreshInterval) clearInterval(this.refreshInterval);
+  }
+
+  private startTicking() {
+    this.tickInterval = setInterval(() => {
+      this.tickets = [...this.tickets];
+    }, 1000);
+
+    this.refreshInterval = setInterval(() => {
+      this.loadTickets(true);
+    }, 8000);
+  }
+
+  loadTickets(isSilent = false) {
+    if (!isSilent) this.isLoading = true;
     this.loadError = '';
     this.ticketService.getAssignedMe().subscribe({
       next: (data: AssignedTicketApiRow[]) => {
@@ -95,7 +120,9 @@ export class ProsesTiketPage implements OnInit {
       },
       error: (err: any) => {
         console.error('Gagal mengambil data tiket', err);
-        this.loadError = err?.error?.message || 'Gagal memuat data tiket, coba lagi.';
+        if (!isSilent) {
+          this.loadError = err?.error?.message || 'Gagal memuat data tiket, coba lagi.';
+        }
         this.isLoading = false;
       },
     });
@@ -122,7 +149,6 @@ export class ProsesTiketPage implements OnInit {
     };
   }
 
-  // LOAD HISTORI PROGRES
   toggleHistory(ticket: ProsesTicket) {
     ticket.isHistoryOpen = !ticket.isHistoryOpen;
     if (ticket.isHistoryOpen && ticket.history.length === 0) {
@@ -135,7 +161,6 @@ export class ProsesTiketPage implements OnInit {
     }
   }
 
-  // 🔥 TOGGLE PAUSE / RESUME YANG MENYERTAKAN PROGRESS & CATATAN
   togglePause(ticket: ProsesTicket) {
     if (ticket.progress > 100) ticket.progress = 100;
     if (ticket.progress < 0) ticket.progress = 0;
@@ -149,8 +174,7 @@ export class ProsesTiketPage implements OnInit {
     this.ticketService.togglePause(ticket.idTicket, payload).subscribe({
       next: (res: any) => {
         ticket.isPaused = res?.data?.is_paused ?? !ticket.isPaused;
-        
-        // Refresh history jika panel history sedang terbuka
+
         if (ticket.isHistoryOpen) {
           this.ticketService.getProgressHistory(ticket.idTicket).subscribe({
             next: (histRes: any) => {
@@ -158,18 +182,46 @@ export class ProsesTiketPage implements OnInit {
             }
           });
         }
-
         alert(ticket.isPaused ? 'Timer berhasil dijeda & progress tersimpan ke history.' : 'Timer dilanjutkan.');
       },
       error: (err: any) => alert(err?.error?.message || 'Gagal toggle pause')
     });
   }
 
-  // FUNGSI TIMER DEADLINE
-  getCountdownText(deadline: string | null): string {
-    if (!deadline) return '-';
+  // ========== 🔥 RETURN MODAL FUNCTIONS ==========
+  openReturnModal(ticket: ProsesTicket) {
+    this.returnTicket = ticket;
+    this.returnReason = '';
+    this.isReturnModalOpen = true;
+  }
+
+  closeReturnModal() {
+    this.isReturnModalOpen = false;
+    this.returnTicket = null;
+  }
+
+  submitReturn() {
+    if (!this.returnTicket || !this.returnReason.trim()) return;
+
+    this.ticketService.requestReturn(this.returnTicket.idTicket, this.returnReason).subscribe({
+      next: () => {
+        alert('Permintaan pengembalian berhasil dikirim ke Admin.');
+        this.closeReturnModal();
+        this.loadTickets();
+      },
+      error: (err) => {
+        alert(err?.error?.message || 'Gagal mengirim permintaan.');
+      }
+    });
+  }
+  // ==========================================
+
+  getCountdownText(ticket: ProsesTicket): string {
+    if (ticket.isPaused) return '⏸️ DIJEDA';
+    if (!ticket.deadline) return '-';
+
     const now = new Date().getTime();
-    const target = new Date(deadline).getTime();
+    const target = new Date(ticket.deadline).getTime();
     const diff = target - now;
 
     if (diff <= 0) return '⚠️ TELAT';
@@ -181,9 +233,10 @@ export class ProsesTiketPage implements OnInit {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
 
-  isDeadlineLate(deadline: string | null): boolean {
-    if (!deadline) return false;
-    return new Date().getTime() > new Date(deadline).getTime();
+  isDeadlineLate(ticket: ProsesTicket): boolean {
+    if (ticket.isPaused) return false;
+    if (!ticket.deadline) return false;
+    return new Date().getTime() > new Date(ticket.deadline).getTime();
   }
 
   get filteredTickets(): ProsesTicket[] {

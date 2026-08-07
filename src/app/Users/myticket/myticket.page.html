@@ -156,7 +156,7 @@
                       {{ getCountdownText(t) }}
                     </div>
                     
-                    <!-- 🔥 Tampilkan Tanggal & Waktu Selesai -->
+                    <!-- Tampilkan Tanggal & Waktu Selesai -->
                     <div *ngIf="t.status === 'Selesai' || t.status === 'Solved'" class="text-success fw-bold">
                       <ion-icon name="checkmark-circle-outline"></ion-icon>
                       <span style="font-size: 0.85rem; color: #1e293b;">
@@ -225,11 +225,11 @@
         <div *ngFor="let h of selectedTicketHistory" class="timeline-item" style="margin-bottom: 16px; border-left: 2px solid var(--primary, #2563eb); padding-left: 12px;">
           <div class="timeline-header-info" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
             <span class="badge-status-progres" style="font-weight: bold;">{{ h.status_pengerjaan }}</span>
-            <span class="timeline-date" style="font-size: 12px; color: #666;">{{ h.tanggal_assign | date:'medium' }}</span>
+            <span class="timeline-date" style="font-size: 12px; color: #666;">{{ h.created_at | date:'medium' }}</span>
           </div>
           <p class="progress-bar-text" style="margin: 4px 0;"><strong>Progres:</strong> {{ h.progress }}%</p>
-          <p class="catatan-text" *ngIf="h.catatan_penyelesaian" style="margin: 4px 0;">
-            <strong>Catatan Teknisi:</strong> {{ h.catatan_penyelesaian }}
+          <p class="catatan-text" *ngIf="h.catatan" style="margin: 4px 0;">
+            <strong>Catatan Teknisi:</strong> {{ h.catatan }}
           </p>
         </div>
       </div>

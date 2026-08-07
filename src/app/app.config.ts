@@ -1,16 +1,26 @@
 import { ApplicationConfig } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { RouteReuseStrategy, provideIonicAngular, IonicRouteStrategy } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import * as allIcons from 'ionicons/icons';
 
 import { routes } from './app.routes';
-import { authInterceptor } from './interceptors/auth.interceptor'; // sesuaikan path & nama file
+import { authInterceptor } from './interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
-    provideHttpClient(
-      withInterceptors([authInterceptor])
-    ),
-    // ...providers lain yang sudah ada di project kamu (Ionic, dsb) tetap dipertahankan
+    // Routing global
+    provideRouter(routes, withPreloading(PreloadAllModules)),
+    
+    // HTTP Client dengan interceptor
+    provideHttpClient(withInterceptors([authInterceptor])),
+    
+    // Ionic Standalone Configuration
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    provideIonicAngular(),
   ]
 };
+
+// 🔥 Daftarkan SEMUA ikon Ionicons di sini (cukup sekali, tidak perlu di main.ts)
+addIcons(allIcons);

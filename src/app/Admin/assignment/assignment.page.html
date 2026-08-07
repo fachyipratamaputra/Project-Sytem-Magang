@@ -144,6 +144,12 @@
           </div>
 
           <div class="toolbar-filters">
+            <!-- 🔥 Tambahkan filter Status untuk Assignment/Returned -->
+            <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
+              <option value="assignable">Tiket Baru</option>
+              <option value="returned">Pengembalian</option>
+            </select>
+
             <select [(ngModel)]="filterKategori" (change)="onFilterChange()">
               <option value="">Semua Kategori</option>
               <option *ngFor="let k of kategoriOptions" [value]="k">{{ k }}</option>
@@ -156,7 +162,7 @@
           <div class="table-wrapper">
             <table class="ticket-table">
               <thead>
-                <tr>
+                <tr *ngIf="filterStatus === 'assignable'">
                   <th>NO</th>
                   <th>ID Ticket</th>
                   <th>Reported</th>
@@ -164,59 +170,94 @@
                   <th>Sub Kategori</th>
                   <th>Asset</th>
                   <th>Tanggal</th>
-                  <th>Prioritas</th> <!-- 🔥 Kolom Baru -->
+                  <th>Prioritas</th>
                   <th>Pilih Teknisi</th>
+                  <th>Aksi</th>
+                </tr>
+                <tr *ngIf="filterStatus === 'returned'">
+                  <th>NO</th>
+                  <th>ID Ticket</th>
+                  <th>Reported</th>
+                  <th>Kategori</th>
+                  <th>Sub Kategori</th>
+                  <th>Asset</th>
+                  <th>Tanggal</th>
+                  <th>Prioritas</th>
+                  <th>Alasan Pengembalian</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let t of pagedTickets; let i = index">
-                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
-                  <td class="ticket-id">{{ t.idTicket }}</td>
-                  <td>{{ t.reportedBy }}</td>
-                  <td>{{ t.kategori }}</td>
-                  <td>{{ t.subKategori }}</td>
-                  <td>{{ t.asset || '-' }}</td>
-                  <td class="nowrap">{{ t.tanggal }}</td>
-                  <!-- 🔥 DROPDOWN PRIORITAS -->
-                  <td>
-                    <ion-select
-                      [(ngModel)]="t.prioritas"
-                      interface="popover"
-                      class="prioritas-select"
-                    >
-                      <ion-select-option value="Low">🟢 Low</ion-select-option>
-                      <ion-select-option value="Normal">🔵 Normal</ion-select-option>
-                      <ion-select-option value="Urgent">🔴 Urgent</ion-select-option>
-                    </ion-select>
-                  </td>
-                  <td>
-                    <ion-select
-                      [(ngModel)]="t.teknisiTerpilih"
-                      interface="popover"
-                      [placeholder]="t.loadingTeknisi ? 'Memuat teknisi...' : (t.teknisiOptions.length === 0 ? 'Tidak ada teknisi' : 'Pilih Teknisi')"
-                      class="teknisi-select"
-                      [disabled]="t.loadingTeknisi"
-                    >
-                      <ion-select-option *ngFor="let tech of t.teknisiOptions" [value]="tech.id_teknisi">
-                        {{ tech.nama }} ({{ tech.jumlah_tiket_ditangani }} tiket)
-                      </ion-select-option>
-                    </ion-select>
-                  </td>
-                  <td>
-                    <div class="action-buttons">
-                      <ion-button
-                        fill="solid"
-                        color="primary"
-                        size="small"
-                        class="btn-assign"
-                        (click)="onAssign(t)">
-                        <ion-icon name="checkmark-outline" slot="start"></ion-icon>
-                        Assign
-                      </ion-button>
-                    </div>
-                  </td>
-                </tr>
+                <!-- ================= TIKET BARU (ASSIGNABLE) ================= -->
+                <ng-container *ngIf="filterStatus === 'assignable'">
+                  <tr *ngFor="let t of pagedTickets; let i = index">
+                    <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                    <td class="ticket-id">{{ t.idTicket }}</td>
+                    <td>{{ t.reportedBy }}</td>
+                    <td>{{ t.kategori }}</td>
+                    <td>{{ t.subKategori }}</td>
+                    <td>{{ t.asset || '-' }}</td>
+                    <td class="nowrap">{{ t.tanggal }}</td>
+                    <td>
+                      <ion-select [(ngModel)]="t.prioritas" interface="popover" class="prioritas-select">
+                        <ion-select-option value="Low">🟢 Low</ion-select-option>
+                        <ion-select-option value="Normal">🔵 Normal</ion-select-option>
+                        <ion-select-option value="Urgent">🔴 Urgent</ion-select-option>
+                      </ion-select>
+                    </td>
+                    <td>
+                      <ion-select [(ngModel)]="t.teknisiTerpilih" interface="popover" [placeholder]="t.loadingTeknisi ? 'Memuat teknisi...' : (t.teknisiOptions.length === 0 ? 'Tidak ada teknisi' : 'Pilih Teknisi')" class="teknisi-select" [disabled]="t.loadingTeknisi">
+                        <ion-select-option *ngFor="let tech of t.teknisiOptions" [value]="tech.id_teknisi">
+                          {{ tech.nama }} ({{ tech.jumlah_tiket_ditangani }} tiket)
+                        </ion-select-option>
+                      </ion-select>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <ion-button fill="solid" color="primary" size="small" class="btn-assign" (click)="onAssign(t)">
+                          <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                          Assign
+                        </ion-button>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+
+                <!-- ================= TIKET PENGEMBALIAN (RETURNED) ================= -->
+                <ng-container *ngIf="filterStatus === 'returned'">
+                  <tr *ngFor="let t of pagedTickets; let i = index">
+                    <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                    <td class="ticket-id">{{ t.id_ticket }}</td>
+                    <td>{{ t.reported }}</td>
+                    <td>{{ t.kategori }}</td>
+                    <td>{{ t.sub_kategori || '-' }}</td>
+                    <td>{{ t.kode_asset || '-' }}</td>
+                    <td class="nowrap">{{ t.tanggal }}</td>
+                    <td>
+                      <span class="prioritas-badge" [ngClass]="getPrioritasClass(t.prioritas || 'Normal')">
+                        {{ t.prioritas || 'Normal' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div *ngIf="t.return_reason" class="return-reason" style="background:#f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 13px;">
+                        {{ t.return_reason }}
+                      </div>
+                      <span *ngIf="!t.return_reason">-</span>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <ion-button fill="solid" color="success" size="small" (click)="reviewReturn(t, 'Approve')">
+                          <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                          Setujui
+                        </ion-button>
+                        <ion-button fill="solid" color="danger" size="small" (click)="reviewReturn(t, 'Reject')">
+                          <ion-icon name="close-outline" slot="start"></ion-icon>
+                          Tolak
+                        </ion-button>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
 
                 <tr *ngIf="!isLoading && filteredTickets.length === 0">
                   <td colspan="10" class="empty-row">Tidak ada data ticket untuk di-assign</td>

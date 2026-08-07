@@ -1,4 +1,4 @@
-<ion-content class="approval-ticket-content">
+<ion-content class="approval-content">
   <div class="dashboard-container">
     <!-- ===== SIDEBAR ===== -->
     <div class="sidebar" [class.open]="isSidebarOpen">
@@ -110,10 +110,7 @@
         </div>
         <div class="header-right">
           <div class="header-avatar" (click)="goToProfile()">
-            <img
-              [src]="'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&size=64&bold=true'"
-              alt="Avatar"
-            />
+            <img [src]="'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&size=64&bold=true'" alt="Avatar" />
             <span class="header-avatar-name">Admin</span>
           </div>
         </div>
@@ -121,21 +118,17 @@
 
       <!-- CONTENT -->
       <div class="content-area">
+        <!-- BAGIAN 1: APPROVAL BIASA -->
         <div class="page-heading">
           <h1 class="page-title">Approval Ticket</h1>
           <p class="page-subtitle">Validasi dan proses persetujuan keluhan dari seluruh departemen</p>
         </div>
 
-        <!-- TOOLBAR: SEARCH + FILTER -->
+        <!-- TOOLBAR FILTER -->
         <div class="list-toolbar">
           <div class="search-box">
             <ion-icon name="search-outline" class="search-icon"></ion-icon>
-            <input
-              type="text"
-              placeholder="Cari id ticket / nama pelapor..."
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="onFilterChange()"
-            />
+            <input type="text" placeholder="Cari id ticket / nama pelapor..." [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" />
           </div>
 
           <div class="toolbar-filters">
@@ -156,10 +149,10 @@
           </div>
         </div>
 
-        <!-- TABLE -->
-        <div class="table-card">
+        <!-- TABLE APPROVAL -->
+        <div class="table-card" *ngIf="!isLoadingApproval">
           <div class="table-wrapper">
-            <table class="ticket-table">
+            <table class="approval-table">
               <thead>
                 <tr>
                   <th>NO</th>
@@ -169,56 +162,38 @@
                   <th>Kategori</th>
                   <th>Sub Kategori</th>
                   <th>Tanggal</th>
-                  <th class="deskripsi-header">Deskripsi</th>
+                  <th>Deskripsi</th>
                   <th>Lampiran</th>
-                  <th>Prioritas</th> <!-- 🔥 Kolom Baru -->
                   <th>Status</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let t of pagedTickets; let i = index">
+                <tr *ngFor="let t of pagedApprovalTickets; let i = index">
                   <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
-                  <td class="ticket-id">{{ t.idTicket }}</td>
-                  <td>{{ t.reportedBy }}</td>
-                  <td>{{ t.departemen }}</td>
-                  <td>{{ t.kategori }}</td>
-                  <td>{{ t.subKategori }}</td>
+                  <td class="ticket-id">{{ t.id_ticket }}</td>
+                  <td>{{ t.reported }}</td>
+                  <td>{{ t.dept }}</td>
+                  <td>{{ t.nama_kategori }}</td>
+                  <td>{{ t.nama_sub_kategori }}</td>
                   <td class="nowrap">{{ t.tanggal }}</td>
                   <td class="deskripsi-col">{{ t.deskripsi }}</td>
                   <td>
-                    <a *ngIf="t.lampiranPath" [href]="getLampiranUrl(t.lampiranPath)" target="_blank" class="lampiran-badge">
-                      <ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}
+                    <a *ngIf="t.lampiran" [href]="getLampiranUrl(t.lampiran)" target="_blank" rel="noopener noreferrer" class="lampiran-badge">
+                      <ion-icon name="image-outline"></ion-icon> Foto
                     </a>
-                    <span *ngIf="!t.lampiranPath">-</span>
-                  </td>
-                  <!-- 🔥 Badge Prioritas -->
-                  <td>
-                    <span class="prioritas-badge" [ngClass]="getPrioritasClass(t.prioritas || 'Normal')">
-                      {{ t.prioritas || 'Normal' }}
-                    </span>
+                    <span *ngIf="!t.lampiran">-</span>
                   </td>
                   <td>
-                    <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span>
+                    <span class="status-badge status-waiting">{{ t.status_approval || 'Menunggu Approval' }}</span>
                   </td>
                   <td>
                     <div class="action-buttons">
-                      <ion-button 
-                        fill="solid" 
-                        color="success" 
-                        size="small" 
-                        class="btn-approve"
-                        (click)="onApprove(t)">
+                      <ion-button fill="solid" color="success" size="small" (click)="approveTicket(t)">
                         <ion-icon name="checkmark-outline" slot="start"></ion-icon>
                         Approve
                       </ion-button>
-                      
-                      <ion-button 
-                        fill="solid" 
-                        color="danger" 
-                        size="small" 
-                        class="btn-reject"
-                        (click)="onReject(t)">
+                      <ion-button fill="solid" color="danger" size="small" (click)="rejectTicket(t)">
                         <ion-icon name="close-outline" slot="start"></ion-icon>
                         Reject
                       </ion-button>
@@ -226,33 +201,74 @@
                   </td>
                 </tr>
 
-                <tr *ngIf="filteredTickets.length === 0">
-                  <td colspan="12" class="empty-row">Tidak ada data ticket yang perlu disetujui</td>
+                <tr *ngIf="filteredApprovalTickets.length === 0">
+                  <td colspan="11" class="empty-row">Tidak ada data ticket yang perlu disetujui</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div class="table-footer">
-            <span class="table-info">
-              Menampilkan {{ pagedTickets.length }} dari {{ filteredTickets.length }} data
-            </span>
-            <div class="pagination" *ngIf="totalPages > 1">
-              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()">
-                <ion-icon name="chevron-back-outline"></ion-icon>
-              </ion-button>
-              <span
-                class="page-number"
-                *ngFor="let p of totalPagesArray"
-                [class.active]="p === currentPage"
-                (click)="goToPage(p)"
-              >{{ p }}</span>
-              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()">
-                <ion-icon name="chevron-forward-outline"></ion-icon>
-              </ion-button>
+          <div class="table-footer" *ngIf="totalPages > 1">
+            <span class="table-info">Menampilkan {{ pagedApprovalTickets.length }} dari {{ filteredApprovalTickets.length }} data</span>
+            <div class="pagination">
+              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()"><ion-icon name="chevron-back-outline"></ion-icon></ion-button>
+              <span class="page-number" *ngFor="let p of totalPagesArray" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</span>
+              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
             </div>
           </div>
         </div>
+
+        <!-- BAGIAN 2: TIKET DIKEMBALIKAN TEKNISI -->
+        <div class="page-heading" style="margin-top: 32px;">
+          <h2 class="page-title">↩️ Tiket Dikembalikan Teknisi</h2>
+          <p class="page-subtitle">Review alasan pengembalian dan putuskan tindakan</p>
+        </div>
+
+        <div class="table-card" *ngIf="!isLoadingReturned">
+          <div class="table-wrapper">
+            <table class="return-table">
+              <thead>
+                <tr>
+                  <th>NO</th>
+                  <th>ID Ticket</th>
+                  <th>Reported</th>
+                  <th>Kategori</th>
+                  <th>Sub Kategori</th>
+                  <th>Teknisi</th>
+                  <th>Alasan Pengembalian</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let t of returnedTickets; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td class="ticket-id">{{ t.id_ticket }}</td>
+                  <td>{{ t.reported }}</td>
+                  <td>{{ t.kategori }}</td>
+                  <td>{{ t.sub_kategori || '-' }}</td>
+                  <td>{{ t.teknisi_nama || '-' }}</td>
+                  <td style="max-width: 200px; white-space: normal;">
+                    {{ t.return_reason || '-' }}
+                  </td>
+                  <td>
+                    <ion-button fill="solid" color="success" size="small" (click)="approveReturn(t.id_ticket)">
+                      <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                      Setujui
+                    </ion-button>
+                    <ion-button fill="solid" color="danger" size="small" (click)="rejectReturn(t.id_ticket)">
+                      <ion-icon name="close-outline" slot="start"></ion-icon>
+                      Tolak
+                    </ion-button>
+                  </td>
+                </tr>
+                <tr *ngIf="returnedTickets.length === 0">
+                  <td colspan="8" class="empty-row">Tidak ada tiket yang sedang dikembalikan oleh Teknisi</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

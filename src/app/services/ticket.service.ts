@@ -37,7 +37,6 @@ export interface TicketApiRow {
   prioritas?: 'Low' | 'Normal' | 'Urgent';
   deadline?: string | null;
   is_paused?: number;
-  // 🔥 Data waktu pengerjaan
   tanggal_assign?: string | null;
   tanggal_selesai?: string | null;
 }
@@ -155,6 +154,21 @@ export class TicketService {
     payload: { progress: number; catatan_penyelesaian?: string; status_pengerjaan: 'Menunggu Diproses' | 'Proses' | 'Selesai' }
   ): Observable<any> {
     return this.http.put(`${this.baseUrl}/${idTicket}/proses`, payload);
+  }
+
+  // 🔥 Method baru untuk Teknisi: Request return
+  requestReturn(idTicket: string, reason: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${idTicket}/return`, { return_reason: reason });
+  }
+
+  // 🔥 Method baru untuk Admin: Get returned tickets
+  getReturnedTickets(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/returned`);
+  }
+
+  // 🔥 Method baru untuk Admin: Review return
+  reviewReturn(idTicket: string, action: 'Approve' | 'Reject'): Observable<any> {
+    return this.http.put(`${this.baseUrl}/${idTicket}/return-review`, { action });
   }
 
   private mapTicket(row: TicketApiRow): Ticket {

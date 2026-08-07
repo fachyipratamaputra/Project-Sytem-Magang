@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonContent, IonButton, IonIcon, IonSelect, IonSelectOption } from '@ionic/angular/standalone';
 import { AssignmentService } from '../../services/assignment.service ';
+import { TicketService } from '../../services/ticket.service'; // 🔥 Tambahkan TicketService
 import { TeknisiOption } from '../../services/teknisi.service';
 
 export interface AssignmentTicket {
@@ -18,7 +19,6 @@ export interface AssignmentTicket {
   teknisiTerpilih: number | null;
   teknisiOptions: TeknisiOption[];
   loadingTeknisi: boolean;
-  // 🔥 Tambahan field prioritas & deadline
   prioritas?: 'Low' | 'Normal' | 'Urgent';
   deadline?: string | null;
 }
@@ -34,12 +34,21 @@ export class AssignmentTicketPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'assignment-ticket';
 
+  // ===== TIKET BARU (Assignable) =====
   tickets: AssignmentTicket[] = [];
+  
+  // 🔥 TIKET KEMBALI (Returned)
+  returnedTickets: any[] = [];
+
   isLoading = false;
   errorMessage = '';
 
   searchTerm = '';
   filterKategori = '';
+  
+  // 🔥 Filter Status
+  filterStatus: 'assignable' | 'returned' = 'assignable';
+
   kategoriOptions: string[] = [];
 
   currentPage = 1;
@@ -47,14 +56,16 @@ export class AssignmentTicketPage implements OnInit {
 
   constructor(
     private router: Router,
-    private assignmentService: AssignmentService
+    private assignmentService: AssignmentService,
+    private ticketService: TicketService // 🔥 Inject TicketService
   ) {}
 
   ngOnInit() {
     this.loadAssignableTickets();
+    this.loadReturnedTickets();
   }
 
- loadAssignableTickets() {
+  loadAssignableTickets() {
     this.isLoading = true;
     this.errorMessage = '';
 
@@ -73,15 +84,13 @@ export class AssignmentTicketPage implements OnInit {
           teknisiTerpilih: null,
           teknisiOptions: [],
           loadingTeknisi: false,
-          // 🔥 Ambil prioritas & deadline dengan pengecekan variasi key dari respons backend
-          prioritas: row.prioritas || row.priority || row.PRIORITAS || row.Prioritas || 'Normal',
-          deadline: row.deadline || row.DEADLINE || row.Deadline || null,
+          prioritas: row.prioritas || row.priority || 'Normal',
+          deadline: row.deadline || null,
         }));
         
         this.buildFilterOptions();
         this.isLoading = false;
 
-        // Panggil fetch teknisi untuk setiap tiket berdasarkan idKategori-nya
         this.tickets.forEach((t) => this.loadTeknisiForTicket(t));
       },
       error: (err: any) => {
@@ -92,13 +101,22 @@ export class AssignmentTicketPage implements OnInit {
     });
   }
 
+  // 🔥 Load tiket yang dikembalikan
+  loadReturnedTickets() {
+    this.ticketService.getReturnedTickets().subscribe({
+      next: (res) => {
+        this.returnedTickets = res?.data || [];
+      },
+      error: (err) => {
+        console.error('Gagal load returned tickets', err);
+      }
+    });
+  }
+
   loadTeknisiForTicket(ticket: AssignmentTicket) {
     ticket.loadingTeknisi = true;
-    console.log(`Mengambil teknisi untuk Kategori ID: ${ticket.idKategori} (Tiket: ${ticket.idTicket})`);
-
     this.assignmentService.getTeknisiByKategori(ticket.idKategori).subscribe({
       next: (res: any) => {
-        console.log(`Respon teknisi untuk kategori ${ticket.idKategori}:`, res);
         ticket.teknisiOptions = Array.isArray(res) ? res : (res?.data || []);
         ticket.loadingTeknisi = false;
       },
@@ -113,16 +131,28 @@ export class AssignmentTicketPage implements OnInit {
     this.kategoriOptions = [...new Set(this.tickets.map((t) => t.kategori))];
   }
 
-  get filteredTickets(): AssignmentTicket[] {
-    const term = this.searchTerm.trim().toLowerCase();
-    return this.tickets.filter((t) => {
-      const matchSearch =
-        !term ||
-        t.idTicket.toLowerCase().includes(term) ||
-        t.reportedBy.toLowerCase().includes(term);
-      const matchKategori = !this.filterKategori || t.kategori === this.filterKategori;
-      return matchSearch && matchKategori;
-    });
+  // 🔥 Logic filter utama
+  get filteredTickets(): any[] {
+    if (this.filterStatus === 'assignable') {
+      const term = this.searchTerm.trim().toLowerCase();
+      return this.tickets.filter((t) => {
+        const matchSearch =
+          !term ||
+          t.idTicket.toLowerCase().includes(term) ||
+          t.reportedBy.toLowerCase().includes(term);
+        const matchKategori = !this.filterKategori || t.kategori === this.filterKategori;
+        return matchSearch && matchKategori;
+      });
+    } else {
+      const term = this.searchTerm.trim().toLowerCase();
+      return this.returnedTickets.filter((t: any) => {
+        const matchSearch =
+          !term ||
+          t.id_ticket?.toLowerCase().includes(term) ||
+          t.reported?.toLowerCase().includes(term);
+        return matchSearch;
+      });
+    }
   }
 
   get totalPages(): number {
@@ -133,7 +163,7 @@ export class AssignmentTicketPage implements OnInit {
     return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 
-  get pagedTickets(): AssignmentTicket[] {
+  get pagedTickets(): any[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredTickets.slice(start, start + this.pageSize);
   }
@@ -154,7 +184,7 @@ export class AssignmentTicketPage implements OnInit {
     if (this.currentPage < this.totalPages) this.currentPage++;
   }
 
-  // 🔥 Helper untuk badge CSS prioritas (sesuai dengan Approval Ticket)
+  // 🔥 Helper untuk badge CSS prioritas
   getPrioritasClass(prioritas: string): string {
     const p = prioritas?.toLowerCase() || 'normal';
     if (p === 'low') return 'prioritas-low';
@@ -162,13 +192,13 @@ export class AssignmentTicketPage implements OnInit {
     return 'prioritas-normal';
   }
 
+  // 🔥 Admin: Assign biasa
   onAssign(ticket: AssignmentTicket) {
     if (!ticket.teknisiTerpilih) {
       alert(`Silakan pilih teknisi terlebih dahulu untuk ticket ${ticket.idTicket}!`);
       return;
     }
 
-    // 🔥 Kirim prioritas yang baru dipilih Admin ke Backend
     this.assignmentService.assignTicket(ticket.idTicket, ticket.teknisiTerpilih, ticket.prioritas).subscribe({
       next: () => {
         alert(`Tiket ${ticket.idTicket} berhasil di-assign dengan prioritas ${ticket.prioritas}!`);
@@ -178,6 +208,19 @@ export class AssignmentTicketPage implements OnInit {
         console.error('Gagal assign tiket:', err);
         alert(err?.error?.message || 'Gagal assign tiket.');
       }
+    });
+  }
+
+  // 🔥 Admin: Review pengembalian (Approve / Reject)
+  reviewReturn(ticket: any, action: 'Approve' | 'Reject') {
+    if (!confirm(`${action === 'Approve' ? 'Setujui' : 'Tolak'} pengembalian tiket ${ticket.id_ticket}?`)) return;
+
+    this.ticketService.reviewReturn(ticket.id_ticket, action).subscribe({
+      next: () => {
+        alert(`Pengembalian ${action === 'Approve' ? 'disetujui' : 'ditolak'}.`);
+        this.loadReturnedTickets(); // refresh
+      },
+      error: (err) => alert(err?.error?.message || 'Gagal memproses review.')
     });
   }
 

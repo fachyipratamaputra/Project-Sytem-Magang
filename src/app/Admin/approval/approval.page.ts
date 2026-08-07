@@ -1,213 +1,235 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { IonContent, IonButton, IonIcon } from '@ionic/angular/standalone';
-import { ApprovalService } from '../../services/approval.service';
+import { Router } from '@angular/router'; // ✅ Import Router sudah benar
+import { IonicModule } from '@ionic/angular';
+import { TicketService } from '../../services/ticket.service';
 import { environment } from '../../../environments/environment';
 
 export interface ApprovalTicket {
-  no: number;
-  idTicket: string;
-  reportedBy: string;
-  departemen: string;
-  kategori: string;
-  subKategori: string;
+  id_ticket: string;
+  reported: string;
+  dept: string;
+  nama_kategori: string;
+  nama_sub_kategori: string;
   tanggal: string;
   deskripsi: string;
-  lampiran: string;
-  lampiranPath: string;
-  status: string;
-  prioritas?: 'Low' | 'Normal' | 'Urgent'; // 🔥 Tambahan baru
+  lampiran: string | null;
+  prioritas?: 'Low' | 'Normal' | 'Urgent';
+  status_approval?: string;
+}
+
+export interface ReturnedTicket {
+  id_ticket: string;
+  reported: string;
+  dept: string;
+  kategori: string;
+  sub_kategori: string | null;
+  teknisi_nama: string;
+  return_reason: string;
+  return_status: string;
 }
 
 @Component({
-  selector: 'app-approval-ticket',
+  selector: 'app-approval',
   templateUrl: './approval.page.html',
   styleUrls: ['./approval.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonButton, IonIcon],
+  imports: [CommonModule, FormsModule, IonicModule],
 })
+// ✅ Nama class diubah menjadi ApprovalTicketPage agar cocok dengan app.routes.ts
 export class ApprovalTicketPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'approval-ticket';
 
-  tickets: ApprovalTicket[] = [];
-  isLoading = false;
-  errorMessage = '';
+  // ===== Data Tiket Approval Biasa =====
+  approvalTickets: ApprovalTicket[] = [];
+  isLoadingApproval = false;
 
+  // ===== Data Tiket Dikembalikan =====
+  returnedTickets: ReturnedTicket[] = [];
+  isLoadingReturned = false;
+
+  // ===== Filter & Pagination (Approval) =====
   searchTerm = '';
   filterStatus = '';
   filterDepartemen = '';
   filterKategori = '';
 
-  statusOptions: string[] = [];
+  statusOptions: string[] = ['Menunggu Approval', 'Approve', 'Reject'];
   departemenOptions: string[] = [];
   kategoriOptions: string[] = [];
 
   currentPage = 1;
   pageSize = 10;
 
+  // ===== Helper untuk API URL =====
+  apiBase = environment.apiUrl.replace(/\/api\/?$/, '');
+
   constructor(
-    private router: Router,
-    private approvalService: ApprovalService
+    private router: Router,         // ✅ Router di-inject dengan benar
+    private ticketService: TicketService
   ) {}
 
   ngOnInit() {
-    this.loadApprovalList();
+    this.loadApprovalTickets();
+    this.loadReturnedTickets();
   }
 
- loadApprovalList() {
-    this.isLoading = true;
-    this.errorMessage = '';
-
-    this.approvalService.getList().subscribe({
+  // ==========================================
+  // AMBIL TIKET APPROVAL
+  // ==========================================
+  loadApprovalTickets() {
+    this.isLoadingApproval = true;
+    this.ticketService.getAll().subscribe({
       next: (res: any) => {
-        const rows = res?.data || [];
-        this.tickets = rows.map((row: any, index: number): ApprovalTicket => ({
-          no: index + 1,
-          idTicket: row.id_ticket,
-          reportedBy: row.reported,
-          departemen: row.departemen,
-          kategori: row.kategori,
-          subKategori: row.sub_kategori,
-          tanggal: row.tanggal,
-          deskripsi: row.deskripsi,
-          lampiran: row.lampiran ? 'Lihat Foto' : '',
-          lampiranPath: row.lampiran || '',
-          status: row.status,
-          // 🔥 Perbaikan: Cek berbagai kemungkinan variasi key dari API backend
-          prioritas: row.prioritas || row.priority || row.PRIORITAS || row.Prioritas || 'Normal',
-        }));
+        const data = res?.data || res || [];
+        this.approvalTickets = data
+          .filter((t: any) => t.status === 'Menunggu Approval')
+          .map((t: any) => ({
+            id_ticket: t.id_ticket,
+            reported: t.reported,
+            dept: t.dept,
+            nama_kategori: t.nama_kategori,
+            nama_sub_kategori: t.nama_sub_kategori || '-',
+            tanggal: t.tanggal,
+            deskripsi: t.deskripsi || '-',
+            lampiran: t.lampiran,
+            prioritas: t.prioritas || 'Normal',
+            status_approval: t.status_approval || 'Menunggu Approval'
+          }));
         this.buildFilterOptions();
-        this.isLoading = false;
+        this.isLoadingApproval = false;
       },
       error: (err) => {
-        console.error('Gagal memuat data approval:', err);
-        this.errorMessage = 'Gagal memuat data approval ticket.';
-        this.isLoading = false;
+        console.error('Gagal memuat tiket approval:', err);
+        this.isLoadingApproval = false;
       }
     });
   }
 
-  getLampiranUrl(lampiranPath: string): string {
-    if (!lampiranPath) return '';
-    const backendBase = environment.apiUrl.replace(/\/api\/?$/, '');
-    let cleanPath = lampiranPath.trim().replace(/\\/g, '/');
-    const parts = cleanPath.split('/');
-    const fileName = parts[parts.length - 1];
-    return `${backendBase}/uploads/${fileName}`;
-  }
-
   private buildFilterOptions() {
-    this.statusOptions = [...new Set(this.tickets.map((t) => t.status))];
-    this.departemenOptions = [...new Set(this.tickets.map((t) => t.departemen))];
-    this.kategoriOptions = [...new Set(this.tickets.map((t) => t.kategori))];
+    this.departemenOptions = [...new Set(this.approvalTickets.map((t) => t.dept).filter(Boolean))];
+    this.kategoriOptions = [...new Set(this.approvalTickets.map((t) => t.nama_kategori).filter(Boolean))];
   }
 
-  get filteredTickets(): ApprovalTicket[] {
+  // ==========================================
+  // AMBIL TIKET DIKEMBALIKAN
+  // ==========================================
+  loadReturnedTickets() {
+    this.isLoadingReturned = true;
+    this.ticketService.getReturnedTickets().subscribe({
+      next: (res: any) => {
+        this.returnedTickets = res?.data || res || [];
+        this.isLoadingReturned = false;
+      },
+      error: (err) => {
+        console.error('Gagal memuat tiket pengembalian:', err);
+        this.isLoadingReturned = false;
+      }
+    });
+  }
+
+  // ==========================================
+  // AKSI APPROVAL BIASA
+  // ==========================================
+  approveTicket(ticket: ApprovalTicket) {
+    if (!confirm(`Setujui tiket ${ticket.id_ticket}?`)) return;
+    this.ticketService.approve(ticket.id_ticket, 'Approve').subscribe({
+      next: () => {
+        this.loadApprovalTickets();
+        alert('Tiket berhasil disetujui.');
+      },
+      error: (err) => alert('Gagal approve: ' + (err.error?.message || err.message))
+    });
+  }
+
+  rejectTicket(ticket: ApprovalTicket) {
+    if (!confirm(`Tolak tiket ${ticket.id_ticket}?`)) return;
+    this.ticketService.approve(ticket.id_ticket, 'Reject').subscribe({
+      next: () => {
+        this.loadApprovalTickets();
+        alert('Tiket ditolak.');
+      },
+      error: (err) => alert('Gagal reject: ' + (err.error?.message || err.message))
+    });
+  }
+
+  // ==========================================
+  // AKSI REVIEW PENGEMBALIAN
+  // ==========================================
+  approveReturn(ticket: ReturnedTicket) {
+    if (!confirm(`Setujui pengembalian tiket ${ticket.id_ticket}? Tiket akan kembali ke status Menunggu Approval.`)) return;
+    this.ticketService.reviewReturn(ticket.id_ticket, 'Approve').subscribe({
+      next: () => {
+        this.loadReturnedTickets();
+        this.loadApprovalTickets();
+        alert('Pengembalian disetujui.');
+      },
+      error: (err) => alert('Gagal approve return: ' + (err.error?.message || err.message))
+    });
+  }
+
+  rejectReturn(ticket: ReturnedTicket) {
+    if (!confirm(`Tolak pengembalian tiket ${ticket.id_ticket}? Tiket akan kembali ke teknisi.`)) return;
+    this.ticketService.reviewReturn(ticket.id_ticket, 'Reject').subscribe({
+      next: () => {
+        this.loadReturnedTickets();
+        alert('Pengembalian ditolak.');
+      },
+      error: (err) => alert('Gagal reject return: ' + (err.error?.message || err.message))
+    });
+  }
+
+  // ==========================================
+  // FILTER & PAGINATION (Approval)
+  // ==========================================
+  get filteredApprovalTickets(): ApprovalTicket[] {
     const term = this.searchTerm.trim().toLowerCase();
-    return this.tickets.filter((t) => {
-      const matchSearch =
-        !term ||
-        t.idTicket.toLowerCase().includes(term) ||
-        t.reportedBy.toLowerCase().includes(term);
-      const matchStatus = !this.filterStatus || t.status === this.filterStatus;
-      const matchDept = !this.filterDepartemen || t.departemen === this.filterDepartemen;
-      const matchKategori = !this.filterKategori || t.kategori === this.filterKategori;
+    return this.approvalTickets.filter((t) => {
+      const matchSearch = !term || 
+        t.id_ticket.toLowerCase().includes(term) || 
+        t.reported.toLowerCase().includes(term);
+      const matchStatus = !this.filterStatus || t.status_approval === this.filterStatus;
+      const matchDept = !this.filterDepartemen || t.dept === this.filterDepartemen;
+      const matchKategori = !this.filterKategori || t.nama_kategori === this.filterKategori;
       return matchSearch && matchStatus && matchDept && matchKategori;
     });
   }
 
   get totalPages(): number {
-    return Math.max(1, Math.ceil(this.filteredTickets.length / this.pageSize));
+    return Math.max(1, Math.ceil(this.filteredApprovalTickets.length / this.pageSize));
   }
-
   get totalPagesArray(): number[] {
     return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
-
-  get pagedTickets(): ApprovalTicket[] {
+  get pagedApprovalTickets(): ApprovalTicket[] {
     const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredTickets.slice(start, start + this.pageSize);
+    return this.filteredApprovalTickets.slice(start, start + this.pageSize);
   }
 
-  onFilterChange() {
-    this.currentPage = 1;
+  onFilterChange() { this.currentPage = 1; }
+  goToPage(page: number) { this.currentPage = page; }
+  prevPage() { if (this.currentPage > 1) this.currentPage--; }
+  nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
+
+  getLampiranUrl(lampiranPath: string | null): string | null {
+    if (!lampiranPath) return null;
+    return this.apiBase + lampiranPath;
   }
 
-  goToPage(page: number) {
-    this.currentPage = page;
-  }
-
-  prevPage() {
-    if (this.currentPage > 1) this.currentPage--;
-  }
-
-  nextPage() {
-    if (this.currentPage < this.totalPages) this.currentPage++;
-  }
-
-  getStatusClass(status: string): string {
-    if (!status) return 'status-default';
-    const s = status.toLowerCase();
-    if (s.includes('menunggu')) return 'status-pending';
-    if (s.includes('disetujui') || s.includes('approve') || s.includes('selesai')) return 'status-approved';
-    if (s.includes('ditolak') || s.includes('reject')) return 'status-rejected';
-    if (s.includes('proses') || s.includes('progress')) return 'status-progress';
-    return 'status-default';
-  }
-
-  // 🔥 Helper untuk badge prioritas
-  getPrioritasClass(prioritas: string): string {
-    const p = prioritas?.toLowerCase() || 'normal';
-    if (p === 'low') return 'prioritas-low';
-    if (p === 'urgent') return 'prioritas-urgent';
-    return 'prioritas-normal';
-  }
-
-  onApprove(ticket: ApprovalTicket) {
-    if (!confirm(`Setujui tiket ${ticket.idTicket}?`)) return;
-
-    this.approvalService.process(ticket.idTicket, 'Approve').subscribe({
-      next: () => {
-        alert(`Tiket ${ticket.idTicket} berhasil disetujui!`);
-        this.loadApprovalList();
-      },
-      error: (err) => {
-        console.error('Gagal approve tiket:', err);
-        alert(err?.error?.message || 'Gagal menyetujui tiket.');
-      }
-    });
-  }
-
-  onReject(ticket: ApprovalTicket) {
-    const catatan = prompt(`Alasan penolakan tiket ${ticket.idTicket} (opsional):`) || undefined;
-    if (!confirm(`Tolak tiket ${ticket.idTicket}?`)) return;
-
-    this.approvalService.process(ticket.idTicket, 'Reject', catatan).subscribe({
-      next: () => {
-        alert(`Tiket ${ticket.idTicket} ditolak.`);
-        this.loadApprovalList();
-      },
-      error: (err) => {
-        console.error('Gagal reject tiket:', err);
-        alert(err?.error?.message || 'Gagal menolak tiket.');
-      }
-    });
-  }
-
-  toggleSidebar() {
-    this.isSidebarOpen = !this.isSidebarOpen;
-  }
-
+  // ==========================================
+  // NAVIGASI SIDEBAR
+  // ==========================================
+  toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
   setActiveMenu(menu: string) {
     this.activeMenu = menu;
+    if (window.innerWidth < 1024) this.isSidebarOpen = false;
   }
 
   goToDashboard() { this.router.navigate(['/dashboard']); }
   goToListTicket() { this.router.navigate(['/list']); }
-  goToApprovalTicket() { this.router.navigate(['/approval']); }
+  goToApprovalTicket() { this.activeMenu = 'approval-ticket'; this.router.navigate(['/approval']); }
   goToAssignmentTicket() { this.router.navigate(['/assignment']); }
   goToKaryawan() { this.router.navigate(['/karyawan']); }
   goToUser() { this.router.navigate(['/users']); }
@@ -218,12 +240,13 @@ export class ApprovalTicketPage implements OnInit {
   goToSubKategori() { this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.router.navigate(['/teknisi']); }
   goToInventory() { this.router.navigate(['/inventory']); }
+  goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); }
+  goToProfile() { this.activeMenu = 'profile'; this.router.navigate(['/profile']); }
 
-  goToLaporanFeedback() {
-    this.setActiveMenu('laporan-feedback');
-    this.router.navigate(['/laporan-feedback']);
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    this.router.navigate(['/login']);
   }
-
-  goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }
-  goToProfile() { this.activeMenu = 'profile'; }
 }
