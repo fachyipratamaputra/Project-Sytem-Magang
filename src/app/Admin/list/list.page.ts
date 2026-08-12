@@ -21,7 +21,6 @@ export interface ListTicket {
   teknisi: string;
   status: string;
   deskripsi?: string;
-  // 🔥 Tambahkan field baru untuk Prioritas & Deadline
   prioritas?: 'Low' | 'Normal' | 'Urgent';
   deadline?: string | null;
 }
@@ -71,7 +70,6 @@ export class ListTicketPage implements OnInit, OnDestroy {
   filteredSubKategoriOptions: any[] = [];
   filteredAssetOptions: any[] = [];
 
-  // 🔥 Variabel Timer
   private countdownInterval: any;
 
   constructor(
@@ -89,12 +87,10 @@ export class ListTicketPage implements OnInit, OnDestroy {
     this.loadMasterDataModal();
   }
 
-  // 🔥 Jalankan timer saat halaman dimuat
   ionViewDidEnter() {
     this.startTimer();
   }
 
-  // 🔥 Hentikan timer saat halaman ditutup
   ngOnDestroy() {
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
@@ -123,7 +119,6 @@ export class ListTicketPage implements OnInit, OnDestroy {
     this.isLoading = true;
     this.ticketService.getAll().subscribe({
       next: (data: ServiceTicket[]) => {
-        // 🔥 Mapping data, ambil prioritas & deadline dari service
         this.tickets = data.map(item => ({
           id_ticket: item.idTicket,
           reported: item.reportedBy,
@@ -136,7 +131,6 @@ export class ListTicketPage implements OnInit, OnDestroy {
           teknisi: item.teknisi,
           status: item.status,
           deskripsi: '',
-          // 🔥 Tambahkan field baru (Jika tidak ada, default Normal & null)
           prioritas: (item as any).prioritas || 'Normal',
           deadline: (item as any).deadline || null
         }));
@@ -153,7 +147,6 @@ export class ListTicketPage implements OnInit, OnDestroy {
     });
   }
 
-  // 🔥 Helper Timer Countdown
   getCountdownText(deadline: string | null): string {
     if (!deadline) return '-';
     const now = new Date().getTime();
@@ -332,24 +325,40 @@ export class ListTicketPage implements OnInit, OnDestroy {
     return 'status-default';
   }
 
-  toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
-  setActiveMenu(menu: string) { this.activeMenu = menu; }
-  goToDashboard() { this.router.navigate(['/dashboard']); }
-  goToListTicket() { this.activeMenu = 'list-ticket'; this.router.navigate(['/list']); }
-  goToApprovalTicket() { this.router.navigate(['/approval']); }
-  goToAssignmentTicket() { this.router.navigate(['/assignment']); }
-  goToKaryawan() { this.router.navigate(['/karyawan']); }
-  goToUser() { this.router.navigate(['/users']); }
-  goToJabatan() { this.router.navigate(['/jabatan']); }
-  goToDepartemen() { this.router.navigate(['/departemen']); }
-  goToBagianDepartemen() { this.router.navigate(['/bagian-departemen']); }
-  goToKategori() { this.router.navigate(['/kategori']); }
-  goToSubKategori() { this.router.navigate(['/sub-kategori']); }
-  goToTeknisi() { this.router.navigate(['/teknisi']); }
-  goToInventory() { this.router.navigate(['/inventory']); }
-  goToLaporanFeedback() { this.activeMenu = 'laporan-feedback'; }
-  goToStatistikTicket() { this.router.navigate(['/statistik-ticket']); }
-  goToProfile() { this.activeMenu = 'profile'; }
+  // ===== NAVIGASI & SIDEBAR =====
+  toggleSidebar() { 
+    this.isSidebarOpen = !this.isSidebarOpen; 
+  }
+
+  setActiveMenu(menu: string) { 
+    this.activeMenu = menu; 
+    if (window.innerWidth < 1024) this.isSidebarOpen = false;
+  }
+
+  goToDashboard() { this.setActiveMenu('dashboard'); this.router.navigate(['/dashboard']); }
+  goToListTicket() { this.setActiveMenu('list-ticket'); this.router.navigate(['/list']); }
+  goToApprovalTicket() { this.setActiveMenu('approval-ticket'); this.router.navigate(['/approval']); }
+  goToAssignmentTicket() { this.setActiveMenu('assignment-ticket'); this.router.navigate(['/assignment']); }
+  goToKaryawan() { this.setActiveMenu('karyawan'); this.router.navigate(['/karyawan']); }
+  goToUser() { this.setActiveMenu('user'); this.router.navigate(['/users']); }
+  goToJabatan() { this.setActiveMenu('jabatan'); this.router.navigate(['/jabatan']); }
+  goToDepartemen() { this.setActiveMenu('departemen'); this.router.navigate(['/departemen']); }
+  goToBagianDepartemen() { this.setActiveMenu('bagian-departemen'); this.router.navigate(['/bagian-departemen']); }
+  goToKategori() { this.setActiveMenu('kategori'); this.router.navigate(['/kategori']); }
+  goToSubKategori() { this.setActiveMenu('sub-kategori'); this.router.navigate(['/sub-kategori']); }
+  goToTeknisi() { this.setActiveMenu('teknisi'); this.router.navigate(['/teknisi']); }
+  goToInventory() { this.setActiveMenu('inventory'); this.router.navigate(['/inventory']); }
+  goToSchedule() { this.setActiveMenu('schedule'); this.router.navigate(['/schedule']); } // 🛠️ Ditambahkan untuk mengatasi error TS2339
+  goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
+  goToProfile() { this.setActiveMenu('profile'); this.router.navigate(['/profile']); }
+  goToNotifikasi() { this.setActiveMenu('notifikasi'); }
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    this.router.navigate(['/login']);
+  }
 
   onViewDetail(ticket: ListTicket) { console.log('View detail', ticket.id_ticket); }
   onEditTicket(ticket: ListTicket) { this.openEditModal(ticket); }

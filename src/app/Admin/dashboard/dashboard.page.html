@@ -67,6 +67,10 @@
           <div class="menu-icon-wrapper"><ion-icon name="cube-outline" class="menu-icon"></ion-icon></div>
           <span class="menu-text">Inventory</span>
         </div>
+        <div class="menu-item" [class.active]="activeMenu === 'schedule'" (click)="goToSchedule()">
+          <div class="menu-icon-wrapper"><ion-icon name="calendar-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Schedule Preventive</span>
+        </div>
 
         <div class="menu-label">COMPLAINT MANAGEMENT</div>
         <div class="menu-item" [class.active]="activeMenu === 'kategori'" (click)="goToKategori()">
@@ -93,7 +97,7 @@
           <div class="menu-icon-wrapper"><ion-icon name="settings-outline" class="menu-icon"></ion-icon></div>
           <span class="menu-text">Pengaturan</span>
         </div>
-        <!-- Tombol Keluar yang baru ditambahkan -->
+        <!-- Tombol Keluar -->
         <div class="menu-item" (click)="logout()">
           <div class="menu-icon-wrapper"><ion-icon name="log-out-outline" class="menu-icon" style="color: #ef4444;"></ion-icon></div>
           <span class="menu-text" style="color: #ef4444; font-weight: 500;">Keluar</span>

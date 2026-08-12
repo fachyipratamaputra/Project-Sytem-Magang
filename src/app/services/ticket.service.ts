@@ -39,6 +39,9 @@ export interface TicketApiRow {
   is_paused?: number;
   tanggal_assign?: string | null;
   tanggal_selesai?: string | null;
+  // 🔥 TAMBAHKAN PROGRESS
+  progress?: number;
+  status_pengerjaan?: string;
 }
 
 export interface AssignedTicketApiRow {
@@ -76,6 +79,18 @@ export class TicketService {
     return this.http
       .get<ApiResponse<TicketApiRow[]>>(this.baseUrl, { params })
       .pipe(map((res) => res.data.map(this.mapTicket)));
+  }
+
+  getAllRaw(filter?: any): Observable<TicketApiRow[]> {
+    const params: Record<string, string> = {};
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value) params[key] = value as string;
+      });
+    }
+    return this.http
+      .get<ApiResponse<TicketApiRow[]>>(this.baseUrl, { params })
+      .pipe(map((res) => res.data));
   }
 
   getMineRaw(): Observable<TicketApiRow[]> {
@@ -156,17 +171,14 @@ export class TicketService {
     return this.http.put(`${this.baseUrl}/${idTicket}/proses`, payload);
   }
 
-  // 🔥 Method baru untuk Teknisi: Request return
   requestReturn(idTicket: string, reason: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/${idTicket}/return`, { return_reason: reason });
   }
 
-  // 🔥 Method baru untuk Admin: Get returned tickets
   getReturnedTickets(): Observable<any> {
     return this.http.get(`${this.baseUrl}/returned`);
   }
 
-  // 🔥 Method baru untuk Admin: Review return
   reviewReturn(idTicket: string, action: 'Approve' | 'Reject'): Observable<any> {
     return this.http.put(`${this.baseUrl}/${idTicket}/return-review`, { action });
   }

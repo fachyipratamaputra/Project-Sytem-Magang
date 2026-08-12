@@ -190,27 +190,35 @@ export class BagianDepartemenPage implements OnInit {
     });
   }
 
+  // ===== SIDEBAR & NAVIGASI =====
   toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
   setActiveMenu(menu: string) { this.activeMenu = menu; }
 
-  goToDashboard() { this.router.navigate(['/dashboard']); }
-  goToListTicket() { this.router.navigate(['/list']); }
-  goToApprovalTicket() { this.router.navigate(['/approval']); }
-  goToAssignmentTicket() { this.router.navigate(['/assignment']); }
-  goToKaryawan() { this.router.navigate(['/karyawan']); }
-  goToUser() { this.router.navigate(['/users']); }
-  goToJabatan() { this.router.navigate(['/jabatan']); }
-  goToDepartemen() { this.router.navigate(['/departemen']); }
-  goToBagianDepartemen() { this.activeMenu = 'bagian-departemen'; this.router.navigate(['/bagian-departemen']); }
-  goToKategori() { this.router.navigate(['/kategori']); }
-  goToSubKategori() { this.router.navigate(['/sub-kategori']); }
-  goToTeknisi() { this.router.navigate(['/teknisi']); }
-  goToInventory() { this.router.navigate(['/inventory']); }
+  goToDashboard() { this.setActiveMenu('dashboard'); this.router.navigate(['/dashboard']); }
+  goToListTicket() { this.setActiveMenu('list-ticket'); this.router.navigate(['/list']); }
+  goToApprovalTicket() { this.setActiveMenu('approval-ticket'); this.router.navigate(['/approval']); }
+  goToAssignmentTicket() { this.setActiveMenu('assignment-ticket'); this.router.navigate(['/assignment']); }
+  goToKaryawan() { this.setActiveMenu('karyawan'); this.router.navigate(['/karyawan']); }
+  goToUser() { this.setActiveMenu('user'); this.router.navigate(['/users']); }
+  goToJabatan() { this.setActiveMenu('jabatan'); this.router.navigate(['/jabatan']); }
+  goToDepartemen() { this.setActiveMenu('departemen'); this.router.navigate(['/departemen']); }
+  goToBagianDepartemen() { this.setActiveMenu('bagian-departemen'); this.router.navigate(['/bagian-departemen']); }
+  goToKategori() { this.setActiveMenu('kategori'); this.router.navigate(['/kategori']); }
+  goToSubKategori() { this.setActiveMenu('sub-kategori'); this.router.navigate(['/sub-kategori']); }
+  goToTeknisi() { this.setActiveMenu('teknisi'); this.router.navigate(['/teknisi']); }
+  goToInventory() { this.setActiveMenu('inventory'); this.router.navigate(['/inventory']); }
+
+  // ===== TAMBAHKAN INI =====
+  goToSchedule() {
+    this.setActiveMenu('schedule');
+    this.router.navigate(['/schedule']);
+  }
+  // ===== SELESAI TAMBAH =====
 
   goToLaporanFeedback() {
     this.setActiveMenu('laporan-feedback');
     this.router.navigate(['/laporan-feedback']);
   }
-  goToStatistikTicket() { this.activeMenu = 'statistik-ticket'; }
-  goToProfile() { this.activeMenu = 'profile'; }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); }
+  goToProfile() { this.setActiveMenu('profile'); }
 }

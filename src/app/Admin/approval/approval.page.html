@@ -66,6 +66,10 @@
           <div class="menu-icon-wrapper"><ion-icon name="cube-outline" class="menu-icon"></ion-icon></div>
           <span class="menu-text">Inventory</span>
         </div>
+        <div class="menu-item" [class.active]="activeMenu === 'schedule'" (click)="goToSchedule()">
+          <div class="menu-icon-wrapper"><ion-icon name="calendar-outline" class="menu-icon"></ion-icon></div>
+         <span class="menu-text">Schedule Preventive</span>
+          </div>
 
         <div class="menu-label">COMPLAINT MANAGEMENT</div>
         <div class="menu-item" [class.active]="activeMenu === 'kategori'" (click)="goToKategori()">
@@ -161,6 +165,7 @@
                   <th>Departemen</th>
                   <th>Kategori</th>
                   <th>Sub Kategori</th>
+                  <th>Prioritas</th>
                   <th>Tanggal</th>
                   <th>Deskripsi</th>
                   <th>Lampiran</th>
@@ -176,6 +181,15 @@
                   <td>{{ t.dept }}</td>
                   <td>{{ t.nama_kategori }}</td>
                   <td>{{ t.nama_sub_kategori }}</td>
+                  <td>
+                    <span class="priority-badge" [ngClass]="{
+                      'priority-urgent': t.prioritas === 'Urgent',
+                      'priority-normal': t.prioritas === 'Normal',
+                      'priority-low': t.prioritas === 'Low'
+                    }">
+                      {{ t.prioritas }}
+                    </span>
+                  </td>
                   <td class="nowrap">{{ t.tanggal }}</td>
                   <td class="deskripsi-col">{{ t.deskripsi }}</td>
                   <td>
@@ -202,7 +216,7 @@
                 </tr>
 
                 <tr *ngIf="filteredApprovalTickets.length === 0">
-                  <td colspan="11" class="empty-row">Tidak ada data ticket yang perlu disetujui</td>
+                  <td colspan="12" class="empty-row">Tidak ada data ticket yang perlu disetujui</td>
                 </tr>
               </tbody>
             </table>
@@ -251,11 +265,11 @@
                     {{ t.return_reason || '-' }}
                   </td>
                   <td>
-                    <ion-button fill="solid" color="success" size="small" (click)="approveReturn(t.id_ticket)">
+                    <ion-button fill="solid" color="success" size="small" (click)="approveReturn(t)">
                       <ion-icon name="checkmark-outline" slot="start"></ion-icon>
                       Setujui
                     </ion-button>
-                    <ion-button fill="solid" color="danger" size="small" (click)="rejectReturn(t.id_ticket)">
+                    <ion-button fill="solid" color="danger" size="small" (click)="rejectReturn(t)">
                       <ion-icon name="close-outline" slot="start"></ion-icon>
                       Tolak
                     </ion-button>

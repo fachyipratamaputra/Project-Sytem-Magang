@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router'; // ✅ Import Router sudah benar
+import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { TicketService } from '../../services/ticket.service';
 import { environment } from '../../../environments/environment';
@@ -37,20 +37,16 @@ export interface ReturnedTicket {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-// ✅ Nama class diubah menjadi ApprovalTicketPage agar cocok dengan app.routes.ts
 export class ApprovalTicketPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'approval-ticket';
 
-  // ===== Data Tiket Approval Biasa =====
   approvalTickets: ApprovalTicket[] = [];
   isLoadingApproval = false;
 
-  // ===== Data Tiket Dikembalikan =====
   returnedTickets: ReturnedTicket[] = [];
   isLoadingReturned = false;
 
-  // ===== Filter & Pagination (Approval) =====
   searchTerm = '';
   filterStatus = '';
   filterDepartemen = '';
@@ -63,11 +59,10 @@ export class ApprovalTicketPage implements OnInit {
   currentPage = 1;
   pageSize = 10;
 
-  // ===== Helper untuk API URL =====
   apiBase = environment.apiUrl.replace(/\/api\/?$/, '');
 
   constructor(
-    private router: Router,         // ✅ Router di-inject dengan benar
+    private router: Router,
     private ticketService: TicketService
   ) {}
 
@@ -76,12 +71,9 @@ export class ApprovalTicketPage implements OnInit {
     this.loadReturnedTickets();
   }
 
-  // ==========================================
-  // AMBIL TIKET APPROVAL
-  // ==========================================
   loadApprovalTickets() {
     this.isLoadingApproval = true;
-    this.ticketService.getAll().subscribe({
+    this.ticketService.getAllRaw().subscribe({
       next: (res: any) => {
         const data = res?.data || res || [];
         this.approvalTickets = data
@@ -113,9 +105,6 @@ export class ApprovalTicketPage implements OnInit {
     this.kategoriOptions = [...new Set(this.approvalTickets.map((t) => t.nama_kategori).filter(Boolean))];
   }
 
-  // ==========================================
-  // AMBIL TIKET DIKEMBALIKAN
-  // ==========================================
   loadReturnedTickets() {
     this.isLoadingReturned = true;
     this.ticketService.getReturnedTickets().subscribe({
@@ -130,10 +119,11 @@ export class ApprovalTicketPage implements OnInit {
     });
   }
 
-  // ==========================================
-  // AKSI APPROVAL BIASA
-  // ==========================================
   approveTicket(ticket: ApprovalTicket) {
+    if (!ticket?.id_ticket) {
+      alert('ID Tiket tidak valid.');
+      return;
+    }
     if (!confirm(`Setujui tiket ${ticket.id_ticket}?`)) return;
     this.ticketService.approve(ticket.id_ticket, 'Approve').subscribe({
       next: () => {
@@ -145,6 +135,10 @@ export class ApprovalTicketPage implements OnInit {
   }
 
   rejectTicket(ticket: ApprovalTicket) {
+    if (!ticket?.id_ticket) {
+      alert('ID Tiket tidak valid.');
+      return;
+    }
     if (!confirm(`Tolak tiket ${ticket.id_ticket}?`)) return;
     this.ticketService.approve(ticket.id_ticket, 'Reject').subscribe({
       next: () => {
@@ -155,10 +149,11 @@ export class ApprovalTicketPage implements OnInit {
     });
   }
 
-  // ==========================================
-  // AKSI REVIEW PENGEMBALIAN
-  // ==========================================
   approveReturn(ticket: ReturnedTicket) {
+    if (!ticket?.id_ticket) {
+      alert('ID Tiket tidak valid atau kosong.');
+      return;
+    }
     if (!confirm(`Setujui pengembalian tiket ${ticket.id_ticket}? Tiket akan kembali ke status Menunggu Approval.`)) return;
     this.ticketService.reviewReturn(ticket.id_ticket, 'Approve').subscribe({
       next: () => {
@@ -171,6 +166,10 @@ export class ApprovalTicketPage implements OnInit {
   }
 
   rejectReturn(ticket: ReturnedTicket) {
+    if (!ticket?.id_ticket) {
+      alert('ID Tiket tidak valid atau kosong.');
+      return;
+    }
     if (!confirm(`Tolak pengembalian tiket ${ticket.id_ticket}? Tiket akan kembali ke teknisi.`)) return;
     this.ticketService.reviewReturn(ticket.id_ticket, 'Reject').subscribe({
       next: () => {
@@ -181,9 +180,6 @@ export class ApprovalTicketPage implements OnInit {
     });
   }
 
-  // ==========================================
-  // FILTER & PAGINATION (Approval)
-  // ==========================================
   get filteredApprovalTickets(): ApprovalTicket[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.approvalTickets.filter((t) => {
@@ -218,31 +214,31 @@ export class ApprovalTicketPage implements OnInit {
     return this.apiBase + lampiranPath;
   }
 
-  // ==========================================
-  // NAVIGASI SIDEBAR
-  // ==========================================
   toggleSidebar() { this.isSidebarOpen = !this.isSidebarOpen; }
   setActiveMenu(menu: string) {
     this.activeMenu = menu;
     if (window.innerWidth < 1024) this.isSidebarOpen = false;
   }
 
-  goToDashboard() { this.router.navigate(['/dashboard']); }
-  goToListTicket() { this.router.navigate(['/list']); }
-  goToApprovalTicket() { this.activeMenu = 'approval-ticket'; this.router.navigate(['/approval']); }
-  goToAssignmentTicket() { this.router.navigate(['/assignment']); }
-  goToKaryawan() { this.router.navigate(['/karyawan']); }
-  goToUser() { this.router.navigate(['/users']); }
-  goToJabatan() { this.router.navigate(['/jabatan']); }
-  goToDepartemen() { this.router.navigate(['/departemen']); }
-  goToBagianDepartemen() { this.router.navigate(['/bagian-departemen']); }
-  goToKategori() { this.router.navigate(['/kategori']); }
-  goToSubKategori() { this.router.navigate(['/sub-kategori']); }
-  goToTeknisi() { this.router.navigate(['/teknisi']); }
-  goToInventory() { this.router.navigate(['/inventory']); }
+  // ===== NAVIGASI MENU =====
+  goToDashboard() { this.setActiveMenu('dashboard'); this.router.navigate(['/dashboard']); }
+  goToListTicket() { this.setActiveMenu('list-ticket'); this.router.navigate(['/list']); }
+  goToApprovalTicket() { this.setActiveMenu('approval-ticket'); this.router.navigate(['/approval']); }
+  goToAssignmentTicket() { this.setActiveMenu('assignment-ticket'); this.router.navigate(['/assignment']); }
+  goToKaryawan() { this.setActiveMenu('karyawan'); this.router.navigate(['/karyawan']); }
+  goToUser() { this.setActiveMenu('user'); this.router.navigate(['/users']); }
+  goToJabatan() { this.setActiveMenu('jabatan'); this.router.navigate(['/jabatan']); }
+  goToDepartemen() { this.setActiveMenu('departemen'); this.router.navigate(['/departemen']); }
+  goToBagianDepartemen() { this.setActiveMenu('bagian-departemen'); this.router.navigate(['/bagian-departemen']); }
+  goToKategori() { this.setActiveMenu('kategori'); this.router.navigate(['/kategori']); }
+  goToSubKategori() { this.setActiveMenu('sub-kategori'); this.router.navigate(['/sub-kategori']); }
+  goToTeknisi() { this.setActiveMenu('teknisi'); this.router.navigate(['/teknisi']); }
+  goToInventory() { this.setActiveMenu('inventory'); this.router.navigate(['/inventory']); }
+  goToSchedule() { this.setActiveMenu('schedule'); this.router.navigate(['/schedule']); } // 🛠️ Ditambahkan untuk mengatasi error
   goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
-  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); }
-  goToProfile() { this.activeMenu = 'profile'; this.router.navigate(['/profile']); }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
+  goToProfile() { this.setActiveMenu('profile'); this.router.navigate(['/profile']); }
+  goToNotifikasi() { this.setActiveMenu('notifikasi'); }
 
   logout() {
     localStorage.removeItem('token');

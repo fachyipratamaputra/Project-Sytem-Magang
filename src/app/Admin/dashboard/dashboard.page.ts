@@ -230,7 +230,6 @@ export class DashboardPage implements OnInit, AfterViewInit {
       this.donutChart.destroy();
     }
 
-    // Dummy 92% untuk sementara, jika Anda punya tabel feedback, Anda bisa menghitungnya dari API
     const positif = 92;
     const negatif = 8;
 
@@ -269,9 +268,10 @@ export class DashboardPage implements OnInit, AfterViewInit {
   goToSubKategori() { this.setActiveMenu('sub-kategori'); this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.setActiveMenu('teknisi'); this.router.navigate(['/teknisi']); }
   goToInventory() { this.setActiveMenu('inventory'); this.router.navigate(['/inventory']); }
+  goToSchedule() { this.setActiveMenu('schedule'); this.router.navigate(['/schedule']); }
   goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
-  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); }
-  goToProfile() { this.setActiveMenu('profile'); }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
+  goToProfile() { this.setActiveMenu('profile'); this.router.navigate(['/profile']); }
   goToNotifikasi() { this.setActiveMenu('notifikasi'); }
 
   logout() { this.router.navigate(['/login']); }
@@ -291,6 +291,7 @@ export class DashboardPage implements OnInit, AfterViewInit {
       'sub-kategori': 'Sub Kategori',
       'teknisi': 'Teknisi',
       'inventory': 'Inventory',
+      'schedule': 'Schedule',
       'laporan-feedback': 'Laporan Feedback',
       'statistik-ticket': 'Statistik Ticket',
       'profile': 'Profile',

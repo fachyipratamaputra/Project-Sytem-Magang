@@ -24,6 +24,9 @@ export interface MyTicket {
   deadline?: string | null;
   isPaused?: number;
   waktuSelesai?: string | null;
+  teknisi?: string | null;
+  progress?: number;           // 🔥 TAMBAH
+  statusPengerjaan?: string;   // 🔥 TAMBAH
 }
 
 @Component({
@@ -39,9 +42,6 @@ export class MyTicketPage implements OnInit {
   isSidebarOpen = false;
   activeMenu = 'my-ticket';
   private countdownInterval: any;
-  // 🔥 BARU: interval terpisah buat re-fetch data ticket dari backend secara berkala,
-  // supaya perubahan is_paused/status yang dilakukan Teknisi ikut kedeteksi
-  // tanpa User harus pindah halaman dulu.
   private refreshInterval: any;
 
   user = {
@@ -73,7 +73,6 @@ export class MyTicketPage implements OnInit {
     lampiranFile: null as File | null,
   };
 
-  // State Chat
   isChatModalOpen = false;
   selectedTicketId = '';
   chatMessages: ChatMessage[] = [];
@@ -82,7 +81,6 @@ export class MyTicketPage implements OnInit {
   selectedChatFile: File | null = null;
   selectedChatFilePreview: string = '';
 
-  // State Modal Riwayat & Catatan Teknisi
   isHistoryModalOpen = false;
   selectedTicketHistory: any[] = [];
   isHistoryLoading = false;
@@ -139,17 +137,13 @@ export class MyTicketPage implements OnInit {
     if (this.countdownInterval) clearInterval(this.countdownInterval);
     if (this.refreshInterval) clearInterval(this.refreshInterval);
 
-    // Tampilan countdown "hidup" tiap detik (cuma re-render, bukan fetch ulang)
     this.countdownInterval = setInterval(() => {
       this.myTickets = [...this.myTickets];
     }, 1000);
 
-    // 🔥 BARU: ambil ulang data dari backend tiap 8 detik, biar status is_paused
-    // (atau progress/status lain) yang diubah Teknisi kelihatan di sini tanpa
-    // User harus keluar-masuk halaman ini dulu.
     this.refreshInterval = setInterval(() => {
       this.loadMyTickets(true);
-    }, 8000);
+    }, 1008000);
   }
 
   loadMyTickets(isSilent = false) {
@@ -205,7 +199,11 @@ export class MyTicketPage implements OnInit {
       prioritas: row.prioritas || 'Normal',
       deadline: row.deadline || null,
       isPaused: row.is_paused ?? 0,
-      waktuSelesai
+      waktuSelesai,
+      teknisi: row.teknisi || null,
+      // 🔥 TAMBAHKAN PROGRESS
+      progress: row.progress ?? 0,
+      statusPengerjaan: row.status_pengerjaan || 'Menunggu Diproses',
     };
   }
 
@@ -438,10 +436,10 @@ export class MyTicketPage implements OnInit {
 
   goToDashboardUser() { this.setActiveMenu('dashboard-user'); this.router.navigate(['/users/dashboard']); }
   goToMyTicket() { this.setActiveMenu('my-ticket'); this.router.navigate(['/users/my-ticket']); }
-  goToInputAset() { this.setActiveMenu('input-aset'); this.router.navigate(['/users/asset']); }
+  goToInputAset() { this.setActiveMenu('input-aset'); this.router.navigate(['/users/input-aset']); }
   goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/users/feedback']); }
   goToPengaturan() { this.setActiveMenu('pengaturan'); this.router.navigate(['/users/settings']); }
-  logout() { localStorage.clear(); this.router.navigate(['/auth/login']); }
+  logout() { localStorage.clear(); this.router.navigate(['/login']); }
   goToProfile() { this.router.navigate(['/users/profile']); }
   getPageTitle(): string { return 'My Ticket'; }
 }

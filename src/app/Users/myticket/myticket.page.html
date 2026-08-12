@@ -122,7 +122,9 @@
                   <th>Lampiran</th>
                   <th>Tanggal</th>
                   <th>Status</th>
+                  <th style="min-width: 140px;">Progres</th>   <!-- 🔥 KOLOM PROGRES -->
                   <th style="min-width: 130px;">Deadline</th>
+                  <th style="min-width: 120px;">Teknisi</th>
                   <th style="width: 110px;">Aksi</th>
                 </tr>
               </thead>
@@ -147,6 +149,27 @@
                   <td>
                     <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ getStatusText(t.status) }}</span>
                   </td>
+                  <!-- 🔥 KOLOM PROGRES -->
+                  <td>
+                    <div *ngIf="t.progress !== undefined && t.progress !== null">
+                      <div class="progress-wrapper" style="display: flex; align-items: center; gap: 6px;">
+                        <span class="progress-text" style="font-size: 0.8rem; min-width: 40px; font-weight: 600;">
+                          {{ t.progress }}%
+                        </span>
+                        <div class="progress-bar-mini" style="flex:1; height: 6px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                          <div class="progress-fill" [style.width.%]="t.progress" 
+                               [style.background]="t.progress === 100 ? '#22c55e' : '#2563eb'" 
+                               style="height: 100%; transition: width 0.3s;">
+                          </div>
+                        </div>
+                      </div>
+                      <span *ngIf="t.statusPengerjaan" style="font-size: 0.7rem; color: #64748b; display: block; margin-top: 2px;">
+                        {{ t.statusPengerjaan }}
+                      </span>
+                    </div>
+                    <span *ngIf="t.progress === undefined || t.progress === null">-</span>
+                  </td>
+                  <!-- 🔥 END KOLOM PROGRES -->
                   <td>
                     <!-- Timer Countdown / Status Jeda -->
                     <div *ngIf="t.status !== 'Selesai' && t.status !== 'Solved' && t.deadline" 
@@ -167,6 +190,9 @@
                     <span *ngIf="!t.deadline && t.status !== 'Selesai' && t.status !== 'Solved'">-</span>
                   </td>
                   <td>
+                    {{ t.teknisi || '-' }}
+                  </td>
+                  <td>
                     <!-- TOMBOL LIHAT RIWAYAT/CATATAN TEKNISI -->
                     <ion-button fill="clear" size="small" (click)="openHistoryModal(t.id)" title="Riwayat Teknisi">
                       <ion-icon name="time-outline" style="color: var(--primary);"></ion-icon>
@@ -179,7 +205,7 @@
                 </tr>
 
                 <tr *ngIf="filteredTickets.length === 0">
-                  <td colspan="10" class="empty-row">Belum ada tiket yang dibuat</td>
+                  <td colspan="12" class="empty-row">Belum ada tiket yang dibuat</td>
                 </tr>
               </tbody>
             </table>

@@ -39,7 +39,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
-    path: 'users', // Route untuk CRUD User (Admin)
+    path: 'users',
     loadComponent: () => import('./Admin/users/users.page').then(m => m.UsersPage),
     canActivate: [AuthGuard]
   },
@@ -83,6 +83,12 @@ export const routes: Routes = [
     loadComponent: () => import('./Admin/feedback/feedback.page').then(m => m.LaporanFeedbackPage),
     canActivate: [AuthGuard]
   },
+  // ✅ TAMBAHKAN ROUTE SCHEDULE PREVENTIVE DI SINI (Admin)
+  {
+    path: 'schedule',
+    loadComponent: () => import('./Admin/schedule/schedule.page').then(m => m.SchedulePage),
+    canActivate: [AuthGuard]
+  },
 
   // ===== HALAMAN TEKNISI =====
   {
@@ -122,7 +128,6 @@ export const routes: Routes = [
     loadComponent: () => import('./Users/feedback/feedback.page').then(m => m.FeedbackPage),
     canActivate: [AuthGuard]
   },
-  // ✅ ROUTE ASET USER DIPERBAIKI (sesuai dengan navigasi goToInputAset)
   {
     path: 'users/input-aset',
     loadComponent: () => import('./Users/asset/asset.page').then(m => m.AssetPage),

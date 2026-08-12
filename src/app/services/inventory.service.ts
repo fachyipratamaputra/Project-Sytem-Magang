@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, catchError, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface InventoryItem {
@@ -30,10 +30,20 @@ export class InventoryService {
     return new HttpHeaders({ Authorization: `Bearer ${token || ''}` });
   }
 
-  // Ambil semua data aset untuk dropdown (Admin)
   getAll(): Observable<InventoryItem[]> {
     return this.http
       .get<ApiResponse<InventoryItem[]>>(this.apiUrl, { headers: this.getHeaders() })
-      .pipe(map((res) => res.data));
+      .pipe(
+        map((res) => {
+          if (res && res.data) {
+            return res.data;
+          }
+          return [];
+        }),
+        catchError((err) => {
+          console.error('InventoryService error:', err);
+          return throwError(() => new Error('Gagal memuat data aset'));
+        })
+      );
   }
 }

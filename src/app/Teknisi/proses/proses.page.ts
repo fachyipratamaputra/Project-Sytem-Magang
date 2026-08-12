@@ -105,7 +105,7 @@ export class ProsesTiketPage implements OnInit, OnDestroy {
 
     this.refreshInterval = setInterval(() => {
       this.loadTickets(true);
-    }, 8000);
+    }, 100000);
   }
 
   loadTickets(isSilent = false) {
@@ -113,9 +113,35 @@ export class ProsesTiketPage implements OnInit, OnDestroy {
     this.loadError = '';
     this.ticketService.getAssignedMe().subscribe({
       next: (data: AssignedTicketApiRow[]) => {
-        this.tickets = data
+        const freshTickets = data
           .filter((row) => row.status_pengerjaan !== 'Menunggu Diproses')
           .map(this.mapToProsesTicket);
+
+        if (isSilent) {
+          // 🔧 DIPERBAIKI: auto-refresh diam-diam (tiap 8 detik) sebelumnya
+          // langsung menimpa seluruh array `tickets`, termasuk field
+          // `progress` dan `catatan` yang mungkin sedang diketik user tapi
+          // belum disimpan. Sekarang cuma field lain (status, is_paused,
+          // deadline, dll) yang diperbarui dari server -- progress dan
+          // catatan yang ada di layar dipertahankan sampai user sendiri
+          // yang menyimpan (Update/Selesai/Lanjutkan).
+          this.tickets = freshTickets.map((fresh) => {
+            const existing = this.tickets.find((t) => t.idTicket === fresh.idTicket);
+            if (existing) {
+              return {
+                ...fresh,
+                progress: existing.progress,
+                catatan: existing.catatan,
+                isHistoryOpen: existing.isHistoryOpen,
+                history: existing.history,
+              };
+            }
+            return fresh;
+          });
+        } else {
+          this.tickets = freshTickets;
+        }
+
         this.isLoading = false;
       },
       error: (err: any) => {
