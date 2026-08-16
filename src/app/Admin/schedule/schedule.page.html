@@ -193,22 +193,19 @@
             <p>Klik tombol "Buat Schedule" untuk menambahkan jadwal preventive</p>
           </div>
 
-          <!-- ===== GANTT CHART (DI BAWAH CARD) ===== -->
-          <div class="chart-section" *ngIf="chartData.length > 0">
+          <!-- ===== 🔥 BAR CHART PER DEPARTEMEN (VERTIKAL) ===== -->
+          <div class="chart-section" *ngIf="deptChartData.length > 0">
             <div class="chart-header">
-              <h3 class="chart-title">📊 Timeline Pemeliharaan 2026</h3>
+              <h3 class="chart-title">📊 Status Pemeliharaan per Departemen</h3>
               <div class="chart-legend">
                 <span class="legend-item">
-                  <span class="legend-color plan"></span> Preventive Plan
+                  <span class="legend-color plan"></span> Belum Dikerjakan
                 </span>
                 <span class="legend-item">
                   <span class="legend-color progress"></span> In Progress
                 </span>
                 <span class="legend-item">
-                  <span class="legend-color complete"></span> Complete
-                </span>
-                <span class="legend-item">
-                  <span class="legend-color approve"></span> Complete & Approve
+                  <span class="legend-color approve"></span> Selesai
                 </span>
                 <span class="legend-total">
                   <ion-icon name="desktop-outline"></ion-icon> Total PC: {{ totalPcPreventive }}
@@ -216,39 +213,80 @@
               </div>
             </div>
 
-            <div class="chart-scroll-wrapper">
-              <table class="chart-table">
+            <div class="bar-chart-wrapper">
+              <div class="bar-chart-group" *ngFor="let dept of deptChartData">
+                <div class="bar-chart-bars">
+                  <div class="bar-chart-bar-wrapper">
+                    <span class="bar-chart-value" *ngIf="dept.belum > 0">{{ dept.belum }}</span>
+                    <div
+                      class="bar-chart-bar plan"
+                      [style.height.%]="getBarHeightPercent(dept.belum)"
+                      (click)="dept.belum > 0 && openStatusDetail(dept.departemen, 'belum')"
+                      [class.clickable]="dept.belum > 0"
+                    ></div>
+                  </div>
+                  <div class="bar-chart-bar-wrapper">
+                    <span class="bar-chart-value" *ngIf="dept.proses > 0">{{ dept.proses }}</span>
+                    <div
+                      class="bar-chart-bar progress"
+                      [style.height.%]="getBarHeightPercent(dept.proses)"
+                      (click)="dept.proses > 0 && openStatusDetail(dept.departemen, 'proses')"
+                      [class.clickable]="dept.proses > 0"
+                    ></div>
+                  </div>
+                  <div class="bar-chart-bar-wrapper">
+                    <span class="bar-chart-value" *ngIf="dept.selesai > 0">{{ dept.selesai }}</span>
+                    <div
+                      class="bar-chart-bar approve"
+                      [style.height.%]="getBarHeightPercent(dept.selesai)"
+                      (click)="dept.selesai > 0 && openStatusDetail(dept.departemen, 'selesai')"
+                      [class.clickable]="dept.selesai > 0"
+                    ></div>
+                  </div>
+                </div>
+                <span class="bar-chart-label">{{ dept.departemen }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== 🔥 TABEL REKAPAN (DATA DARI DATABASE) ===== -->
+          <div class="rekapan-section" *ngIf="rekapanData.length > 0">
+            <div class="chart-header">
+              <h3 class="chart-title">📋 Rekapan Pemeliharaan per Departemen</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="rekapan-table">
                 <thead>
                   <tr>
-                    <th *ngFor="let month of chartMonths" style="min-width: 80px; text-align: center;">
-                      {{ month }}
-                    </th>
+                    <th>Departemen</th>
+                    <th>Schedule</th>
+                    <th>Asset</th>
+                    <th>Durasi</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Teknisi</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let item of chartData">
-                    <td *ngFor="let month of chartMonths; let j = index">
-                      <div class="chart-cell-wrapper">
-                        <div class="chart-bar"
-                             [style.background]="(j >= item.startOffset && j <= item.endOffset) ? getChartStatusColor(item.status) : 'transparent'"
-                             [style.width.%]="(j >= item.startOffset && j <= item.endOffset) ? 100 : 0"
-                             [title]="item.departemen + ' - ' + item.nama_schedule + ' (' + getChartStatusLabel(item.status) + ')'">
-                          <span *ngIf="j >= item.startOffset && j <= item.endOffset" class="chart-label">
-                            {{ getDaysPerMonth(item, j) }}d
-                          </span>
-                        </div>
-                      </div>
-                    </td>
+                  <tr *ngFor="let item of rekapanData">
+                    <td>{{ item.departemen }}</td>
+                    <td>{{ item.schedule }}</td>
+                    <td>{{ item.totalAset }}</td>
+                    <td>{{ item.durationDays }} hari</td>
+                    <td>{{ item.startDate | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ item.endDate | date:'dd/MM/yyyy' }}</td>
+                    <td>{{ item.teknisi }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <div *ngIf="chartData.length === 0 && filteredDepartments.length > 0" class="chart-empty">
+          <div *ngIf="deptChartData.length === 0 && filteredDepartments.length > 0" class="chart-empty">
             <ion-icon name="calendar-outline"></ion-icon>
             <p>Belum ada data untuk ditampilkan di chart</p>
           </div>
+
         </ng-container>
 
         <!-- ==================== VIEW DETAIL ==================== -->
@@ -379,8 +417,6 @@
           </div>
           <div class="form-group">
             <label class="form-label">Sub Kategori</label>
-            <!-- 🔥 FIX: tambah fallback camelCase (idSubKategori/namaSubKategori) 
-                 karena SubKategoriService memetakan field backend jadi camelCase -->
             <ion-select [(ngModel)]="formData.id_sub_kategori" class="form-select" placeholder="Pilih Sub Kategori">
               <ion-select-option [value]="null">Tidak Ada</ion-select-option>
               <ion-select-option *ngFor="let sk of subKategoriOptions" [value]="sk.idSubKategori || sk.id_sub_kategori || sk.id">
@@ -425,6 +461,7 @@
         </div>
       </div>
     </ion-content>
+
     <ion-footer>
       <ion-toolbar class="ion-padding-horizontal">
         <ion-buttons slot="start">
@@ -454,6 +491,7 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
+
     <ion-content>
       <ion-searchbar placeholder="Cari aset..." (ionInput)="filterAssets($event)" debounce="300"></ion-searchbar>
       <ion-list>
@@ -470,21 +508,64 @@
       <ion-item *ngIf="filteredAssetList.length === 0">
         <ion-label class="ion-text-center">Tidak ada aset terkait</ion-label>
       </ion-item>
-      <ion-footer>
-        <ion-toolbar>
-          <ion-title size="small">Total: {{ filteredAssetList.length }} aset</ion-title>
-          <ion-buttons slot="end" *ngIf="assetTotalPages > 1">
-            <ion-button (click)="assetPrevPage()" [disabled]="assetCurrentPage === 1">
-              <ion-icon name="chevron-back-outline"></ion-icon>
-            </ion-button>
-            <span style="margin: 0 8px;">{{ assetCurrentPage }} / {{ assetTotalPages }}</span>
-            <ion-button (click)="assetNextPage()" [disabled]="assetCurrentPage === assetTotalPages">
-              <ion-icon name="chevron-forward-outline"></ion-icon>
-            </ion-button>
-          </ion-buttons>
-          <ion-button slot="end" (click)="closeAssetModal()">Tutup</ion-button>
-        </ion-toolbar>
-      </ion-footer>
     </ion-content>
+
+    <ion-footer>
+      <ion-toolbar>
+        <ion-title size="small">Total: {{ filteredAssetList.length }} aset</ion-title>
+        <ion-buttons slot="end" *ngIf="assetTotalPages > 1">
+          <ion-button (click)="assetPrevPage()" [disabled]="assetCurrentPage === 1">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+          </ion-button>
+          <span style="margin: 0 8px;">{{ assetCurrentPage }} / {{ assetTotalPages }}</span>
+          <ion-button (click)="assetNextPage()" [disabled]="assetCurrentPage === assetTotalPages">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+        <ion-button slot="end" (click)="closeAssetModal()">Tutup</ion-button>
+      </ion-toolbar>
+    </ion-footer>
+  </ng-template>
+</ion-modal>
+
+<!-- ===== MODAL DETAIL STATUS (KLIK BAR CHART) ===== -->
+<ion-modal [isOpen]="isStatusModalOpen" (didDismiss)="closeStatusModal()" cssClass="asset-modal">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ statusModalTitle }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeStatusModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <div *ngIf="statusModalLoading" class="ion-padding ion-text-center">
+        Memuat detail...
+      </div>
+      <ion-list *ngIf="!statusModalLoading">
+        <ion-item *ngFor="let asset of statusModalItems">
+          <ion-label>
+            <h2>{{ asset.kode_asset }} - {{ asset.nama_barang }}</h2>
+            <p><strong>Schedule:</strong> {{ asset.nama_schedule }}</p>
+            <p><strong>Pemegang:</strong> {{ asset.pemegang || 'Belum ditentukan' }}</p>
+            <p><strong>Last Maintenance:</strong> {{ formatDate(asset.last_maintenance) }}</p>
+          </ion-label>
+        </ion-item>
+        <ion-item *ngIf="statusModalItems.length === 0">
+          <ion-label class="ion-text-center">Tidak ada data untuk kombinasi ini</ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+    <ion-footer>
+      <ion-toolbar>
+        <ion-title size="small">Total: {{ statusModalItems.length }} PC/aset</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeStatusModal()">Tutup</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
   </ng-template>
 </ion-modal>

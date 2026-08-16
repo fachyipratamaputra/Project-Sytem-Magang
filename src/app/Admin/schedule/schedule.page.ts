@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 import {
   IonContent,
   IonHeader,
@@ -31,7 +33,7 @@ import {
   IonModal,
   IonButtons,
   IonFooter,
-  IonText,
+  IonText
 } from '@ionic/angular/standalone';
 import { ScheduleService, DepartmentSchedule, Schedule } from '../../services/schedule.service';
 import { DepartemenService } from '../../services/departemen.services';
@@ -76,7 +78,7 @@ import { InventoryService } from '../../services/inventory.service';
     IonModal,
     IonButtons,
     IonFooter,
-    IonText,
+    IonText
   ],
 })
 export class SchedulePage implements OnInit {
@@ -111,6 +113,7 @@ export class SchedulePage implements OnInit {
   isModalOpen = false;
   isEditing = false;
   formData: any = {
+    id: null,
     nama: '',
     id_departemen: null,
     id_kategori: null,
@@ -133,10 +136,21 @@ export class SchedulePage implements OnInit {
   assetCurrentPage = 1;
   assetPageSize = 10;
 
-  // ===== BAGAN / GANTT CHART =====
+  // ===== CHART DATA =====
   chartData: any[] = [];
-  chartMonths: string[] = [];
   totalPcPreventive = 0;
+
+  // ===== BAR CHART PER DEPARTEMEN =====
+  deptChartData: { departemen: string; belum: number; proses: number; selesai: number }[] = [];
+
+  // ===== REKAPAN DATA (dari database) =====
+  rekapanData: any[] = [];
+
+  // ===== MODAL DETAIL STATUS =====
+  isStatusModalOpen = false;
+  statusModalTitle = '';
+  statusModalItems: any[] = [];
+  statusModalLoading = false;
 
   constructor(
     private router: Router,
@@ -158,10 +172,10 @@ export class SchedulePage implements OnInit {
     this.isLoading = true;
     this.scheduleService.getDepartmentsWithSchedules().subscribe({
       next: (data) => {
-        this.departments = data;
-        this.filteredDepartments = data;
+        this.departments = data || [];
+        this.filteredDepartments = data || [];
         this.isLoading = false;
-        this.buildChartData();
+        this.onFilterChange();
       },
       error: (err: any) => {
         console.error('Gagal load departments', err);
@@ -171,126 +185,217 @@ export class SchedulePage implements OnInit {
     });
   }
 
-  // ===== BUILD CHART DATA =====
+  // ===== 🔥 BUILD CHART & REKAPAN (pakai field asli dari backend) =====
   buildChartData() {
-    const baseDate = new Date(2026, 0, 1);
-    this.chartMonths = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-    ];
-
-    if (!this.departments || this.departments.length === 0) {
+    if (!this.filteredDepartments || this.filteredDepartments.length === 0) {
       this.chartData = [];
       this.totalPcPreventive = 0;
+      this.deptChartData = [];
+      this.rekapanData = [];
       return;
     }
 
     const allItems: any[] = [];
+    const rekapanItems: any[] = [];
     let totalAsset = 0;
 
     for (const dept of this.filteredDepartments) {
+      if (!dept.schedules) continue;
+
       for (const sched of dept.schedules) {
         if (!sched.is_active) continue;
-        totalAsset += sched.total_aset || 0;
 
-        const startDate = new Date(sched.created_at);
-        let durationDays = sched.frekuensi;
+        const s = sched as any;
+        const totalAset = sched.total_aset || 0;
+        totalAsset += totalAset;
+
+        // 🔥 field asli dari backend: completed_aset, max_progress, status_pengerjaan
+        const selesaiCount = Math.min(s.completed_aset ?? 0, totalAset);
+        const maxProgress = s.max_progress ?? 0;
+        const statusPengerjaan = s.status_pengerjaan;
+
+        let prosesCount = 0;
+        if (selesaiCount < totalAset && (maxProgress > 0 || statusPengerjaan)) {
+          // ada indikasi pekerjaan sudah dimulai (ada tiket/assignment berjalan)
+          prosesCount = totalAset - selesaiCount;
+        }
+
+        const belumCount = Math.max(0, totalAset - selesaiCount - prosesCount);
+
+        let status = 'plan';
+        if (selesaiCount === totalAset && totalAset > 0) {
+          status = 'approve';
+        } else if (prosesCount > 0) {
+          status = 'progress';
+        }
+
+        // Data chart
+        allItems.push({
+          id_schedule: sched.id_schedule,
+          departemen: dept.nama_departemen,
+          nama_schedule: sched.nama_schedule || s.nama || '-',
+          total_aset: totalAset,
+          belum_count: belumCount,
+          proses_count: prosesCount,
+          selesai_count: selesaiCount,
+          status,
+        });
+
+        // REKAPAN DATA (dari database)
+        const startDate = sched.created_at ? new Date(sched.created_at) : new Date();
+        let durationDays = sched.frekuensi || 1;
         if (sched.satuan === 'minggu') durationDays *= 7;
         else if (sched.satuan === 'bulan') durationDays *= 30;
         else if (sched.satuan === 'tahun') durationDays *= 365;
-        const endDateCalc = new Date(startDate);
-        endDateCalc.setDate(endDateCalc.getDate() + durationDays);
+        const endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + durationDays);
 
-        const startOffset = this.getMonthOffset(startDate, baseDate);
-        const endOffset = this.getMonthOffset(endDateCalc, baseDate);
+        // Ambil nama teknisi dari database (teknisi_list)
+        let teknisi = sched.teknisi_list || 'Belum ditentukan';
+        if (Array.isArray(teknisi)) {
+          teknisi = teknisi.join(', ');
+        }
 
-        if (endOffset < 0 || startOffset > 11) continue;
-
-        // 🔥 Ambil progress dari assignment (sementara random, nanti dari API)
-        const progress = Math.floor(Math.random() * 101);
-        let status = 'plan';
-        if (progress >= 100) status = 'approve';
-        else if (progress >= 80) status = 'complete';
-        else if (progress > 0) status = 'progress';
-
-        allItems.push({
+        rekapanItems.push({
           departemen: dept.nama_departemen,
-          nama_schedule: sched.nama_schedule || sched.nama || '-',
-          total_aset: sched.total_aset || 0,
-          startOffset: Math.max(0, startOffset),
-          endOffset: Math.min(11, endOffset),
+          schedule: sched.nama_schedule || sched.nama || '-',
+          totalAset,
           durationDays,
-          status,
-          progress,
+          startDate,
+          endDate,
+          teknisi: teknisi,
         });
       }
     }
 
     this.totalPcPreventive = totalAsset;
     this.chartData = allItems;
+    this.rekapanData = rekapanItems;
+
+    this.buildDeptChart();
   }
 
-  getMonthOffset(date: Date, base: Date): number {
-    const diffMonths = (date.getFullYear() - base.getFullYear()) * 12 + (date.getMonth() - base.getMonth());
-    return diffMonths;
+  buildDeptChart() {
+    const deptMap: { [dept: string]: { belum: number; proses: number; selesai: number } } = {};
+    for (const item of this.chartData) {
+      if (!deptMap[item.departemen]) {
+        deptMap[item.departemen] = { belum: 0, proses: 0, selesai: 0 };
+      }
+      deptMap[item.departemen].belum += item.belum_count;
+      deptMap[item.departemen].proses += item.proses_count;
+      deptMap[item.departemen].selesai += item.selesai_count;
+    }
+    this.deptChartData = Object.keys(deptMap).map((dept) => ({
+      departemen: dept,
+      belum: deptMap[dept].belum,
+      proses: deptMap[dept].proses,
+      selesai: deptMap[dept].selesai,
+    }));
   }
 
-  // 🔥 Warna untuk chart
-  getChartStatusColor(status: string): string {
-    const colors: any = {
-      plan: '#1e293b',      // hitam/gelap
-      progress: '#f59e0b',  // kuning
-      complete: '#2563eb',  // biru
-      approve: '#22c55e',   // hijau
+  getMaxBarValue(): number {
+    let max = 0;
+    for (const d of this.deptChartData) {
+      max = Math.max(max, d.belum, d.proses, d.selesai);
+    }
+    return max || 1;
+  }
+
+  getBarHeightPercent(value: number): number {
+    return (value / this.getMaxBarValue()) * 100;
+  }
+
+  openStatusDetail(departemen: string, statusKey: 'belum' | 'proses' | 'selesai') {
+    const labelMap: any = {
+      belum: 'Belum Dikerjakan',
+      proses: 'In Progress',
+      selesai: 'Selesai',
     };
-    return colors[status] || '#94a3b8';
+    this.statusModalTitle = `${departemen} - ${labelMap[statusKey]}`;
+    this.statusModalItems = [];
+    this.statusModalLoading = true;
+    this.isStatusModalOpen = true;
+
+    const matchStatuses =
+      statusKey === 'belum' ? ['plan'] :
+      statusKey === 'proses' ? ['progress'] :
+      ['approve', 'complete'];
+
+    const matchingSchedules = this.chartData.filter(
+      (item) => item.departemen === departemen && matchStatuses.includes(item.status)
+    );
+
+    if (matchingSchedules.length === 0) {
+      this.statusModalLoading = false;
+      return;
+    }
+
+    const calls = matchingSchedules.map((sched) =>
+      this.scheduleService.getAssetsBySchedule(sched.id_schedule).pipe(
+        map((assets: any[]) =>
+          (assets || []).map((a) => ({
+            ...a,
+            nama_schedule: sched.nama_schedule,
+          }))
+        )
+      )
+    );
+
+    forkJoin(calls).subscribe({
+      next: (results: any[][]) => {
+        this.statusModalItems = ([] as any[]).concat(...results);
+        this.statusModalLoading = false;
+      },
+      error: (err) => {
+        console.error('Gagal memuat detail aset', err);
+        this.statusModalLoading = false;
+      },
+    });
   }
 
-  getChartStatusLabel(status: string): string {
-    const labels: any = {
-      plan: 'Preventive Plan',
-      progress: 'In Progress',
-      complete: 'Complete',
-      approve: 'Complete & Approve',
-    };
-    return labels[status] || status;
-  }
-
-  getDaysPerMonth(item: any, monthIndex: number): number {
-    const totalMonths = item.endOffset - item.startOffset + 1;
-    if (totalMonths <= 0) return 0;
-    return Math.round(item.durationDays / totalMonths);
+  closeStatusModal() {
+    this.isStatusModalOpen = false;
+    this.statusModalItems = [];
   }
 
   // ===== FILTER =====
   filterDepartments(event: any) {
-    const query = event.target.value.toLowerCase().trim();
-    this.filteredDepartments = this.departments.filter((d) =>
-      d.nama_departemen.toLowerCase().includes(query)
-    );
-    this.buildChartData();
+    this.searchTerm = event?.target?.value || '';
+    this.onFilterChange();
   }
 
   onFilterChange() {
     let filtered = [...this.departments];
+
     if (this.searchTerm) {
-      const q = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(d => d.nama_departemen.toLowerCase().includes(q));
+      const q = this.searchTerm.toLowerCase().trim();
+      filtered = filtered.filter((d) =>
+        d.nama_departemen.toLowerCase().includes(q) ||
+        d.schedules.some((s) => (s.nama_schedule || s.nama || '').toLowerCase().includes(q))
+      );
     }
+
     if (this.filterDept) {
-      filtered = filtered.filter(d => d.nama_departemen === this.filterDept);
+      filtered = filtered.filter(
+        (d) => d.nama_departemen === this.filterDept || String(d.id_departemen) === String(this.filterDept)
+      );
     }
+
     if (this.filterStatus) {
       const isActive = this.filterStatus === 'Aktif';
-      filtered = filtered.map(dept => ({
-        ...dept,
-        schedules: dept.schedules.filter(s => s.is_active === isActive)
-      })).filter(dept => dept.schedules.length > 0 || this.filterStatus === '');
+      filtered = filtered
+        .map((dept) => ({
+          ...dept,
+          schedules: dept.schedules.filter((s) => s.is_active === isActive),
+        }))
+        .filter((dept) => dept.schedules.length > 0);
     }
+
     this.filteredDepartments = filtered;
     this.buildChartData();
   }
 
+  // ===== NAVIGATION & UI =====
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
@@ -317,6 +422,7 @@ export class SchedulePage implements OnInit {
   openCreateModal(deptId?: number) {
     this.isEditing = false;
     this.formData = {
+      id: null,
       nama: '',
       id_departemen: deptId || null,
       id_kategori: null,
@@ -332,7 +438,6 @@ export class SchedulePage implements OnInit {
     this.availableAssets = [];
 
     if (deptId) {
-      this.formData.id_departemen = deptId;
       setTimeout(() => {
         this.onDepartemenChange();
       }, 300);
@@ -348,16 +453,21 @@ export class SchedulePage implements OnInit {
   editSchedule(schedule: Schedule) {
     this.isEditing = true;
     const sId = schedule.id_schedule!;
+    const sched = schedule as any;
+
+    const mainTeknisi = schedule.id_teknisi_utama ?? (Array.isArray(sched.id_teknis) ? sched.id_teknis[0] : null);
+    const pendampingTeknisi = schedule.id_teknisi_pendamping ?? (Array.isArray(sched.id_teknis) ? sched.id_teknis[1] : null);
+
     this.formData = {
       id: sId,
-      nama: schedule.nama_schedule || '',
+      nama: schedule.nama_schedule || schedule.nama || '',
       id_departemen: schedule.id_departemen,
       id_kategori: schedule.id_kategori,
       id_sub_kategori: schedule.id_sub_kategori,
       frekuensi: schedule.frekuensi,
-      satuan: schedule.satuan,
-      id_teknisi_utama: schedule.id_teknisi_utama,
-      id_teknisi_pendamping: schedule.id_teknisi_pendamping,
+      satuan: schedule.satuan || 'bulan',
+      id_teknisi_utama: mainTeknisi,
+      id_teknisi_pendamping: pendampingTeknisi,
       deskripsi: schedule.deskripsi || '',
       aset_list: [],
     };
@@ -369,33 +479,34 @@ export class SchedulePage implements OnInit {
 
     this.scheduleService.getAssetsBySchedule(sId).subscribe({
       next: (data: any[]) => {
-        this.formData.aset_list = data.map((a: any) => a.kode_asset);
+        this.formData.aset_list = (data || []).map((a: any) => a.kode_asset || a.id_asset);
       },
       error: (err: any) => console.error('Gagal load aset', err),
     });
+
     this.isModalOpen = true;
   }
 
   loadDropdownOptions() {
     this.departemenService.getAll().subscribe((data: any) => {
-      this.departemenOptions = Array.isArray(data) ? data : data.data;
+      this.departemenOptions = Array.isArray(data) ? data : data?.data || [];
     });
 
     this.kategoriService.getAll().subscribe((data: any) => {
-      this.kategoriOptions = Array.isArray(data) ? data : data.data;
+      this.kategoriOptions = Array.isArray(data) ? data : data?.data || [];
     });
 
     this.subKategoriService.getAll().subscribe((data: any) => {
-      this.allSubKategori = Array.isArray(data) ? data : data.data;
+      this.allSubKategori = Array.isArray(data) ? data : data?.data || [];
     });
 
     this.teknisiService.getAll().subscribe((data: any) => {
-      this.teknisiOptions = Array.isArray(data) ? data : data.data;
+      this.teknisiOptions = Array.isArray(data) ? data : data?.data || [];
     });
 
     this.inventoryService.getAll().subscribe({
       next: (data: any) => {
-        this.allAssets = Array.isArray(data) ? data : data.data;
+        this.allAssets = Array.isArray(data) ? data : data?.data || [];
         if (this.formData.id_departemen) {
           this.onDepartemenChange();
         }
@@ -404,15 +515,15 @@ export class SchedulePage implements OnInit {
         console.error('❌ Gagal load inventory:', err);
         this.allAssets = [];
         this.availableAssets = [];
-      }
+      },
     });
   }
 
   onDepartemenChange() {
     const selectedDeptId = this.formData.id_departemen;
     if (selectedDeptId) {
-      const selectedDept = this.departemenOptions.find((d: any) => 
-        Number(d.id_departemen || d.id) === Number(selectedDeptId)
+      const selectedDept = this.departemenOptions.find(
+        (d: any) => Number(d.id_departemen || d.id) === Number(selectedDeptId)
       );
       const deptName = selectedDept?.nama_departemen || selectedDept?.nama || '';
 
@@ -447,11 +558,7 @@ export class SchedulePage implements OnInit {
 
     if (selectedKatId) {
       this.subKategoriOptions = this.allSubKategori.filter((sk: any) => {
-        const katId = sk.idKategori ??
-                      sk.id_kategori ??
-                      sk.kategori_id ??
-                      sk.id_master_kategori;
-
+        const katId = sk.idKategori ?? sk.id_kategori ?? sk.kategori_id ?? sk.id_master_kategori;
         return katId !== undefined && katId !== null && Number(katId) === Number(selectedKatId);
       });
     } else {
@@ -465,6 +572,10 @@ export class SchedulePage implements OnInit {
       return;
     }
 
+    const teknisiList: number[] = [];
+    if (this.formData.id_teknisi_utama) teknisiList.push(this.formData.id_teknisi_utama);
+    if (this.formData.id_teknisi_pendamping) teknisiList.push(this.formData.id_teknisi_pendamping);
+
     const payload = {
       nama_schedule: this.formData.nama,
       id_departemen: this.formData.id_departemen,
@@ -472,19 +583,25 @@ export class SchedulePage implements OnInit {
       id_sub_kategori: this.formData.id_sub_kategori,
       frekuensi: this.formData.frekuensi,
       satuan: this.formData.satuan,
-      id_teknis: this.formData.id_teknisi_utama ? [this.formData.id_teknisi_utama] : [],
+      id_teknis: teknisiList,
       deskripsi: this.formData.deskripsi,
       aset_list: this.formData.aset_list,
     };
 
     if (this.isEditing) {
-      this.scheduleService.update(this.formData.id, payload).subscribe({
+      const updateId = this.formData.id;
+      if (!updateId) {
+        alert('ID schedule tidak ditemukan!');
+        return;
+      }
+      this.scheduleService.update(updateId, payload).subscribe({
         next: () => {
           this.isModalOpen = false;
           this.loadData();
+          alert('Schedule berhasil diupdate!');
         },
         error: (err: any) => {
-          console.error('Gagal update', err);
+          console.error('❌ Gagal update:', err);
           alert('Gagal update schedule: ' + (err?.error?.message || 'Terjadi kesalahan'));
         },
       });
@@ -493,9 +610,10 @@ export class SchedulePage implements OnInit {
         next: () => {
           this.isModalOpen = false;
           this.loadData();
+          alert('Schedule berhasil dibuat!');
         },
         error: (err: any) => {
-          console.error('Gagal tambah', err);
+          console.error('❌ Gagal tambah:', err);
           alert('Gagal menambah schedule: ' + (err?.error?.message || 'Terjadi kesalahan'));
         },
       });
@@ -518,8 +636,7 @@ export class SchedulePage implements OnInit {
       next: () => {
         schedule.is_active = newStatus;
         if (this.selectedDepartment) {
-          const totalAktif = this.selectedDepartment.schedules.filter((s) => s.is_active).length;
-          this.selectedDepartment.total_aktif = totalAktif;
+          this.selectedDepartment.total_aktif = this.selectedDepartment.schedules.filter((s) => s.is_active).length;
         } else {
           this.loadData();
         }
@@ -527,7 +644,7 @@ export class SchedulePage implements OnInit {
       error: (err: any) => {
         console.error('Gagal mengubah status schedule', err);
         alert('Gagal mengubah status schedule');
-      }
+      },
     });
   }
 
@@ -547,11 +664,12 @@ export class SchedulePage implements OnInit {
         error: (err: any) => {
           console.error('Gagal menghapus schedule', err);
           alert('Gagal menghapus schedule');
-        }
+        },
       });
     }
   }
 
+  // ===== MODAL ASET =====
   openAssetModal(schedule: Schedule) {
     this.assetModalScheduleId = schedule.id_schedule!;
     this.assetModalScheduleName = schedule.nama_schedule || '';
@@ -559,15 +677,15 @@ export class SchedulePage implements OnInit {
 
     this.scheduleService.getAssetsBySchedule(this.assetModalScheduleId).subscribe({
       next: (data: any[]) => {
-        this.assetList = data;
-        this.filteredAssetList = data;
+        this.assetList = data || [];
+        this.filteredAssetList = data || [];
         this.assetCurrentPage = 1;
       },
       error: (err: any) => {
         console.error('Gagal memuat aset terkait', err);
         this.assetList = [];
         this.filteredAssetList = [];
-      }
+      },
     });
   }
 
@@ -578,7 +696,7 @@ export class SchedulePage implements OnInit {
   }
 
   filterAssets(event: any) {
-    const query = event.target.value.toLowerCase().trim();
+    const query = event?.target?.value?.toLowerCase().trim() || '';
     this.assetSearchQuery = query;
     if (!query) {
       this.filteredAssetList = [...this.assetList];
@@ -614,14 +732,17 @@ export class SchedulePage implements OnInit {
     }
   }
 
+  // ===== HELPER METHODS =====
   formatDate(dateString: string | undefined | null): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
-    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    return isNaN(date.getTime())
+      ? dateString
+      : date.toLocaleDateString('id-ID', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
   }
 
   getStatusColor(schedule: Schedule): string {
@@ -632,10 +753,15 @@ export class SchedulePage implements OnInit {
     return schedule.is_active ? 'Aktif' : 'Nonaktif';
   }
 
+  // ===== 🔥 FIX: pakai completed_aset asli dari backend =====
   getProgress(schedule: Schedule): number {
-    return (schedule as any).progress || 0;
+    const s = schedule as any;
+    const totalAset = schedule.total_aset || 1;
+    const completedAset = Math.min(s.completed_aset ?? 0, totalAset);
+    return Math.round((completedAset / totalAset) * 100);
   }
 
+  // ===== ROUTING NAVIGATION =====
   goToDashboard() { this.router.navigate(['/dashboard']); }
   goToListTicket() { this.router.navigate(['/list-ticket']); }
   goToApprovalTicket() { this.router.navigate(['/approval-ticket']); }

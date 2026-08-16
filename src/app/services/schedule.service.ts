@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AuthService } from '../services/auth.service'; // Sesuaikan jika folder Services huruf besar
+import { AuthService } from '../services/auth.service';
 
 export interface Schedule {
   id: number;
@@ -23,6 +23,11 @@ export interface Schedule {
   teknisi_list?: string;
   next_maintenance?: string;
   total_aset?: number;
+  progress?: number;
+  status_pengerjaan?: string;
+  completed_aset?: number;
+  progress_dates?: string[];
+  max_progress?: number;   // 🔥 TAMBAHKAN
 }
 
 export interface DepartmentSchedule {
