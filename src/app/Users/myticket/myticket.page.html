@@ -4,9 +4,9 @@
     <div class="sidebar" [class.open]="isSidebarOpen">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <div class="logo-icon-wrapper">
-            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
-          </div>
+         <div class="logo-icon-wrapper">
+  <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+</div>
           <span class="logo-text">Helpdesk<br>Ticketing System</span>
         </div>
         <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
@@ -122,10 +122,11 @@
                   <th>Lampiran</th>
                   <th>Tanggal</th>
                   <th>Status</th>
-                  <th style="min-width: 140px;">Progres</th>   <!-- 🔥 KOLOM PROGRES -->
+                  <th style="min-width: 160px;">Catatan Reject</th>
+                  <th style="min-width: 140px;">Progres</th>
                   <th style="min-width: 130px;">Deadline</th>
                   <th style="min-width: 120px;">Teknisi</th>
-                  <th style="width: 110px;">Aksi</th>
+                  <th style="width: 170px;">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,7 +150,14 @@
                   <td>
                     <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ getStatusText(t.status) }}</span>
                   </td>
-                  <!-- 🔥 KOLOM PROGRES -->
+                  <!-- 🔥 KOLOM BARU: Catatan Reject, terpisah dari kolom Status -->
+                  <td>
+                    <span *ngIf="isRejected(t.status) && t.catatanApproval" class="reject-reason-text">
+                      {{ t.catatanApproval }}
+                    </span>
+                    <span *ngIf="!isRejected(t.status) || !t.catatanApproval">-</span>
+                  </td>
+                  <!-- KOLOM PROGRES -->
                   <td>
                     <div *ngIf="t.progress !== undefined && t.progress !== null">
                       <div class="progress-wrapper" style="display: flex; align-items: center; gap: 6px;">
@@ -166,10 +174,14 @@
                       <span *ngIf="t.statusPengerjaan" style="font-size: 0.7rem; color: #64748b; display: block; margin-top: 2px;">
                         {{ t.statusPengerjaan }}
                       </span>
+                      <!-- 🔵 BADGE SUDAH DI-APPROVE USER (khusus preventive) -->
+                      <span *ngIf="t.isPreventive && t.userKonfirmasi === 1" style="font-size: 0.7rem; color: #2563eb; display: block; margin-top: 2px; font-weight: 600;">
+                        ✅ Disetujui Anda
+                      </span>
                     </div>
                     <span *ngIf="t.progress === undefined || t.progress === null">-</span>
                   </td>
-                  <!-- 🔥 END KOLOM PROGRES -->
+                  <!-- END KOLOM PROGRES -->
                   <td>
                     <!-- Timer Countdown / Status Jeda -->
                     <div *ngIf="t.status !== 'Selesai' && t.status !== 'Solved' && t.deadline" 
@@ -201,11 +213,19 @@
                     <ion-button fill="clear" size="small" (click)="openChatModal(t.id)" title="Chat Teknisi">
                       <ion-icon name="chatbubble-ellipses-outline" style="color: var(--success);"></ion-icon>
                     </ion-button>
+
+                    <!-- 🔵 TOMBOL BUKA CHECK SHEET (khusus tiket Preventive, status Selesai/Solved) -->
+                    <ion-button
+                      *ngIf="t.isPreventive && (t.status === 'Selesai' || t.status === 'Solved')"
+                      fill="clear" size="small" color="primary"
+                      (click)="openChecklistModal(t.id)" title="Lihat & Approve Check Sheet">
+                      <ion-icon name="document-text-outline"></ion-icon>
+                    </ion-button>
                   </td>
                 </tr>
 
                 <tr *ngIf="filteredTickets.length === 0">
-                  <td colspan="12" class="empty-row">Belum ada tiket yang dibuat</td>
+                  <td colspan="13" class="empty-row">Belum ada tiket yang dibuat</td>
                 </tr>
               </tbody>
             </table>
@@ -312,6 +332,209 @@
             </ion-button>
           </div>
         </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- ========================================== -->
+<!-- 🔵 MODAL CHECK SHEET (READ-ONLY + APPROVE) -->
+<!-- Struktur identik dengan modal punya Teknisi: header logo + form no + -->
+<!-- tanggal, tabel info (asset/dept/dst), tabel checklist 8 kolom        -->
+<!-- (termasuk ALAT), legenda, tanda tangan.                              -->
+<!-- ========================================== -->
+<ion-modal [isOpen]="isChecklistModalOpen" (didDismiss)="closeChecklistModal()" class="checksheet-modal-user">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Check Sheet - {{ selectedChecklistTicketId }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeChecklistModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="checksheet-form">
+
+        <div *ngIf="isLoadingChecklist" class="loading-state" style="text-align:center; padding:20px;">
+          Memuat checklist...
+        </div>
+
+        <div *ngIf="!isLoadingChecklist && checklistItems.length === 0" class="empty-state" style="text-align:center; padding:20px;">
+          Checklist belum tersedia untuk tiket ini.
+        </div>
+
+        <ng-container *ngIf="!isLoadingChecklist && checklistItems.length > 0 && selectedChecklistTicket as t">
+
+          <!-- HEADER PERSIS SEPERTI PDF (pakai table biar ada border tebal) -->
+          <table class="checksheet-header-table">
+            <tr>
+              <td class="cs-logo-cell">
+                <img src="../../../assets/logo bakrie.png" alt="Logo" class="checksheet-logo" />
+              </td>
+              <td class="cs-title-cell">
+                <div class="cs-title-main">CHECK SHEET</div>
+                <div class="cs-title-sub">PERSONAL COMPUTER,SOFTWARE<br />PRINTER,SCANNER &amp; NETWORK</div>
+              </td>
+              <td class="cs-formno-cell">
+                <div>No.Form : FRM/IT/CS/001</div>
+                <div>No.Rev : 00</div>
+                <!-- 🔧 FIX: tanggal statis 15-07-2014 diganti binding ke tanggal dibuatnya
+                     schedule preventive (t.tanggalDibuatSchedule). Untuk tiket non-preventive
+                     (tanggalDibuatSchedule selalu null), tetap fallback ke 15-07-2014 seperti semula. -->
+                <div>Tanggal : {{ t.tanggalDibuatSchedule || '15-07-2014' }}</div>
+              </td>
+            </tr>
+          </table>
+
+          <table class="checksheet-info-table">
+            <tr>
+              <td class="cs-info-label">Tanggal Pelaksanaan</td>
+              <td class="cs-info-value">: {{ t.tanggal }}</td>
+            </tr>
+            <tr>
+              <td class="cs-info-label">IT Propertis</td>
+              <td class="cs-info-value">: {{ t.asset || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="cs-info-label">Department</td>
+              <td class="cs-info-value">: {{ t.departemen || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="cs-info-label">Sub Department</td>
+              <td class="cs-info-value">: {{ t.subKategori || '-' }}</td>
+            </tr>
+          </table>
+
+          <!-- TABEL CHECKLIST (READ-ONLY, 8 kolom sama persis dengan punya Teknisi) -->
+          <div class="checksheet-table-wrapper">
+            <table class="checksheet-table">
+              <thead>
+                <tr>
+                  <th style="width:30px;" rowspan="2">NO</th>
+                  <th style="width:100px;" rowspan="2">UNIT</th>
+                  <th rowspan="2">URAIAN PEKERJAAN</th>
+                  <th style="width:110px;" rowspan="2">ALAT YANG<br />DIGUNAKAN</th>
+                  <th style="width:100px;" rowspan="2">PENERIMAAN</th>
+                  <th colspan="2">KONDISI</th>
+                  <th rowspan="2">CATATAN</th>
+                </tr>
+                <tr>
+                  <th style="width:36px;">OK</th>
+                  <th style="width:36px;">NC</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let section of checklistSections; trackBy: trackBySection">
+
+                  <!-- BARIS JUDUL "Kode Assets (...)" -->
+                  <tr *ngIf="section.type === 'header'" class="cs-section-header-row">
+                    <td colspan="8" class="cs-section-header-cell">{{ section.label }}</td>
+                  </tr>
+
+                  <!-- BARIS GRUP UNIT (read-only, nomor sudah dihitung ulang per section) -->
+                  <ng-container *ngIf="section.type === 'group'">
+                    <tr *ngFor="let item of section.items; let itemIdx = index; trackBy: trackByChecklistItem">
+                      <td *ngIf="itemIdx === 0" [attr.rowspan]="section.items.length" class="unit-cell">{{ section.number }}</td>
+                      <td *ngIf="itemIdx === 0" [attr.rowspan]="section.items.length" class="unit-cell">{{ section.kategori }}</td>
+                      <td>{{ item.uraian_pekerjaan }}</td>
+                      <td class="alat-cell">{{ item.alat_yang_digunakan || '-' }}</td>
+                      <td class="penerimaan-cell">{{ item.penerimaan_default || '-' }}</td>
+                      <td class="check-col">
+                        <div class="cs-checkbox" [class.checked]="item.kondisi === 'OK'">
+                          <ion-icon name="checkmark-outline" *ngIf="item.kondisi === 'OK'"></ion-icon>
+                        </div>
+                      </td>
+                      <td class="check-col">
+                        <div class="cs-checkbox cs-checkbox-nc" [class.checked]="item.kondisi === 'NC'">
+                          <span *ngIf="item.kondisi === 'NC'">{{ item.kondisi_huruf || '✓' }}</span>
+                        </div>
+                      </td>
+                      <td>{{ item.catatan || '-' }}</td>
+                    </tr>
+                  </ng-container>
+                </ng-container>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- legenda Catatan & Kondisi NC persis seperti di PDF resmi -->
+          <table class="checksheet-legend-table">
+            <tr>
+              <td class="checksheet-legend-col">
+                <strong>Catatan:</strong>
+                <p>B : Masih dapat beroperasi, dan masih bisa dipertahankan, sampai waktu disiapkan dan persiapan sparepart</p>
+                <p>C : Segera diperbaiki atau harus segera diperbaiki dan waktu perbaikan ditentukan ITS</p>
+                <p>D : Harus berhenti / tidak mampu berkerja</p>
+              </td>
+              <td class="checksheet-legend-col checksheet-legend-nc">
+                <strong>Kondisi NC :</strong>
+                <p>B : Masih Baik</p>
+                <p>C : Segera Diperbaiki</p>
+                <p>D : Harus diganti</p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- STATUS APPROVAL -->
+          <div class="checksheet-approval-status" *ngIf="!isLoadingApproval">
+            <p class="approval-status-text">Status: {{ getApprovalStageLabel() }}</p>
+          </div>
+
+          <!-- TABEL TANDA TANGAN, PERSIS SEPERTI DI PDF -->
+          <table class="checksheet-signature-table">
+            <tr>
+              <th>DIBUAT OLEH (TEKNISI)</th>
+              <th>DIKETAHUI (ANDA)</th>
+              <th>DISETUJUI (IT SERVICE)</th>
+            </tr>
+            <tr class="signature-row">
+              <td>
+                <div class="signature-cell">
+                  <img *ngIf="selectedChecklistApproval?.ttd_dibuat_oleh"
+                       [src]="getSignatureUrl(selectedChecklistApproval?.ttd_dibuat_oleh)"
+                       class="signature-img" alt="Tanda tangan" />
+                  <span class="signature-name">{{ selectedChecklistApproval?.nama_dibuat_oleh || '-' }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="signature-cell">
+                  <img *ngIf="selectedChecklistApproval?.ttd_diketahui_oleh"
+                       [src]="getSignatureUrl(selectedChecklistApproval?.ttd_diketahui_oleh)"
+                       class="signature-img" alt="Tanda tangan" />
+                  <span class="signature-name">{{ selectedChecklistApproval?.nama_diketahui_oleh || 'Menunggu' }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="signature-cell">
+                  <img *ngIf="selectedChecklistApproval?.ttd_disetujui_oleh"
+                       [src]="getSignatureUrl(selectedChecklistApproval?.ttd_disetujui_oleh)"
+                       class="signature-img" alt="Tanda tangan" />
+                  <span class="signature-name">{{ selectedChecklistApproval?.nama_disetujui_oleh || 'Menunggu' }}</span>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- TOMBOL AKSI -->
+          <div class="checksheet-approval-actions">
+            <ion-button *ngIf="canApproveChecklist" color="success" [disabled]="isSubmittingApproval" (click)="approveChecklist('Approve')">
+              <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+              Approve
+            </ion-button>
+            <ion-button *ngIf="canApproveChecklist" color="danger" fill="outline" [disabled]="isSubmittingApproval" (click)="approveChecklist('Reject')">
+              <ion-icon name="close-outline" slot="start"></ion-icon>
+              Reject
+            </ion-button>
+            <ion-button *ngIf="selectedChecklistApproval?.status_diketahui === 'Approve'" fill="outline" (click)="downloadChecklistPdf()">
+              <ion-icon name="download-outline" slot="start"></ion-icon>
+              Download PDF
+            </ion-button>
+          </div>
+        </ng-container>
+
       </div>
     </ion-content>
   </ng-template>

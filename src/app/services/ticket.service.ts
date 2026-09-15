@@ -39,9 +39,11 @@ export interface TicketApiRow {
   is_paused?: number;
   tanggal_assign?: string | null;
   tanggal_selesai?: string | null;
-  // 🔥 TAMBAHKAN PROGRESS
   progress?: number;
   status_pengerjaan?: string;
+  user_konfirmasi?: number;
+  tanggal_konfirmasi_user?: string | null;
+  catatan_penyelesaian?: string | null;
 }
 
 export interface AssignedTicketApiRow {
@@ -57,15 +59,66 @@ export interface AssignedTicketApiRow {
   kode_asset: string | null;
   aset: string | null;
   nama_pelapor: string;
+  departemen?: string;
   nama_kategori: string;
   nama_sub_kategori: string | null;
   deadline?: string | null;
   is_paused?: number;
+  user_konfirmasi?: number;
+  tanggal_konfirmasi_user?: string | null;
+  admin_konfirmasi?: number;
+  tanggal_konfirmasi_admin?: string | null;
+  admin_approve?: number;
+  admin_approve_by?: string | null;
+  admin_approve_at?: string | null;
+}
+
+// Kondisi_huruf: kode B/C/D — hanya relevan kalau kondisi === 'NC'
+export interface ChecklistItemApiRow {
+  id_result: number;
+  id_item: number;
+  kategori_unit: string;
+  uraian_pekerjaan: string;
+  alat_yang_digunakan: string | null;
+  penerimaan_default: string | null;
+  urutan: number;
+  kondisi: 'OK' | 'NC' | null;
+  // B = Masih Baik, C = Segera Diperbaiki, D = Harus Diganti
+  kondisi_huruf: 'B' | 'C' | 'D' | null;
+  catatan: string | null;
+  checked_at: string | null;
+  // flag UI-only (tidak dikirim ke backend) — true saat popup B/C/D terbuka
+  _showHurufPicker?: boolean;
+}
+
+// 🔥 status approval Check Sheet 3 tingkat, sekarang termasuk path tanda tangan
+// (ttd_*) yang otomatis terisi begitu masing-masing user pernah upload
+// tanda tangan sekali lewat halaman profil mereka
+export interface ChecklistApprovalRow {
+  id_ticket: string;
+  dibuat_oleh_nik: string | null;
+  tanggal_dibuat: string | null;
+  nama_dibuat_oleh: string | null;
+  ttd_dibuat_oleh: string | null;
+  diketahui_oleh_nik: string | null;
+  tanggal_diketahui: string | null;
+  status_diketahui: 'Menunggu' | 'Approve' | 'Reject';
+  catatan_diketahui: string | null;
+  nama_diketahui_oleh: string | null;
+  ttd_diketahui_oleh: string | null;
+  disetujui_oleh_nik: string | null;
+  tanggal_disetujui: string | null;
+  status_disetujui: 'Menunggu' | 'Approve' | 'Reject';
+  catatan_disetujui: string | null;
+  nama_disetujui_oleh: string | null;
+  ttd_disetujui_oleh: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
 export class TicketService {
   private baseUrl = `${environment.apiUrl}/tickets`;
+  private checklistUrl = `${environment.apiUrl}/checklist`;
+  private profileUrl = `${environment.apiUrl}/profile`;
 
   constructor(private http: HttpClient) {}
 
@@ -124,12 +177,12 @@ export class TicketService {
     return this.http.put(`${this.baseUrl}/${idTicket}/assign`, { id_teknisi: idTeknisi });
   }
 
-  create(payload: { 
-    id_kategori: string; 
-    id_sub_kategori?: string; 
-    kode_asset?: string; 
+  create(payload: {
+    id_kategori: string;
+    id_sub_kategori?: string;
+    kode_asset?: string;
     deskripsi: string;
-    prioritas: 'Low' | 'Normal' | 'Urgent'; 
+    prioritas: 'Low' | 'Normal' | 'Urgent';
   }, file?: File): Observable<any> {
     const formData = new FormData();
     formData.append('id_kategori', payload.id_kategori);
@@ -181,6 +234,78 @@ export class TicketService {
 
   reviewReturn(idTicket: string, action: 'Approve' | 'Reject'): Observable<any> {
     return this.http.put(`${this.baseUrl}/${idTicket}/return-review`, { action });
+  }
+
+  confirmByUser(idTicket: string): Observable<any> {
+    return this.http.put(`${this.baseUrl}/${idTicket}/user-konfirmasi`, {});
+  }
+
+  // ================================================================
+  // CHECKLIST PREVENTIVE (sesuai check sheet PDF)
+  // ================================================================
+  getChecklistTemplateKategori(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.checklistUrl}/template-kategori`);
+  }
+
+  getChecklist(idTicket: string): Observable<ChecklistItemApiRow[]> {
+    return this.http.get<ChecklistItemApiRow[]>(`${this.checklistUrl}/ticket/${idTicket}`);
+  }
+
+  // payload menerima kondisi_huruf (wajib diisi kalau kondisi = 'NC')
+  updateChecklistItem(
+    idResult: number,
+    payload: { kondisi: 'OK' | 'NC' | null; kondisi_huruf?: 'B' | 'C' | 'D' | null; catatan?: string }
+  ): Observable<any> {
+    return this.http.patch(`${this.checklistUrl}/item/${idResult}`, payload);
+  }
+
+  // ================================================================
+  // 🔥 APPROVAL CHECK SHEET 3 TINGKAT: Teknisi -> User -> IT Service
+  // ================================================================
+  getChecklistApproval(idTicket: string): Observable<ChecklistApprovalRow> {
+    return this.http.get<ChecklistApprovalRow>(`${this.checklistUrl}/ticket/${idTicket}/approval`);
+  }
+
+  ajukanApprovalChecklist(idTicket: string): Observable<any> {
+    return this.http.post(`${this.checklistUrl}/ticket/${idTicket}/ajukan`, {});
+  }
+
+  approveChecklistByUser(idTicket: string, action: 'Approve' | 'Reject', catatan?: string): Observable<any> {
+    return this.http.put(`${this.checklistUrl}/ticket/${idTicket}/user-approve`, { action, catatan });
+  }
+
+  approveChecklistByItService(idTicket: string, action: 'Approve' | 'Reject', catatan?: string): Observable<any> {
+    return this.http.put(`${this.checklistUrl}/ticket/${idTicket}/itservice-approve`, { action, catatan });
+  }
+
+  downloadChecklistPdf(idTicket: string) {
+    this.http.get(`${this.checklistUrl}/ticket/${idTicket}/pdf`, { responseType: 'blob' }).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CheckSheet_${idTicket}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err: any) => {
+        console.error('Gagal download PDF', err);
+        alert('Gagal download PDF: ' + (err?.error?.message || 'PDF belum bisa didownload'));
+      }
+    });
+  }
+
+  // ================================================================
+  // 🔥 TANDA TANGAN DIGITAL (upload sekali, otomatis dipakai saat approve)
+  // ================================================================
+  uploadMySignature(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('signature', file);
+    return this.http.post(`${this.profileUrl}/signature`, formData);
+  }
+
+  getMySignature(): Observable<{ tanda_tangan: string | null }> {
+    return this.http.get<{ tanda_tangan: string | null }>(`${this.profileUrl}/signature`);
   }
 
   private mapTicket(row: TicketApiRow): Ticket {

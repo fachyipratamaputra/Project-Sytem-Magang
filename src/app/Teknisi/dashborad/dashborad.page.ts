@@ -117,6 +117,10 @@ export class TeknisiDashboardPage implements OnInit {
   goToProfile() {
     this.setActiveMenu('profile');
   }
+  goToScheduleTersedia() {
+  this.setActiveMenu('schedule-tersedia');
+  this.router.navigate(['/teknisi/schedule-tersedia']);
+}
 
   // ===== HELPER UNTUK JUDUL HALAMAN =====
   getPageTitle(): string {

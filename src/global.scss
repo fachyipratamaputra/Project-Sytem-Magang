@@ -35,3 +35,21 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+
+/* ==========================================================
+   TAMBAHKAN INI KE global.scss (bukan inventory.page.scss)
+   supaya ion-modal dengan cssClass="detail-modal" (dipakai saat
+   mode Edit di halaman Inventory) tampil lebih besar & center.
+   ========================================================== */
+
+.detail-modal {
+  --width: 720px;
+  --height: 85%;
+  --border-radius: 16px;
+
+  @media (max-width: 768px) {
+    --width: 100%;
+    --height: 100%;
+    --border-radius: 0;
+  }
+}

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
-import { TicketService, Ticket as ServiceTicket } from '../../services/ticket.service';
+import { TicketService, TicketApiRow } from '../../services/ticket.service';
 import { InventoryService, InventoryItem } from '../../services/inventory.service';
 import { KategoriService } from '../../services/kategori.service';
 import { SubKategoriService } from '../../services/sub-kategori.service';
@@ -23,6 +23,7 @@ export interface ListTicket {
   deskripsi?: string;
   prioritas?: 'Low' | 'Normal' | 'Urgent';
   deadline?: string | null;
+  statusPengerjaan?: string | null;   // status_pengerjaan dari assignment_ticket
 }
 
 @Component({
@@ -72,6 +73,22 @@ export class ListTicketPage implements OnInit, OnDestroy {
 
   private countdownInterval: any;
 
+  // ================= CHART STATISTIK TICKET =================
+  filterTahun: number | null = null;
+  selectedBulan: number | null = null; // 0 = Januari
+  selectedDeptChart: string = '';
+  filterStatusChart: string = ''; // '' | 'approval' | 'assigned' | 'belum_proses' | 'progress' | 'selesai'
+
+  readonly namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  readonly statusGroups = [
+    { key: 'approval', label: 'Menunggu Approval' },
+    { key: 'assigned', label: 'Assignment Ticket' },
+    { key: 'belum_proses', label: 'Belum Diproses Teknisi' },
+    { key: 'progress', label: 'Sedang Dikerjakan' },
+    { key: 'selesai', label: 'Selesai' },
+    { key: 'rejected', label: 'Ditolak' },
+  ];
+
   constructor(
     private router: Router,
     private ticketService: TicketService,
@@ -117,24 +134,30 @@ export class ListTicketPage implements OnInit, OnDestroy {
 
   loadTickets() {
     this.isLoading = true;
-    this.ticketService.getAll().subscribe({
-      next: (data: ServiceTicket[]) => {
+    this.ticketService.getAllRaw().subscribe({
+      next: (data: TicketApiRow[]) => {
         this.tickets = data.map(item => ({
-          id_ticket: item.idTicket,
-          reported: item.reportedBy,
-          dept: item.departemen,
+          id_ticket: item.id_ticket,
+          reported: item.reported,
+          dept: item.dept,
           tanggal: item.tanggal,
-          nama_kategori: item.kategori,
-          nama_sub_kategori: item.subKategori,
-          aset: item.aset,
-          lampiran: item.lampiran,
-          teknisi: item.teknisi,
+          nama_kategori: item.nama_kategori,
+          nama_sub_kategori: item.nama_sub_kategori || '',
+          aset: item.aset || '',
+          lampiran: item.lampiran || '',
+          teknisi: item.teknisi || '',
           status: item.status,
           deskripsi: '',
-          prioritas: (item as any).prioritas || 'Normal',
-          deadline: (item as any).deadline || null
+          prioritas: item.prioritas || 'Normal',
+          deadline: item.deadline || null,
+          statusPengerjaan: item.status_pengerjaan || null,
         }));
         this.buildFilterOptions();
+
+        if (this.filterTahun === null) {
+          this.filterTahun = this.tahunOptions[0] ?? new Date().getFullYear();
+        }
+
         this.isLoading = false;
       },
       error: (err) => {
@@ -221,6 +244,183 @@ export class ListTicketPage implements OnInit, OnDestroy {
     this.kategoriOptions = [...new Set(this.tickets.map((t) => t.nama_kategori).filter(Boolean))];
   }
 
+  // ================= HELPER CHART =================
+
+  /** "2026-09-15 09:09:58" -> Date (aman lintas browser) */
+  private parseTanggal(raw: string | null | undefined): Date | null {
+    if (!raw) return null;
+    const d = new Date(String(raw).trim().replace(' ', 'T'));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /** Kelompokkan status apa pun ke bucket besar berdasarkan teks status saja.
+   * Masih dipakai untuk badge chip di chart level-3 (asset breakdown). */
+  getStatusGroup(status: string): string {
+    const s = (status || '').toLowerCase();
+    if (s.includes('solved') || s.includes('closed') || s.includes('selesai') || s.includes('resolved')) return 'selesai';
+    if (s.includes('proses') || s.includes('progress') || s.includes('assign')) return 'progress';
+    if (s.includes('approve') || s.includes('approval') || s.includes('menunggu')) return 'approval';
+    return 'lainnya';
+  }
+
+  /** 🔥 FUNNEL BERJENJANG — satu tiket cuma masuk SATU tahap,
+   * dipilih dari progres paling akhir/paling maju, supaya tidak
+   * tumpang tindih antara "Assignment Ticket" dan "Sedang Dikerjakan". */
+  getFunnelStage(t: ListTicket): string {
+    const statusLower = (t.status || '').toLowerCase();
+    const pengerjaanLower = (t.statusPengerjaan || '').toLowerCase();
+    const hasTeknisi = !!t.teknisi && t.teknisi.trim() !== '' && t.teknisi !== '-';
+
+    // 1. Selesai — paling final
+    if (statusLower.includes('solved') || statusLower.includes('selesai') || pengerjaanLower === 'selesai') {
+      return 'selesai';
+    }
+    // 2. Ditolak — keluar dari funnel utama
+    if (statusLower.includes('reject')) {
+      return 'rejected';
+    }
+    // 3. Sedang Dikerjakan — sudah ada teknisi DAN sudah mulai proses
+    if (hasTeknisi && pengerjaanLower === 'proses') {
+      return 'progress';
+    }
+    // 4. Belum Diproses Teknisi — sudah ada teknisi, tapi belum mulai
+    if (hasTeknisi) {
+      return 'belum_proses';
+    }
+    // 5. Assignment Ticket — sudah di-approve, tapi BELUM ada teknisi (perlu di-assign)
+    if (statusLower.includes('assign') || statusLower.includes('approve')) {
+      return 'assigned';
+    }
+    // 6. Menunggu Approval — tahap paling awal
+    return 'approval';
+  }
+
+  /** dipakai chip, chart, dan filter tabel — satu sumber kebenaran */
+  matchesStatusGroup(t: ListTicket, key: string): boolean {
+    return this.getFunnelStage(t) === key;
+  }
+
+  get tahunOptions(): number[] {
+    const set = new Set<number>();
+    this.tickets.forEach(t => {
+      const d = this.parseTanggal(t.tanggal);
+      if (d) set.add(d.getFullYear());
+    });
+    return [...set].sort((a, b) => b - a);
+  }
+
+  /** Basis semua chart: ticket yang sudah tersaring tahun + status group aktif */
+  private get chartBaseTickets(): ListTicket[] {
+    return this.tickets.filter(t => {
+      const d = this.parseTanggal(t.tanggal);
+      if (!d) return false;
+      if (this.filterTahun && d.getFullYear() !== this.filterTahun) return false;
+      if (this.filterStatusChart && !this.matchesStatusGroup(t, this.filterStatusChart)) return false;
+      return true;
+    });
+  }
+
+  /** LEVEL 1 — jumlah ticket per bulan (untuk tahun & status terpilih) */
+  get chartBulan(): { bulan: number; label: string; jumlah: number }[] {
+    const counts = new Array(12).fill(0);
+    this.chartBaseTickets.forEach(t => {
+      const d = this.parseTanggal(t.tanggal)!;
+      counts[d.getMonth()]++;
+    });
+    return counts.map((jumlah, bulan) => ({ bulan, label: this.namaBulan[bulan], jumlah }));
+  }
+
+  get maxBulanValue(): number {
+    return Math.max(1, ...this.chartBulan.map(b => b.jumlah));
+  }
+
+  /** LEVEL 2 — daftar departemen yang ticketing di bulan terpilih */
+  get chartDepartemen(): { departemen: string; jumlah: number }[] {
+    if (this.selectedBulan === null) return [];
+    const map = new Map<string, number>();
+    this.chartBaseTickets
+      .filter(t => this.parseTanggal(t.tanggal)!.getMonth() === this.selectedBulan)
+      .forEach(t => {
+        const dept = t.dept || '(Belum Diketahui)';
+        map.set(dept, (map.get(dept) || 0) + 1);
+      });
+    return [...map.entries()]
+      .map(([departemen, jumlah]) => ({ departemen, jumlah }))
+      .sort((a, b) => b.jumlah - a.jumlah);
+  }
+
+  get maxDeptValue(): number {
+    return Math.max(1, ...this.chartDepartemen.map(d => d.jumlah));
+  }
+
+  /** LEVEL 3 — asset yang di-ticketing pada departemen + bulan terpilih */
+  get chartAssets(): { aset: string; jumlah: number; tickets: ListTicket[] }[] {
+    if (this.selectedBulan === null || !this.selectedDeptChart) return [];
+    const map = new Map<string, ListTicket[]>();
+    this.chartBaseTickets
+      .filter(t =>
+        this.parseTanggal(t.tanggal)!.getMonth() === this.selectedBulan &&
+        (t.dept || '(Belum Diketahui)') === this.selectedDeptChart
+      )
+      .forEach(t => {
+        const aset = t.aset || '(Tanpa Asset)';
+        if (!map.has(aset)) map.set(aset, []);
+        map.get(aset)!.push(t);
+      });
+    return [...map.entries()]
+      .map(([aset, tickets]) => ({ aset, jumlah: tickets.length, tickets }))
+      .sort((a, b) => b.jumlah - a.jumlah);
+  }
+
+  get totalTicketChart(): number {
+    return this.chartBaseTickets.length;
+  }
+
+  countByStatusGroup(key: string): number {
+    return this.tickets.filter(t => {
+      const d = this.parseTanggal(t.tanggal);
+      if (!d) return false;
+      if (this.filterTahun && d.getFullYear() !== this.filterTahun) return false;
+      return this.matchesStatusGroup(t, key);
+    }).length;
+  }
+
+  // ===== INTERAKSI CHART =====
+  onTahunChange() {
+    this.selectedBulan = null;
+    this.selectedDeptChart = '';
+    this.onFilterChange();
+  }
+
+  selectStatusGroup(key: string) {
+    this.filterStatusChart = this.filterStatusChart === key ? '' : key;
+    this.selectedDeptChart = '';
+    this.onFilterChange();
+  }
+
+  selectBulan(bulan: number) {
+    this.selectedBulan = this.selectedBulan === bulan ? null : bulan;
+    this.selectedDeptChart = '';
+    this.onFilterChange();
+  }
+
+  selectDeptChart(dept: string) {
+    this.selectedDeptChart = this.selectedDeptChart === dept ? '' : dept;
+    this.onFilterChange();
+    setTimeout(() => {
+      document.querySelector('.asset-breakdown')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+
+  resetChartFilter() {
+    this.selectedBulan = null;
+    this.selectedDeptChart = '';
+    this.filterStatusChart = '';
+    this.onFilterChange();
+  }
+
+  // ================= FILTER & PAGINASI TABEL =================
+
   get filteredTickets(): ListTicket[] {
     const term = this.searchTerm.trim().toLowerCase();
     return this.tickets.filter((t) => {
@@ -228,7 +428,16 @@ export class ListTicketPage implements OnInit, OnDestroy {
       const matchStatus = !this.filterStatus || t.status === this.filterStatus;
       const matchDept = !this.filterDepartemen || t.dept === this.filterDepartemen;
       const matchKategori = !this.filterKategori || t.nama_kategori === this.filterKategori;
-      return matchSearch && matchStatus && matchDept && matchKategori;
+
+      // --- filter yang berasal dari chart ---
+      const d = this.parseTanggal(t.tanggal);
+      const matchTahun = !this.filterTahun || (d ? d.getFullYear() === this.filterTahun : false);
+      const matchBulan = this.selectedBulan === null || (d ? d.getMonth() === this.selectedBulan : false);
+      const matchDeptChart = !this.selectedDeptChart || (t.dept || '(Belum Diketahui)') === this.selectedDeptChart;
+      const matchStatusChart = !this.filterStatusChart || this.matchesStatusGroup(t, this.filterStatusChart);
+
+      return matchSearch && matchStatus && matchDept && matchKategori
+        && matchTahun && matchBulan && matchDeptChart && matchStatusChart;
     });
   }
 
@@ -314,6 +523,12 @@ export class ListTicketPage implements OnInit, OnDestroy {
     }
   }
 
+  // Download PDF Check Sheet (cuma relevan untuk tiket yang punya aset/checklist preventive).
+  // Kalau Check Sheet-nya belum di-approve User, service ini otomatis nampilin alert error sendiri.
+  downloadChecklistPdf(ticket: ListTicket) {
+    this.ticketService.downloadChecklistPdf(ticket.id_ticket);
+  }
+
   getStatusClass(status: string): string {
     if (!status) return 'status-default';
     const s = status.toLowerCase();
@@ -326,12 +541,12 @@ export class ListTicketPage implements OnInit, OnDestroy {
   }
 
   // ===== NAVIGASI & SIDEBAR =====
-  toggleSidebar() { 
-    this.isSidebarOpen = !this.isSidebarOpen; 
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
   }
 
-  setActiveMenu(menu: string) { 
-    this.activeMenu = menu; 
+  setActiveMenu(menu: string) {
+    this.activeMenu = menu;
     if (window.innerWidth < 1024) this.isSidebarOpen = false;
   }
 
@@ -348,7 +563,7 @@ export class ListTicketPage implements OnInit, OnDestroy {
   goToSubKategori() { this.setActiveMenu('sub-kategori'); this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.setActiveMenu('teknisi'); this.router.navigate(['/teknisi']); }
   goToInventory() { this.setActiveMenu('inventory'); this.router.navigate(['/inventory']); }
-  goToSchedule() { this.setActiveMenu('schedule'); this.router.navigate(['/schedule']); } // 🛠️ Ditambahkan untuk mengatasi error TS2339
+  goToSchedule() { this.setActiveMenu('schedule'); this.router.navigate(['/schedule']); }
   goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
   goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
   goToProfile() { this.setActiveMenu('profile'); this.router.navigate(['/profile']); }

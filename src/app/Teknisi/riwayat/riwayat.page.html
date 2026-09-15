@@ -4,9 +4,9 @@
     <div class="sidebar" [class.open]="isSidebarOpen">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <div class="logo-icon-wrapper">
-            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
-          </div>
+       <div class="logo-icon-wrapper">
+  <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+</div>
           <span class="logo-text">Helpdesk<br>Ticketing System</span>
         </div>
         <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
@@ -49,6 +49,11 @@
           <div class="menu-icon-wrapper"><ion-icon name="time-outline" class="menu-icon"></ion-icon></div>
           <span class="menu-text">Riwayat Tiket</span>
         </div>
+        <div class="menu-label">PREVENTIVE</div>
+<div class="menu-item" [class.active]="activeMenu === 'schedule-tersedia'" (click)="goToScheduleTersedia()">
+  <ion-icon name="calendar-outline" class="menu-icon"></ion-icon>
+  <span class="menu-text">Schedule Tersedia</span>
+</div>
 
         <div class="menu-label">LAINNYA</div>
         <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="goToPengaturan()">

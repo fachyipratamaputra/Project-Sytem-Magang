@@ -115,6 +115,10 @@ export class RiwayatTiketPage implements OnInit {
   goToTicket() { this.setActiveMenu('ticket'); this.router.navigate(['/teknisi/ticket']); }
   goToProsesTiket() { this.setActiveMenu('proses-tiket'); this.router.navigate(['/teknisi/proses']); }
   goToRiwayatTiket() { this.setActiveMenu('riwayat-tiket'); this.router.navigate(['/teknisi/riwayat']); }
+  goToScheduleTersedia() {
+    this.setActiveMenu('schedule-tersedia');
+    this.router.navigate(['/teknisi/schedule-tersedia']);
+  }
   goToPengaturan() { this.setActiveMenu('pengaturan'); }
   goToProfile() { this.setActiveMenu('profile'); }
 
@@ -124,6 +128,7 @@ export class RiwayatTiketPage implements OnInit {
       'ticket': 'Ticket',
       'proses-tiket': 'Proses Tiket',
       'riwayat-tiket': 'Riwayat Tiket',
+      'schedule-tersedia': 'Schedule Tersedia',
       'pengaturan': 'Pengaturan',
     };
     return titles[this.activeMenu] ?? 'Riwayat Tiket';

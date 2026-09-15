@@ -4,9 +4,9 @@
     <div class="sidebar" [class.open]="isSidebarOpen">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <div class="logo-icon-wrapper">
-            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
-          </div>
+       <div class="logo-icon-wrapper">
+  <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+</div>
           <span class="logo-text">Helpdesk<br>Ticketing System</span>
         </div>
         <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
@@ -291,10 +291,19 @@
           </ion-input>
         </div>
 
-        <!-- Username -->
+        <!-- 🔥 Username (BARU: sekarang otomatis terisi = NIK, readonly.
+             Sebelumnya admin input manual di sini, sekarang cukup ambil
+             dari formData.username yang sudah di-set otomatis lewat
+             onNikChange() saat NIK Karyawan dipilih di atas.) -->
         <div class="form-group" *ngIf="!isEditing">
           <label class="form-label">Username <span class="required">*</span></label>
-          <ion-input type="text" placeholder="Masukkan username login" [(ngModel)]="formData.username" class="form-input"></ion-input>
+          <ion-input 
+            type="text" 
+            [(ngModel)]="formData.username" 
+            class="form-input" 
+            readonly="true"
+            placeholder="Akan terisi otomatis dari NIK">
+          </ion-input>
         </div>
 
         <!-- Level -->

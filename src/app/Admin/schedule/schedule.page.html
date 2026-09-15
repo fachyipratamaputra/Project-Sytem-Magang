@@ -1,12 +1,16 @@
 <ion-content class="schedule-content">
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
   <div class="dashboard-container">
     <!-- ===== SIDEBAR ===== -->
     <div class="sidebar" [class.open]="isSidebarOpen">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <div class="logo-icon-wrapper">
-            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
-          </div>
+       <div class="logo-icon-wrapper">
+  <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+</div>
           <span class="logo-text">Helpdesk<br>Ticketing System</span>
         </div>
         <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
@@ -127,14 +131,14 @@
 
       <!-- CONTENT -->
       <div class="content-area">
-        <!-- ==================== VIEW LIST (CARD + CHART) ==================== -->
+        <!-- ==================== VIEW LIST ==================== -->
         <ng-container *ngIf="viewMode === 'list'">
           <div class="page-heading">
-            <h1 class="page-title">📅 Schedule Preventive</h1>
-            <p class="page-subtitle">Kelola jadwal pemeliharaan rutin per departemen secara otomatis</p>
+            <h1 class="page-title">📊 Status Pemeliharaan per Departemen</h1>
+            <p class="page-subtitle">Pantau progress pemeliharaan rutin semua departemen</p>
           </div>
 
-          <!-- TOOLBAR -->
+          <!-- ===== TOOLBAR + PERIOD FILTER ===== -->
           <div class="list-toolbar">
             <div class="search-box">
               <ion-icon name="search-outline" class="search-icon"></ion-icon>
@@ -164,95 +168,136 @@
             </ion-button>
           </div>
 
-          <!-- ===== GRID DEPARTEMEN (CARD) ===== -->
-          <div class="dept-grid">
-            <div class="dept-card" *ngFor="let dept of filteredDepartments" (click)="viewDetail(dept)">
-              <div class="dept-card-icon">
-                <ion-icon name="business-outline"></ion-icon>
-              </div>
-              <div class="dept-card-content">
-                <h3>{{ dept.nama_departemen }}</h3>
-                <p>{{ dept.schedules.length }} Schedule</p>
-                <div class="dept-card-status">
-                  <ion-badge [color]="dept.total_aktif > 0 ? 'success' : 'medium'">
-                    {{ dept.total_aktif }} Aktif
-                  </ion-badge>
-                </div>
-              </div>
-              <div class="dept-card-action">
-                <ion-button fill="clear" size="small">
-                  <ion-icon name="chevron-forward-outline"></ion-icon>
-                </ion-button>
-              </div>
-            </div>
+          <!-- ===== PERIOD FILTER (BULAN/TAHUN) ===== -->
+          <div class="period-filter">
+            <ion-segment [(ngModel)]="selectedPeriod" (ionChange)="onPeriodChange()">
+              <ion-segment-button value="monthly">
+                <ion-label>Bulanan</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="yearly">
+                <ion-label>Tahunan</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+
+            <ion-select
+              *ngIf="selectedPeriod === 'monthly'"
+              [(ngModel)]="selectedMonth"
+              (ionChange)="onPeriodChange()"
+              interface="popover"
+              placeholder="Pilih Bulan"
+              class="period-select"
+            >
+              <ion-select-option *ngFor="let m of monthOptions" [value]="m.value">
+                {{ m.label }}
+              </ion-select-option>
+            </ion-select>
+
+            <ion-select
+              [(ngModel)]="selectedYear"
+              (ionChange)="onPeriodChange()"
+              interface="popover"
+              placeholder="Pilih Tahun"
+              class="period-select"
+            >
+              <ion-select-option *ngFor="let y of yearOptions" [value]="y">
+                {{ y }}
+              </ion-select-option>
+            </ion-select>
+
+            <span class="period-label">Periode: {{ getPeriodLabel() }}</span>
           </div>
 
-          <div *ngIf="filteredDepartments.length === 0" class="empty-state">
-            <ion-icon name="calendar-outline" class="empty-icon"></ion-icon>
-            <h3>Belum ada departemen dengan schedule</h3>
-            <p>Klik tombol "Buat Schedule" untuk menambahkan jadwal preventive</p>
-          </div>
-
-          <!-- ===== 🔥 BAR CHART PER DEPARTEMEN (VERTIKAL) ===== -->
-          <div class="chart-section" *ngIf="deptChartData.length > 0">
+          <!-- ===== GANTT CHART PER DEPARTEMEN ===== -->
+          <div class="gantt-section" *ngIf="ganttRows.length > 0">
             <div class="chart-header">
-              <h3 class="chart-title">📊 Status Pemeliharaan per Departemen</h3>
+              <h3 class="chart-title">📅 Schedule Preventive {{ selectedYear }}</h3>
               <div class="chart-legend">
-                <span class="legend-item">
-                  <span class="legend-color plan"></span> Belum Dikerjakan
-                </span>
-                <span class="legend-item">
-                  <span class="legend-color progress"></span> In Progress
-                </span>
-                <span class="legend-item">
-                  <span class="legend-color approve"></span> Selesai
-                </span>
+                <span class="legend-item"><span class="legend-color plan"></span> Preventive Plan</span>
+                <span class="legend-item"><span class="legend-color progress"></span> Inprogress</span>
+                <span class="legend-item"><span class="legend-color approve"></span> Complete & Approve</span>
+                <span class="legend-item"><span class="legend-color userapprove"></span> Disetujui User</span>
                 <span class="legend-total">
-                  <ion-icon name="desktop-outline"></ion-icon> Total PC: {{ totalPcPreventive }}
+                  <ion-icon name="desktop-outline"></ion-icon> Total PC Preventive {{ totalPcPreventive }} PC
                 </span>
               </div>
             </div>
 
-            <div class="bar-chart-wrapper">
-              <div class="bar-chart-group" *ngFor="let dept of deptChartData">
-                <div class="bar-chart-bars">
-                  <div class="bar-chart-bar-wrapper">
-                    <span class="bar-chart-value" *ngIf="dept.belum > 0">{{ dept.belum }}</span>
-                    <div
-                      class="bar-chart-bar plan"
-                      [style.height.%]="getBarHeightPercent(dept.belum)"
-                      (click)="dept.belum > 0 && openStatusDetail(dept.departemen, 'belum')"
-                      [class.clickable]="dept.belum > 0"
-                    ></div>
-                  </div>
-                  <div class="bar-chart-bar-wrapper">
-                    <span class="bar-chart-value" *ngIf="dept.proses > 0">{{ dept.proses }}</span>
-                    <div
-                      class="bar-chart-bar progress"
-                      [style.height.%]="getBarHeightPercent(dept.proses)"
-                      (click)="dept.proses > 0 && openStatusDetail(dept.departemen, 'proses')"
-                      [class.clickable]="dept.proses > 0"
-                    ></div>
-                  </div>
-                  <div class="bar-chart-bar-wrapper">
-                    <span class="bar-chart-value" *ngIf="dept.selesai > 0">{{ dept.selesai }}</span>
-                    <div
-                      class="bar-chart-bar approve"
-                      [style.height.%]="getBarHeightPercent(dept.selesai)"
-                      (click)="dept.selesai > 0 && openStatusDetail(dept.departemen, 'selesai')"
-                      [class.clickable]="dept.selesai > 0"
-                    ></div>
-                  </div>
-                </div>
-                <span class="bar-chart-label">{{ dept.departemen }}</span>
-              </div>
+            <div
+              class="gantt-wrapper"
+              #ganttScroll
+              (mousedown)="onGanttMouseDown($event)"
+              (mousemove)="onGanttMouseMove($event)"
+              (mouseup)="onGanttMouseUp()"
+              (mouseleave)="onGanttMouseUp()"
+            >
+              <table class="gantt-table">
+                <thead>
+                  <tr class="gantt-month-row">
+                    <th class="gantt-sticky-col" rowspan="2">Departemen / Schedule</th>
+                    <th class="gantt-info-col" rowspan="2">Asset</th>
+                    <th class="gantt-info-col" rowspan="2">Mulai</th>
+                    <th class="gantt-info-col" rowspan="2">Selesai</th>
+                    <th *ngFor="let group of timelineMonthGroups" [attr.colspan]="group.span" class="gantt-month-col">
+                      {{ group.label }}
+                    </th>
+                  </tr>
+                  <tr>
+                    <th
+                      *ngFor="let day of timelineDays; trackBy: trackByDay"
+                      class="gantt-marker-col"
+                      [class.gantt-today-col]="day.isToday"
+                      [class.gantt-weekend-col]="day.isWeekend"
+                    >
+                      {{ day.label }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of ganttRows; trackBy: trackByRowId" [class.gantt-header-row]="row.isHeader">
+                    <td class="gantt-sticky-col">
+                      <div class="gantt-label-wrapper">
+                        <span class="gantt-label-name">{{ row.label }}</span>
+                        <span class="gantt-label-teknisi">{{ row.teknisi }}</span>
+                      </div>
+                    </td>
+                    <td class="gantt-info-col">{{ row.totalAset }} pc</td>
+                    <td class="gantt-info-col">{{ row.startDate | date:'dd/MM' }}</td>
+                    <td class="gantt-info-col">{{ row.endDate | date:'dd/MM' }}</td>
+                    <td class="gantt-bar-cell" [attr.colspan]="timelineDays.length">
+                      <div class="gantt-bar-track">
+                        <div
+                          class="gantt-bar"
+                          [ngClass]="getGanttStatusClass(row.status)"
+                          [ngStyle]="getGanttBarStyle(row.startDate, row.endDate)"
+                          (click)="openDetailAset(row)"
+                        >
+                          <ion-icon
+                            [name]="getGanttBarIcon(row.status)"
+                            class="gantt-bar-icon"
+                            [class.spin]="row.status === 'progress'"
+                          ></ion-icon>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <!-- ===== 🔥 TABEL REKAPAN (DATA DARI DATABASE) ===== -->
+          <!-- ===== TABEL REKAPAN ===== -->
           <div class="rekapan-section" *ngIf="rekapanData.length > 0">
             <div class="chart-header">
               <h3 class="chart-title">📋 Rekapan Pemeliharaan per Departemen</h3>
+              <div class="rekapan-filter">
+                <ion-icon name="filter-outline" class="rekapan-filter-icon"></ion-icon>
+                <select [(ngModel)]="rekapanFilterDept" (change)="onRekapanFilterChange()">
+                  <option value="">Semua Departemen ({{ rekapanData.length }})</option>
+                  <option *ngFor="let d of rekapanDeptOptions" [value]="d">
+                    {{ d }} ({{ getRekapanCountByDept(d) }})
+                  </option>
+                </select>
+              </div>
             </div>
             <div class="table-responsive">
               <table class="rekapan-table">
@@ -265,26 +310,51 @@
                     <th>Start Date</th>
                     <th>End Date</th>
                     <th>Teknisi</th>
+                    <!-- 🔥 BARU: kolom Aksi supaya Edit/Hapus bisa diakses
+                         langsung dari halaman utama, tanpa perlu masuk ke
+                         viewMode 'detail' -->
+                    <th>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let item of rekapanData">
+                  <tr *ngFor="let item of filteredRekapanData">
                     <td>{{ item.departemen }}</td>
                     <td>{{ item.schedule }}</td>
                     <td>{{ item.totalAset }}</td>
                     <td>{{ item.durationDays }} hari</td>
                     <td>{{ item.startDate | date:'dd/MM/yyyy' }}</td>
                     <td>{{ item.endDate | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ item.teknisi }}</td>
+
+                    <!-- 🔥 BARU: kalau ada data klaim per-asset (teknisiKlaim),
+                         tampilkan badge per teknisi + jumlah aset yang
+                         dikerjakan, sama seperti halaman Teknisi. Kalau
+                         tidak ada (belum ada yang klaim / masih skema
+                         assign manual lama), fallback ke teks polos. -->
+                    <td>
+                      <div class="teknisi-klaim-list" *ngIf="item.teknisiKlaim && item.teknisiKlaim.length > 0; else teknisiPlainAdmin">
+                        <span class="teknisi-klaim-badge" *ngFor="let tk of item.teknisiKlaim">
+                          {{ tk.nama }} <b>({{ tk.jumlah }}/{{ item.totalAset }} aset)</b>
+                        </span>
+                      </div>
+                      <ng-template #teknisiPlainAdmin>{{ item.teknisi }}</ng-template>
+                    </td>
+
+                    <!-- 🔥 BARU: tombol Edit & Hapus per baris -->
+                    <td class="rekapan-aksi">
+                      <ion-button fill="clear" size="small" color="primary" (click)="editFromRekapan(item)">
+                        <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small" color="danger" (click)="hapusFromRekapan(item)">
+                        <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                      </ion-button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="filteredRekapanData.length === 0">
+                    <td colspan="8" class="rekapan-empty">Tidak ada data untuk departemen ini</td>
                   </tr>
                 </tbody>
               </table>
             </div>
-          </div>
-
-          <div *ngIf="deptChartData.length === 0 && filteredDepartments.length > 0" class="chart-empty">
-            <ion-icon name="calendar-outline"></ion-icon>
-            <p>Belum ada data untuk ditampilkan di chart</p>
           </div>
 
         </ng-container>
@@ -312,7 +382,7 @@
 
           <!-- LIST SCHEDULE (DETAIL) -->
           <div class="schedule-list">
-            <div class="schedule-card" *ngFor="let schedule of selectedDepartment.schedules">
+            <div class="schedule-card" *ngFor="let schedule of selectedDepartment.schedules; trackBy: trackBySchedule">
               <div class="schedule-card-header">
                 <div class="schedule-title">
                   <ion-icon name="document-text-outline"></ion-icon>
@@ -326,16 +396,12 @@
               <div class="schedule-card-body">
                 <div class="schedule-meta">
                   <div class="meta-item">
-                    <ion-icon name="repeat-outline"></ion-icon>
-                    <span>{{ schedule.frekuensi }} {{ schedule.satuan }}</span>
-                  </div>
-                  <div class="meta-item">
-                    <ion-icon name="pricetag-outline"></ion-icon>
-                    <span>{{ schedule.nama_kategori || '-' }}</span>
+                    <ion-icon name="calendar-number-outline"></ion-icon>
+                    <span>{{ formatDate(schedule.tanggal_mulai) }} - {{ formatDate(schedule.tanggal_selesai) }}</span>
                   </div>
                   <div class="meta-item">
                     <ion-icon name="people-outline"></ion-icon>
-                    <span>{{ schedule.teknisi_list || 'Belum ditentukan' }}</span>
+                    <span>{{ schedule.teknisi_list || 'Belum diklaim' }}</span>
                   </div>
                   <div class="meta-item">
                     <ion-icon name="calendar-outline"></ion-icon>
@@ -408,41 +474,79 @@
             <ion-select-option *ngFor="let d of departemenOptions" [value]="d.id_departemen || d.id">{{ d.nama_departemen || d.nama }}</ion-select-option>
           </ion-select>
         </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Kategori</label>
-            <ion-select [(ngModel)]="formData.id_kategori" (ionChange)="onKategoriChange()" class="form-select" placeholder="Pilih Kategori">
-              <ion-select-option *ngFor="let k of kategoriOptions" [value]="k.id_kategori || k.id">{{ k.nama_kategori || k.nama }}</ion-select-option>
-            </ion-select>
+            <label class="form-label">Tanggal Mulai <span class="required">*</span></label>
+            <ion-input
+              id="tglMulaiTrigger"
+              readonly="true"
+              [value]="formData.tanggal_mulai ? formatDate(formData.tanggal_mulai) : ''"
+              placeholder="Pilih tanggal mulai"
+              class="form-input"
+            ></ion-input>
+            <!--
+              🔧 FIXED (BUG "tanggal mulai balik ke hari ini"):
+              ion-datetime di dalam ion-popover SEBELUMNYA pakai [(ngModel)].
+              Popover di-render lewat overlay/portal terpisah dari tree
+              komponen utama, jadi two-way binding ngModel sering gagal
+              commit balik ke formData. Sekarang pakai [value] (baca dari
+              formData, one-way) + (ionChange) yang EKSPLISIT menulis balik
+              lewat onTanggalMulaiChange($event) di .ts. Tidak ada [min]
+              di sini — admin bebas pilih tanggal ke depan kapan saja.
+            -->
+            <ion-popover trigger="tglMulaiTrigger" show-backdrop="true" [dismissOnSelect]="false">
+              <ng-template>
+                <ion-datetime
+                  presentation="date"
+                  [value]="formData.tanggal_mulai"
+                  [max]="formData.tanggal_selesai || undefined"
+                  (ionChange)="onTanggalMulaiChange($event)"
+                ></ion-datetime>
+              </ng-template>
+            </ion-popover>
           </div>
           <div class="form-group">
-            <label class="form-label">Sub Kategori</label>
-            <ion-select [(ngModel)]="formData.id_sub_kategori" class="form-select" placeholder="Pilih Sub Kategori">
-              <ion-select-option [value]="null">Tidak Ada</ion-select-option>
-              <ion-select-option *ngFor="let sk of subKategoriOptions" [value]="sk.idSubKategori || sk.id_sub_kategori || sk.id">
-                {{ sk.namaSubKategori || sk.nama_sub_kategori || sk.nama }}
-              </ion-select-option>
-            </ion-select>
+            <label class="form-label">Tanggal Selesai <span class="required">*</span></label>
+            <ion-input
+              id="tglSelesaiTrigger"
+              readonly="true"
+              [value]="formData.tanggal_selesai ? formatDate(formData.tanggal_selesai) : ''"
+              placeholder="Pilih tanggal selesai"
+              class="form-input"
+            ></ion-input>
+            <!-- 🔧 FIXED: sama seperti tanggal mulai, [value]+(ionChange) -->
+            <ion-popover trigger="tglSelesaiTrigger" show-backdrop="true" [dismissOnSelect]="false">
+              <ng-template>
+                <ion-datetime
+                  presentation="date"
+                  [value]="formData.tanggal_selesai"
+                  [min]="formData.tanggal_mulai || undefined"
+                  (ionChange)="onTanggalSelesaiChange($event)"
+                ></ion-datetime>
+              </ng-template>
+            </ion-popover>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Frekuensi <span class="required">*</span></label>
-            <ion-input type="number" placeholder="1" [(ngModel)]="formData.frekuensi" class="form-input"></ion-input>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Satuan <span class="required">*</span></label>
-            <ion-select [(ngModel)]="formData.satuan" class="form-select">
-              <ion-select-option *ngFor="let s of satuanOptions" [value]="s">{{ s | titlecase }}</ion-select-option>
-            </ion-select>
+
+        <!-- 🔥 GANTI: dulu ion-select pilih teknisi -> sekarang status read-only, hanya muncul saat edit -->
+        <div class="form-group" *ngIf="isEditing">
+          <label class="form-label">Status Teknisi</label>
+          <div class="teknisi-status-box">
+            <ng-container *ngIf="formData.id_teknis && formData.id_teknis.length > 0; else belumDiklaim">
+              <ion-icon name="person-circle-outline" color="success"></ion-icon>
+              Sudah diklaim oleh: <strong>{{ formData.teknisi_list || 'Teknisi' }}</strong>
+              <ion-button size="small" fill="clear" color="danger" (click)="batalkanKlaim()">
+                <ion-icon name="close-circle-outline" slot="start"></ion-icon> Batalkan Klaim
+              </ion-button>
+            </ng-container>
+            <ng-template #belumDiklaim>
+              <ion-icon name="time-outline" color="medium"></ion-icon>
+              Menunggu diklaim oleh teknisi
+            </ng-template>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Teknisi</label>
-          <ion-select [(ngModel)]="formData.id_teknisi_utama" class="form-select" placeholder="Pilih Teknisi Utama">
-            <ion-select-option *ngFor="let t of teknisiOptions" [value]="t.id_teknisi || t.id">{{ t.nama || t.nama_teknisi }}</ion-select-option>
-          </ion-select>
-        </div>
+
         <div class="form-group">
           <label class="form-label">Deskripsi</label>
           <ion-textarea placeholder="Deskripsi pekerjaan..." [(ngModel)]="formData.deskripsi" class="form-textarea" rows="3"></ion-textarea>
@@ -458,6 +562,19 @@
               </ion-select>
             </ion-item>
           </div>
+        </div>
+
+        <!-- 🔧 FIXED: tidak ada lagi checkbox/interaksi apa pun di sini.
+             Semua kategori checklist otomatis ikut terkirim ke backend
+             saat tombol Simpan diklik (lihat saveSchedule() di .ts) —
+             admin tidak perlu memilih apa pun. -->
+        <div class="form-group">
+          <label class="form-label">Checklist Pengecekan Preventive</label>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <ion-badge color="medium" *ngFor="let kat of checklistKategoriOptions">{{ kat }}</ion-badge>
+          </div>
+          <p class="form-hint">
+          </p>
         </div>
       </div>
     </ion-content>
@@ -501,8 +618,25 @@
             <p><strong>Merk:</strong> {{ asset.merk_model || '-' }}</p>
             <p><strong>Pemegang:</strong> {{ asset.pemegang || '-' }}</p>
             <p><strong>Last Maintenance:</strong> {{ formatDate(asset.last_maintenance) }}</p>
+            <p *ngIf="asset.status_pengerjaan_asset === 'Selesai'">
+              <strong>Approval:</strong>
+              User {{ asset.user_konfirmasi === 1 ? '✅' : '⏳' }} →
+              Admin {{ asset.admin_konfirmasi === 1 ? '✅' : '⏳' }}
+            </p>
           </ion-label>
-          <ion-badge slot="end" color="medium">{{ asset.nama_kategori || '-' }}</ion-badge>
+          <div slot="end" style="display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+            <ion-badge color="medium">{{ asset.nama_kategori || '-' }}</ion-badge>
+            <ion-button
+              *ngIf="asset.status_pengerjaan_asset === 'Selesai' && asset.user_konfirmasi === 1 && asset.admin_konfirmasi !== 1"
+              size="small" fill="solid" color="primary" (click)="approveByAdmin(asset)">
+              Approve Admin
+            </ion-button>
+            <ion-button
+              *ngIf="asset.admin_konfirmasi === 1"
+              size="small" fill="outline" color="success" (click)="downloadPdf(asset)">
+              <ion-icon name="download-outline" slot="start"></ion-icon> PDF
+            </ion-button>
+          </div>
         </ion-item>
       </ion-list>
       <ion-item *ngIf="filteredAssetList.length === 0">
@@ -540,16 +674,31 @@
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
+      <ion-toolbar *ngIf="statusModalStartDate && statusModalEndDate">
+        <p class="status-modal-duration">
+          🗓️ Durasi {{ statusModalDurationDays }} hari
+          ({{ formatDate(statusModalStartDate) }} – {{ formatDate(statusModalEndDate) }})
+        </p>
+      </ion-toolbar>
     </ion-header>
     <ion-content>
       <div *ngIf="statusModalLoading" class="ion-padding ion-text-center">
         Memuat detail...
       </div>
       <ion-list *ngIf="!statusModalLoading">
-        <ion-item *ngFor="let asset of statusModalItems">
+        <ion-item
+          *ngFor="let asset of statusModalItems"
+          button="true"
+          detail="true"
+          class="asset-history-link"
+          (click)="goToAssetDetail(asset.kode_asset)"
+        >
           <ion-label>
             <h2>{{ asset.kode_asset }} - {{ asset.nama_barang }}</h2>
             <p><strong>Schedule:</strong> {{ asset.nama_schedule }}</p>
+            <p><strong>Dibuat:</strong> {{ formatDate(asset.tanggal_dibuat) }}</p>
+            <p><strong>Progress:</strong> {{ getAssetProgressLabel(asset) }}</p>
+            <p><strong>Selesai:</strong> {{ getAssetSelesaiLabel(asset) }}</p>
             <p><strong>Pemegang:</strong> {{ asset.pemegang || 'Belum ditentukan' }}</p>
             <p><strong>Last Maintenance:</strong> {{ formatDate(asset.last_maintenance) }}</p>
           </ion-label>

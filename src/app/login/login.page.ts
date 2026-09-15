@@ -22,6 +22,10 @@ export class LoginPage implements OnInit {
   isLoading = false;
   errorMessage = '';
 
+  // ===== STATE UNTUK ELEMEN VISUAL BARU =====
+  showPassword = false;
+  rememberMe = false;
+
   constructor(
     private router: Router,
     private authService: AuthService
@@ -61,5 +65,17 @@ export class LoginPage implements OnInit {
         this.errorMessage = err?.error?.message || 'Username atau password salah!';
       }
     });
+  }
+
+  // ===== HANDLER VISUAL SAJA (belum difungsikan) =====
+  // "Lupa password?" dan "Masuk dengan SSO" saat ini murni tampilan sesuai
+  // desain referensi. Sambungkan ke flow yang sesungguhnya kalau backend-nya
+  // sudah siap (misal endpoint reset password / provider SSO).
+  onForgotPassword() {
+    alert('Fitur reset password belum tersedia. Hubungi Administrator IT.');
+  }
+
+  onSsoLogin() {
+    alert('Login SSO belum tersedia saat ini.');
   }
 }

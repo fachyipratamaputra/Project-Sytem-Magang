@@ -120,15 +120,20 @@ export class UsersPage implements OnInit {
     });
   }
 
-  // Saat NIK dipilih, isi otomatis Nama dan Departemen
+  // Saat NIK dipilih, isi otomatis Nama, Departemen, dan Username
+  // 🔥 BARU: username otomatis dibuat sama persis dengan NIK karyawan
+  // yang dipilih (contoh: NIK "K0038" -> username "K0038"), admin tidak
+  // perlu input manual lagi.
   onNikChange() {
     const selected = this.availableKaryawan.find(k => k.nik === this.formData.nik);
     if (selected) {
       this.formData.nama = selected.nama;
       this.formData.departemen = selected.departemen;
+      this.formData.username = selected.nik; // 🔥 auto-fill username = NIK
     } else {
       this.formData.nama = '';
       this.formData.departemen = '';
+      this.formData.username = '';
     }
   }
 

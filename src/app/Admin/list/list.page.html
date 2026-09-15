@@ -4,9 +4,9 @@
     <div class="sidebar" [class.open]="isSidebarOpen">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <div class="logo-icon-wrapper">
-            <ion-icon name="headset-outline" class="logo-icon"></ion-icon>
-          </div>
+         <div class="logo-icon-wrapper">
+  <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+</div>
           <span class="logo-text">Helpdesk<br>Ticketing System</span>
         </div>
         <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
@@ -129,6 +129,122 @@
         <div class="page-heading">
           <h1 class="page-title">📋 List Ticket</h1>
           <p class="page-subtitle">Kelola dan pantau seluruh ticket yang masuk</p>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CHART STATISTIK TICKET                     -->
+        <!-- ========================================== -->
+        <div class="stats-card">
+          <div class="stats-header">
+            <div>
+              <h3>Statistik Ticket per Bulan</h3>
+              <p class="stats-sub">Total {{ totalTicketChart }} ticket pada tahun {{ filterTahun }}</p>
+            </div>
+            <div class="stats-header-right">
+              <select class="stats-filter" [(ngModel)]="filterTahun" (ngModelChange)="onTahunChange()">
+                <option *ngFor="let th of tahunOptions" [ngValue]="th">Tahun {{ th }}</option>
+              </select>
+              <ion-button fill="clear" size="small" class="reset-btn"
+                *ngIf="selectedBulan !== null || selectedDeptChart || filterStatusChart"
+                (click)="resetChartFilter()">
+                <ion-icon name="refresh-outline" slot="start"></ion-icon> Reset
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- FILTER STATUS -->
+          <div class="status-chips">
+            <div class="status-chip" [class.active]="filterStatusChart === ''" (click)="selectStatusGroup('')">
+              Semua <span class="chip-count">{{ tickets.length }}</span>
+            </div>
+            <div class="status-chip" *ngFor="let g of statusGroups"
+                 [class.active]="filterStatusChart === g.key"
+                 [ngClass]="'chip-' + g.key"
+                 (click)="selectStatusGroup(g.key)">
+              {{ g.label }} <span class="chip-count">{{ countByStatusGroup(g.key) }}</span>
+            </div>
+          </div>
+
+          <!-- LEVEL 1: CHART PER BULAN -->
+          <div class="bar-chart" *ngIf="chartBulan.length > 0">
+            <div class="bar-item" *ngFor="let b of chartBulan"
+                 [class.active]="selectedBulan === b.bulan"
+                 [class.empty]="b.jumlah === 0"
+                 (click)="selectBulan(b.bulan)"
+                 [title]="'Klik untuk lihat departemen di bulan ' + b.label">
+              <div class="bar-track">
+                <div class="bar-fill" [style.height.%]="(b.jumlah / maxBulanValue) * 100">
+                  <span class="bar-value" *ngIf="b.jumlah > 0">{{ b.jumlah }}</span>
+                </div>
+              </div>
+              <div class="bar-label">{{ b.label }}</div>
+            </div>
+          </div>
+          <div class="stats-empty" *ngIf="totalTicketChart === 0">
+            Belum ada data ticket untuk tahun/status ini
+          </div>
+          <div class="stats-hint" *ngIf="totalTicketChart > 0">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Klik salah satu bulan untuk melihat departemen yang melakukan ticketing
+          </div>
+        </div>
+
+        <!-- LEVEL 2: CHART PER DEPARTEMEN -->
+        <div class="stats-card" *ngIf="selectedBulan !== null">
+          <div class="stats-header">
+            <div>
+              <h3>Departemen yang Ticketing — {{ namaBulan[selectedBulan] }} {{ filterTahun }}</h3>
+              <p class="stats-sub">{{ chartDepartemen.length }} departemen terlibat</p>
+            </div>
+          </div>
+
+          <div class="bar-chart" *ngIf="chartDepartemen.length > 0">
+            <div class="bar-item" *ngFor="let d of chartDepartemen"
+                 [class.active]="selectedDeptChart === d.departemen"
+                 (click)="selectDeptChart(d.departemen)"
+                 [title]="'Klik untuk lihat asset departemen ' + d.departemen">
+              <div class="bar-track">
+                <div class="bar-fill dept" [style.height.%]="(d.jumlah / maxDeptValue) * 100">
+                  <span class="bar-value">{{ d.jumlah }}</span>
+                </div>
+              </div>
+              <div class="bar-label">{{ d.departemen }}</div>
+            </div>
+          </div>
+          <div class="stats-empty" *ngIf="chartDepartemen.length === 0">
+            Tidak ada ticket pada bulan ini
+          </div>
+          <div class="stats-hint" *ngIf="chartDepartemen.length > 0">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Klik salah satu departemen untuk melihat asset yang bermasalah
+          </div>
+        </div>
+
+        <!-- LEVEL 3: DAFTAR ASSET -->
+        <div class="stats-card asset-breakdown" *ngIf="selectedDeptChart && chartAssets.length > 0">
+          <div class="stats-header">
+            <div>
+              <h3>Asset Bermasalah — {{ selectedDeptChart }}</h3>
+              <p class="stats-sub">{{ namaBulan[selectedBulan!] }} {{ filterTahun }}</p>
+            </div>
+          </div>
+
+          <div class="asset-list">
+            <div class="asset-row" *ngFor="let a of chartAssets">
+              <div class="asset-row-head">
+                <span class="asset-name">
+                  <ion-icon name="cube-outline"></ion-icon> {{ a.aset }}
+                </span>
+                <span class="asset-count">{{ a.jumlah }} ticket</span>
+              </div>
+              <div class="asset-tickets">
+                <span class="asset-ticket-chip" *ngFor="let t of a.tickets"
+                      [ngClass]="getStatusClass(t.status)">
+                  {{ t.id_ticket }} · {{ t.status }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- TOOLBAR -->

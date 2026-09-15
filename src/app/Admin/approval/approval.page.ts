@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, AlertController } from '@ionic/angular';
 import { TicketService } from '../../services/ticket.service';
 import { environment } from '../../../environments/environment';
 
@@ -63,7 +63,8 @@ export class ApprovalTicketPage implements OnInit {
 
   constructor(
     private router: Router,
-    private ticketService: TicketService
+    private ticketService: TicketService,
+    private alertCtrl: AlertController
   ) {}
 
   ngOnInit() {
@@ -76,6 +77,7 @@ export class ApprovalTicketPage implements OnInit {
     this.ticketService.getAllRaw().subscribe({
       next: (res: any) => {
         const data = res?.data || res || [];
+
         this.approvalTickets = data
           .filter((t: any) => t.status === 'Menunggu Approval')
           .map((t: any) => ({
@@ -90,10 +92,11 @@ export class ApprovalTicketPage implements OnInit {
             prioritas: t.prioritas || 'Normal',
             status_approval: t.status_approval || 'Menunggu Approval'
           }));
+
         this.buildFilterOptions();
         this.isLoadingApproval = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Gagal memuat tiket approval:', err);
         this.isLoadingApproval = false;
       }
@@ -112,7 +115,7 @@ export class ApprovalTicketPage implements OnInit {
         this.returnedTickets = res?.data || res || [];
         this.isLoadingReturned = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Gagal memuat tiket pengembalian:', err);
         this.isLoadingReturned = false;
       }
@@ -130,22 +133,58 @@ export class ApprovalTicketPage implements OnInit {
         this.loadApprovalTickets();
         alert('Tiket berhasil disetujui.');
       },
-      error: (err) => alert('Gagal approve: ' + (err.error?.message || err.message))
+      error: (err: any) => alert('Gagal approve: ' + (err.error?.message || err.message))
     });
   }
 
-  rejectTicket(ticket: ApprovalTicket) {
+  // =========================================================
+  // 🔥 REJECT TICKET — sekarang wajib isi alasan lewat AlertController
+  // =========================================================
+  async rejectTicket(ticket: ApprovalTicket) {
     if (!ticket?.id_ticket) {
       alert('ID Tiket tidak valid.');
       return;
     }
-    if (!confirm(`Tolak tiket ${ticket.id_ticket}?`)) return;
-    this.ticketService.approve(ticket.id_ticket, 'Reject').subscribe({
+
+    const alertEl = await this.alertCtrl.create({
+      header: 'Tolak Tiket',
+      subHeader: `Tiket ${ticket.id_ticket}`,
+      message: 'Masukkan alasan penolakan tiket ini (wajib diisi):',
+      inputs: [
+        {
+          name: 'alasan',
+          type: 'textarea',
+          placeholder: 'Contoh: Deskripsi kurang jelas, mohon dilengkapi kembali',
+        },
+      ],
+      buttons: [
+        { text: 'Batal', role: 'cancel' },
+        {
+          text: 'Tolak Tiket',
+          role: 'destructive',
+          handler: (data) => {
+            const alasan = (data?.alasan || '').trim();
+            if (!alasan) {
+              // return false -> alert tidak ditutup, alasan wajib diisi dulu
+              return false;
+            }
+            this.doRejectTicket(ticket, alasan);
+            return true;
+          },
+        },
+      ],
+    });
+
+    await alertEl.present();
+  }
+
+  private doRejectTicket(ticket: ApprovalTicket, alasan: string) {
+    this.ticketService.approve(ticket.id_ticket, 'Reject', alasan).subscribe({
       next: () => {
         this.loadApprovalTickets();
         alert('Tiket ditolak.');
       },
-      error: (err) => alert('Gagal reject: ' + (err.error?.message || err.message))
+      error: (err: any) => alert('Gagal reject: ' + (err.error?.message || err.message)),
     });
   }
 
@@ -161,7 +200,7 @@ export class ApprovalTicketPage implements OnInit {
         this.loadApprovalTickets();
         alert('Pengembalian disetujui.');
       },
-      error: (err) => alert('Gagal approve return: ' + (err.error?.message || err.message))
+      error: (err: any) => alert('Gagal approve return: ' + (err.error?.message || err.message))
     });
   }
 
@@ -176,7 +215,7 @@ export class ApprovalTicketPage implements OnInit {
         this.loadReturnedTickets();
         alert('Pengembalian ditolak.');
       },
-      error: (err) => alert('Gagal reject return: ' + (err.error?.message || err.message))
+      error: (err: any) => alert('Gagal reject return: ' + (err.error?.message || err.message))
     });
   }
 
@@ -234,7 +273,7 @@ export class ApprovalTicketPage implements OnInit {
   goToSubKategori() { this.setActiveMenu('sub-kategori'); this.router.navigate(['/sub-kategori']); }
   goToTeknisi() { this.setActiveMenu('teknisi'); this.router.navigate(['/teknisi']); }
   goToInventory() { this.setActiveMenu('inventory'); this.router.navigate(['/inventory']); }
-  goToSchedule() { this.setActiveMenu('schedule'); this.router.navigate(['/schedule']); } // 🛠️ Ditambahkan untuk mengatasi error
+  goToSchedule() { this.setActiveMenu('schedule'); this.router.navigate(['/schedule']); }
   goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
   goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
   goToProfile() { this.setActiveMenu('profile'); this.router.navigate(['/profile']); }

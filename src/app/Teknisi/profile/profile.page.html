@@ -1,0 +1,160 @@
+<ion-content class="proses-tiket-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon-wrapper">
+            <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+          </div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="avatar-wrapper">
+          <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=128&bold=true'" alt="Avatar" class="sidebar-avatar" />
+          <div class="online-status"></div>
+        </div>
+        <div class="sidebar-user-info">
+          <h4 class="sidebar-username">{{ user.nama || 'Teknisi' }}</h4>
+          <p class="sidebar-userrole">🔧 Teknisi</p>
+        </div>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" (click)="goToDashboardTeknisi()">
+          <div class="menu-icon-wrapper"><ion-icon name="home-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" (click)="goToTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="list-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Ticket</span>
+        </div>
+        <div class="menu-item" (click)="goToProsesTiket()">
+          <div class="menu-icon-wrapper"><ion-icon name="construct-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Proses Tiket</span>
+        </div>
+        <div class="menu-item" (click)="goToRiwayatTiket()">
+          <div class="menu-icon-wrapper"><ion-icon name="time-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Riwayat Tiket</span>
+        </div>
+        <div class="menu-label">PREVENTIVE</div>
+<div class="menu-item" [class.active]="activeMenu === 'schedule-tersedia'" (click)="goToScheduleTersedia()">
+  <ion-icon name="calendar-outline" class="menu-icon"></ion-icon>
+  <span class="menu-text">Schedule Tersedia</span>
+</div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item active">
+          <div class="menu-icon-wrapper"><ion-icon name="person-circle-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Profil Saya</span>
+        </div>
+        <div class="menu-item logout-item" (click)="logout()">
+          <div class="menu-icon-wrapper"><ion-icon name="log-out-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Keluar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">Profil Saya</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar">
+            <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=64&bold=true'" alt="Avatar" />
+            <span class="header-avatar-name">{{ user.nama }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div class="page-heading">
+          <h1 class="page-title">Profil Saya</h1>
+          <p class="page-subtitle">Kelola data diri dan tanda tangan digital kamu</p>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-user-row">
+            <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=128&bold=true'" alt="Avatar" class="profile-avatar" />
+            <div>
+              <h2 class="profile-name">{{ user.nama }}</h2>
+              <p class="profile-role">🔧 Teknisi</p>
+            </div>
+          </div>
+
+          <div class="signature-section">
+            <h4>Tanda Tangan Digital</h4>
+            <p class="hint-text">
+              Tanda tangan ini akan otomatis dipakai di Check Sheet setiap kali kamu
+              mengajukan/approve tiket. Upload sekali saja, tidak perlu diulang tiap tiket.
+            </p>
+
+            <div class="signature-preview-box" *ngIf="currentSignatureUrl && !previewUrl">
+              <img [src]="currentSignatureUrl" alt="Tanda tangan tersimpan" />
+              <span class="label">Tanda tangan tersimpan</span>
+            </div>
+
+            <div class="signature-preview-box" *ngIf="!currentSignatureUrl && !previewUrl">
+              <span class="empty-label">Belum ada tanda tangan tersimpan</span>
+            </div>
+
+            <div class="signature-preview-box" *ngIf="previewUrl">
+              <img [src]="previewUrl" alt="Preview tanda tangan baru" />
+              <span class="label">Preview (belum tersimpan)</span>
+            </div>
+
+            <input
+              type="file"
+              accept="image/png, image/jpeg"
+              style="display:none"
+              #fileInput
+              (change)="onFileSelected($event)"
+            />
+
+            <div class="signature-actions">
+              <ion-button fill="outline" (click)="fileInput.click()">
+                <ion-icon name="image-outline" slot="start"></ion-icon>
+                {{ currentSignatureUrl ? 'Ganti Tanda Tangan' : 'Pilih Gambar' }}
+              </ion-button>
+
+              <ion-button
+                *ngIf="selectedFile"
+                color="success"
+                [disabled]="isUploading"
+                (click)="uploadSignature()">
+                <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+                {{ isUploading ? 'Menyimpan...' : 'Simpan' }}
+              </ion-button>
+
+              <ion-button
+                *ngIf="selectedFile"
+                fill="clear"
+                color="medium"
+                (click)="cancelPreview()">
+                Batal
+              </ion-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

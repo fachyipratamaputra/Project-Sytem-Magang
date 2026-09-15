@@ -59,19 +59,21 @@
 }
 
 .logo-icon-wrapper {
-  width: 36px;
-  height: 36px;
+  width: 60px;
+  height: 60px;
   border-radius: 10px;
-  background: var(--primary);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: visible;
 }
 
-.logo-icon {
-  font-size: 20px;
-  color: #fff;
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .logo-text {
@@ -571,7 +573,7 @@
 }
 
 /* ========================================== */
-/* 🔥 STYLING MODAL CHAT (WhatsApp Style)      */
+/* STYLING MODAL CHAT (WhatsApp Style)         */
 /* ========================================== */
 .modal-content {
   --background: #f2f5f8;
@@ -584,7 +586,6 @@
   background: #f2f5f8;
 }
 
-/* Area Chat Messages */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -594,7 +595,6 @@
   gap: 12px;
 }
 
-/* Loading dan Empty State */
 .chat-loading, .chat-empty {
   text-align: center;
   color: var(--text-muted);
@@ -602,7 +602,6 @@
   font-size: 14px;
 }
 
-/* Gelembung Chat (Bubble) */
 .chat-bubble {
   max-width: 80%;
   padding: 10px 16px;
@@ -614,7 +613,6 @@
   border: 1px solid #e5e7eb;
 }
 
-/* Header Bubble (Nama & Waktu) */
 .bubble-header {
   display: flex;
   justify-content: space-between;
@@ -630,7 +628,6 @@
   color: var(--primary);
 }
 
-/* Isi Pesan */
 .bubble-text {
   font-size: 14px;
   color: var(--text-dark);
@@ -638,13 +635,12 @@
   word-break: break-word;
 }
 
-/* ===== BUBBLE MILIK SENDIRI (User / Teknisi) ===== */
 .chat-bubble.bubble-me {
   align-self: flex-end;
-  background: var(--primary); /* Biru #2563eb */
+  background: var(--primary);
   color: #ffffff;
   border-color: var(--primary);
-  border-bottom-right-radius: 4px; /* Sedikit runcing seperti WA */
+  border-bottom-right-radius: 4px;
 }
 
 .bubble-me .bubble-header {
@@ -659,7 +655,6 @@
   color: #000000;
 }
 
-/* ===== AREA INPUT CHAT ===== */
 .chat-input-area {
   display: flex;
   align-items: center;
@@ -670,7 +665,6 @@
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
 }
 
-/* Input text */
 .chat-input {
   --padding-start: 16px;
   --padding-end: 16px;
@@ -680,7 +674,6 @@
   flex: 1;
 }
 
-/* Tombol Kirim */
 .chat-input-area ion-button {
   --border-radius: 50%;
   width: 44px;
@@ -690,7 +683,6 @@
   margin: 0;
 }
 
-/* Scrollbar Custom Chat */
 .chat-messages::-webkit-scrollbar {
   width: 4px;
 }
@@ -700,7 +692,7 @@
 }
 
 /* ========================================== */
-/* 🔥 STYLING COUNTDOWN TIMER                 */
+/* STYLING COUNTDOWN TIMER                     */
 /* ========================================== */
 .countdown-timer {
   display: flex;
@@ -713,7 +705,7 @@
 }
 
 .countdown-timer.is-late {
-  color: #ef4444 !important; /* Merah jika telat */
+  color: #ef4444 !important;
 }
 
 .countdown-timer ion-icon {
@@ -721,7 +713,7 @@
 }
 
 /* ========================================== */
-/* 🔥 STYLING HISTORI PROGRES                 */
+/* STYLING HISTORI PROGRES                     */
 /* ========================================== */
 .history-container {
   display: flex;
@@ -764,4 +756,383 @@
 .history-date {
   color: var(--text-muted);
   font-size: 12px;
+}
+
+/* ========================================== */
+/* STYLING MODAL CHECK SHEET (mirip PDF)       */
+/* ========================================== */
+.checksheet-modal {
+  --width: 900px;
+  --height: 90%;
+  --border-radius: 12px;
+
+  @media (max-width: 992px) {
+    --width: 100%;
+    --height: 100%;
+  }
+}
+
+.checksheet-form {
+  padding: 20px;
+  background: #ffffff;
+}
+
+/* ========================================== */
+/* HEADER FORM PERSIS SEPERTI PDF RESMI        */
+/* (pakai <table> beneran biar border-nya      */
+/* menyatu jadi satu kotak, sama seperti PDF)  */
+/* ========================================== */
+.checksheet-header-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0;
+
+  td {
+    border: 1px solid #1f2937;
+    vertical-align: middle;
+    padding: 8px 10px;
+  }
+}
+
+.cs-logo-cell {
+  width: 70px;
+  text-align: center;
+
+  .checksheet-logo {
+    width: 55px;
+    height: auto;
+    object-fit: contain;
+  }
+}
+
+.cs-title-cell {
+  text-align: center;
+
+  .cs-title-main {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .cs-title-sub {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+}
+
+.cs-formno-cell {
+  width: 170px;
+  font-size: 10.5px;
+  color: var(--text-dark);
+
+  div {
+    margin: 1px 0;
+  }
+}
+
+.checksheet-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #1f2937;
+  border-top: none;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+  color: var(--text-dark);
+
+  td {
+    padding: 3px 10px;
+  }
+
+  .cs-info-label {
+    width: 160px;
+    font-weight: 600;
+  }
+
+  .cs-info-value {
+    text-align: left;
+  }
+}
+
+.checksheet-table-wrapper {
+  overflow-x: auto;
+  overflow-y: visible; /* penting: jangan sampai popup B/C/D kepotong */
+}
+
+.checksheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 560px;
+
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 8px;
+    vertical-align: middle;
+    overflow: visible; /* jangan potong popup B/C/D yang keluar dari sel */
+  }
+
+  th {
+    background: #f1f5f9;
+    text-align: center;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .unit-cell {
+    text-align: center;
+    font-weight: 600;
+    background: #f8fafc;
+    color: var(--text-dark);
+  }
+
+  .check-col {
+    text-align: center;
+  }
+}
+
+/* ========================================== */
+/* 🔥 KOTAK CHECK OK/NC CUSTOM                 */
+/* (ganti ion-checkbox yang sebelumnya bug     */
+/* jadi kotak biru solid tanpa tanda centang)  */
+/* ========================================== */
+.cs-checkbox {
+  width: 22px;
+  height: 22px;
+  margin: 0 auto;
+  border: 2px solid #94a3b8;
+  border-radius: 4px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+
+  ion-icon {
+    font-size: 16px;
+    color: #ffffff;
+  }
+
+  &:hover {
+    border-color: #2563eb;
+  }
+
+  &.checked {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+  }
+}
+
+.cs-checkbox-nc {
+  color: #070606;
+
+  &.checked {
+    background: #ffffff !important;
+    border-color: #020202 !important;
+    color: #0e0c0c;
+  }
+}
+
+.checksheet-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ========================================== */
+/* POPUP PILIHAN HURUF B/C/D DI NC             */
+/* ========================================== */
+.nc-popup-col {
+  position: relative;
+  overflow: visible; /* supaya popup tidak kepotong border cell */
+}
+
+.nc-huruf-popup {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  margin-top: 4px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  width: 128px;
+}
+
+.nc-huruf-popup-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.nc-huruf-popup-options {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.nc-huruf-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  line-height: 1;
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+
+  &.active {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
+  }
+}
+
+.nc-huruf-popup-cancel {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--text-dark);
+  }
+}
+
+/* ========================================== */
+/* LEGENDA "CATATAN" & "KONDISI NC"            */
+/* (persis footer kiri-kanan di PDF resmi,     */
+/* pakai <table> biar border-nya nyatu, sama   */
+/* gaya dengan checksheet-header-table dan     */
+/* checksheet-signature-table)                 */
+/* ========================================== */
+.checksheet-legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-dark);
+
+  td {
+    border: 1px solid #1f2937;
+    padding: 10px 14px;
+    vertical-align: top;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--text-dark);
+  }
+
+  p {
+    margin: 2px 0;
+    line-height: 1.4;
+  }
+}
+
+.checksheet-legend-col {
+  width: 70%;
+}
+
+.checksheet-legend-nc {
+  width: 30%;
+}
+
+.checksheet-approval-actions {
+  margin: 16px 0 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.checksheet-signature-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #1e293b;
+
+  th, td {
+    border: 1px solid #1f2937;
+    padding: 6px 8px;
+    text-align: center;
+  }
+
+  th {
+    background: #f1f5f9;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .signature-row td {
+    height: 70px;
+    vertical-align: middle;
+    font-weight: 600;
+  }
+
+  .signature-date {
+    font-weight: 400;
+    color: #64748b;
+    font-size: 10px;
+  }
+
+  .signature-label {
+    font-size: 10px;
+    font-weight: 400;
+    color: #64748b;
+  }
+}
+
+/* ========================================== */
+/* 🔥 SEL TANDA TANGAN (gambar PNG + nama + tanggal) */
+/* dipakai di dalam .checksheet-signature-table,     */
+/* muncul otomatis begitu approver pernah upload TTD */
+/* ========================================== */
+.signature-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.signature-img {
+  max-width: 90px;
+  max-height: 34px;
+  object-fit: contain;
+  margin-bottom: 2px;
+}
+
+.signature-name {
+  font-weight: 600;
+  font-size: 11px;
+  color: #1e293b;
 }

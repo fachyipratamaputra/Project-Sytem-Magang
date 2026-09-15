@@ -1,0 +1,397 @@
+<ion-content class="schedule-content">
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon-wrapper">
+            <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+          </div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="avatar-wrapper">
+          <img
+            [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=128&bold=true'"
+            alt="Avatar"
+            class="sidebar-avatar"
+          />
+          <div class="online-status"></div>
+        </div>
+        <div class="sidebar-user-info">
+          <h4 class="sidebar-username">{{ user.nama || 'Teknisi' }}</h4>
+          <p class="sidebar-userrole">🔧 Teknisi</p>
+        </div>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard-teknisi'" (click)="goToDashboardTeknisi()">
+          <ion-icon name="home-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'ticket'" (click)="goToTicket()">
+          <ion-icon name="list-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'proses-tiket'" (click)="goToProsesTiket()">
+          <ion-icon name="construct-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Proses Tiket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'riwayat-tiket'" (click)="goToRiwayatTiket()">
+          <ion-icon name="time-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Riwayat Tiket</span>
+        </div>
+
+        <div class="menu-label">PREVENTIVE</div>
+        <div class="menu-item" [class.active]="activeMenu === 'schedule-tersedia'" (click)="goToScheduleTersedia()">
+          <ion-icon name="calendar-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Schedule Tersedia</span>
+        </div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="goToPengaturan()">
+          <ion-icon name="settings-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Pengaturan</span>
+        </div>
+        <div class="menu-item logout-item" (click)="logout()">
+          <ion-icon name="log-out-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Keluar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">Schedule Preventive</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar" (click)="goToProfile()">
+            <img
+              [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=64&bold=true'"
+              alt="Avatar"
+            />
+            <span class="header-avatar-name">{{ user.nama }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div class="page-heading">
+          <h1 class="page-title">📊 Status Pemeliharaan per Departemen</h1>
+          <p class="page-subtitle">Pantau progress pemeliharaan rutin semua departemen, lalu ambil asset yang belum dikerjakan</p>
+        </div>
+
+        <!-- ===== TOOLBAR ===== -->
+        <div class="list-toolbar">
+          <div class="search-box">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input
+              type="text"
+              placeholder="Cari departemen..."
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onFilterChange()"
+            />
+          </div>
+          <div class="toolbar-filters">
+            <select [(ngModel)]="filterDept" (change)="onFilterChange()">
+              <option value="">Semua Departemen</option>
+              <option *ngFor="let d of departemenOptions" [value]="d">{{ d }}</option>
+            </select>
+            <select [(ngModel)]="filterStatus" (change)="onFilterChange()">
+              <option value="">Semua Status</option>
+              <option value="Aktif">Aktif</option>
+              <option value="Nonaktif">Nonaktif</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ===== PERIOD FILTER (BULAN/TAHUN) ===== -->
+        <div class="period-filter">
+          <ion-segment [(ngModel)]="selectedPeriod" (ionChange)="onPeriodChange()">
+            <ion-segment-button value="monthly">
+              <ion-label>Bulanan</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="yearly">
+              <ion-label>Tahunan</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <ion-select
+            *ngIf="selectedPeriod === 'monthly'"
+            [(ngModel)]="selectedMonth"
+            (ionChange)="onPeriodChange()"
+            interface="popover"
+            placeholder="Pilih Bulan"
+            class="period-select"
+          >
+            <ion-select-option *ngFor="let m of monthOptions" [value]="m.value">
+              {{ m.label }}
+            </ion-select-option>
+          </ion-select>
+
+          <ion-select
+            [(ngModel)]="selectedYear"
+            (ionChange)="onPeriodChange()"
+            interface="popover"
+            placeholder="Pilih Tahun"
+            class="period-select"
+          >
+            <ion-select-option *ngFor="let y of yearOptions" [value]="y">
+              {{ y }}
+            </ion-select-option>
+          </ion-select>
+
+          <span class="period-label">Periode: {{ getPeriodLabel() }}</span>
+        </div>
+
+        <!-- LOADING -->
+        <div class="ion-padding ion-text-center" *ngIf="isLoading">Memuat data schedule...</div>
+
+        <!-- ERROR -->
+        <div class="ion-padding ion-text-center" *ngIf="errorMessage && !isLoading" style="color: var(--ion-color-danger);">
+          {{ errorMessage }}
+        </div>
+
+        <!-- ===== GANTT CHART PER DEPARTEMEN ===== -->
+        <div class="gantt-section" *ngIf="!isLoading && ganttRows.length > 0">
+          <div class="chart-header">
+            <h3 class="chart-title">📅 Schedule Preventive {{ selectedYear }}</h3>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-color plan"></span> Preventive Plan</span>
+              <span class="legend-item"><span class="legend-color progress"></span> Inprogress</span>
+              <span class="legend-item"><span class="legend-color approve"></span> Complete & Approve</span>
+              <span class="legend-item"><span class="legend-color userapprove"></span> Disetujui User</span>
+              <span class="legend-total">
+                <ion-icon name="desktop-outline"></ion-icon> Total PC Preventive {{ totalPcPreventive }} PC
+              </span>
+            </div>
+          </div>
+
+          <div
+            class="gantt-wrapper"
+            #ganttScroll
+            (mousedown)="onGanttMouseDown($event)"
+            (mousemove)="onGanttMouseMove($event)"
+            (mouseup)="onGanttMouseUp()"
+            (mouseleave)="onGanttMouseUp()"
+          >
+            <table class="gantt-table">
+              <thead>
+                <tr class="gantt-month-row">
+                  <th class="gantt-sticky-col" rowspan="2">Departemen / Schedule</th>
+                  <th class="gantt-info-col" rowspan="2">Asset</th>
+                  <th class="gantt-info-col" rowspan="2">Mulai</th>
+                  <th class="gantt-info-col" rowspan="2">Selesai</th>
+                  <th *ngFor="let group of timelineMonthGroups" [attr.colspan]="group.span" class="gantt-month-col">
+                    {{ group.label }}
+                  </th>
+                </tr>
+                <tr>
+                  <th
+                    *ngFor="let day of timelineDays; trackBy: trackByDay"
+                    class="gantt-marker-col"
+                    [class.gantt-today-col]="day.isToday"
+                    [class.gantt-weekend-col]="day.isWeekend"
+                  >
+                    {{ day.label }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of ganttRows; trackBy: trackByRowId">
+                  <td class="gantt-sticky-col">
+                    <div class="gantt-label-wrapper">
+                      <span class="gantt-label-name">{{ row.label }}</span>
+                      <span class="gantt-label-teknisi">{{ row.teknisi }}</span>
+                    </div>
+                  </td>
+                  <td class="gantt-info-col">{{ row.totalAset }} pc</td>
+                  <td class="gantt-info-col">{{ row.startDate | date:'dd/MM' }}</td>
+                  <td class="gantt-info-col">{{ row.endDate | date:'dd/MM' }}</td>
+                  <td class="gantt-bar-cell" [attr.colspan]="timelineDays.length">
+                    <div class="gantt-bar-track">
+                      <div
+                        class="gantt-bar"
+                        [ngClass]="getGanttStatusClass(row.status)"
+                        [ngStyle]="getGanttBarStyle(row.startDate, row.endDate)"
+                        (click)="openDetailAset(row)"
+                      >
+                        <ion-icon
+                          [name]="getGanttBarIcon(row.status)"
+                          class="gantt-bar-icon"
+                          [class.spin]="row.status === 'progress'"
+                        ></ion-icon>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="empty-state" *ngIf="!isLoading && ganttRows.length === 0">
+          <ion-icon name="checkmark-done-circle-outline" class="empty-icon"></ion-icon>
+          <h3>Tidak ada schedule preventive</h3>
+          <p>Belum ada schedule aktif untuk periode ini.</p>
+        </div>
+
+        <!-- ===== TABEL REKAPAN + AKSI AMBIL TUGAS ===== -->
+        <div class="rekapan-section" *ngIf="rekapanData.length > 0">
+          <div class="chart-header">
+            <h3 class="chart-title">📋 Rekapan Pemeliharaan per Departemen</h3>
+            <div class="rekapan-filter">
+              <ion-icon name="filter-outline" class="rekapan-filter-icon"></ion-icon>
+              <select [(ngModel)]="rekapanFilterDept" (change)="onRekapanFilterChange()">
+                <option value="">Semua Departemen ({{ rekapanData.length }})</option>
+                <option *ngFor="let d of rekapanDeptOptions" [value]="d">
+                  {{ d }} ({{ getRekapanCountByDept(d) }})
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="rekapan-table">
+              <thead>
+                <tr>
+                  <th>Departemen</th>
+                  <th>Schedule</th>
+                  <th>Asset</th>
+                  <th>Durasi</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Teknisi</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of filteredRekapanData">
+                  <td>{{ item.departemen }}</td>
+                  <td>{{ item.schedule }}</td>
+                  <td>{{ item.totalAset }}</td>
+                  <td>{{ item.durationDays }} hari</td>
+                  <td>{{ item.startDate | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ item.endDate | date:'dd/MM/yyyy' }}</td>
+
+                  <!-- 🔥 BARU: kalau ada data klaim per-asset, tampilkan
+                       badge per teknisi + jumlah aset yang dikerjakan.
+                       Kalau tidak ada (belum ada yang klaim / masih pakai
+                       skema assign manual lama), fallback ke teks polos. -->
+                  <td>
+                    <div class="teknisi-klaim-list" *ngIf="item.teknisiKlaim && item.teknisiKlaim.length > 0; else teknisiPlain">
+                      <span class="teknisi-klaim-badge" *ngFor="let tk of item.teknisiKlaim">
+                        {{ tk.nama }} <b>({{ tk.jumlah }}/{{ item.totalAset }} aset)</b>
+                      </span>
+                    </div>
+                    <ng-template #teknisiPlain>{{ item.teknisi }}</ng-template>
+                  </td>
+
+                  <td>
+                    <ion-button
+                      *ngIf="!item.isClaimed"
+                      size="small"
+                      fill="solid"
+                      color="primary"
+                      [disabled]="claimingId === item.id_schedule"
+                      (click)="ambilTugas(item)"
+                    >
+                      <ion-icon name="hand-left-outline" slot="start"></ion-icon>
+                      {{ claimingId === item.id_schedule ? 'Memproses...' : 'Ambil Tugas' }}
+                    </ion-button>
+                    <ion-badge *ngIf="item.isClaimed" color="success">Sudah diklaim</ion-badge>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredRekapanData.length === 0">
+                  <td colspan="8" class="rekapan-empty">Tidak ada data untuk departemen ini</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<!-- ===== MODAL DETAIL ASSET (KLIK BAR CHART) ===== -->
+<ion-modal [isOpen]="isStatusModalOpen" (didDismiss)="closeStatusModal()" cssClass="asset-modal">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ statusModalTitle }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeStatusModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+      <ion-toolbar *ngIf="statusModalStartDate && statusModalEndDate">
+        <p class="status-modal-duration">
+          🗓️ Durasi {{ statusModalDurationDays }} hari
+          ({{ formatDate(statusModalStartDate) }} – {{ formatDate(statusModalEndDate) }})
+        </p>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content>
+      <div *ngIf="statusModalLoading" class="ion-padding ion-text-center">
+        Memuat detail...
+      </div>
+      <ion-list *ngIf="!statusModalLoading">
+        <ion-item *ngFor="let asset of statusModalItems">
+          <ion-label>
+            <h2>{{ asset.kode_asset }} - {{ asset.nama_barang }}</h2>
+            <p><strong>Progress:</strong> {{ getAssetProgressLabel(asset) }}</p>
+            <p><strong>Selesai:</strong> {{ getAssetSelesaiLabel(asset) }}</p>
+            <p><strong>Pemegang:</strong> {{ asset.pemegang || 'Belum ditentukan' }}</p>
+            <p><strong>Last Maintenance:</strong> {{ formatDate(asset.last_maintenance) }}</p>
+          </ion-label>
+
+          <!-- 🔥 BARU: tombol ambil asset / badge sudah diklaim -->
+          <ion-button
+            *ngIf="!asset.claimed_by_id_teknisi"
+            slot="end" size="small" color="primary"
+            (click)="claimAsset(asset)">
+            Ambil Asset
+          </ion-button>
+          <ion-badge *ngIf="asset.claimed_by_id_teknisi" slot="end" color="success">
+            Diklaim: {{ asset.claimed_by_nama }}
+          </ion-badge>
+        </ion-item>
+        <ion-item *ngIf="statusModalItems.length === 0">
+          <ion-label class="ion-text-center">Tidak ada data untuk kombinasi ini</ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-content>
+    <ion-footer>
+      <ion-toolbar>
+        <ion-title size="small">Total: {{ statusModalItems.length }} PC/aset</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeStatusModal()">Tutup</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
+  </ng-template>
+</ion-modal>
