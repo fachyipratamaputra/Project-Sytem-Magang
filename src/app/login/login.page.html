@@ -1,0 +1,162 @@
+<ion-content class="login-content">
+  <div class="login-wrapper">
+
+    <!-- ===== LEFT SIDE (Branding / Industrial) ===== -->
+    <div class="login-left">
+      <!-- === GAMBAR PIPA / INDUSTRI ===
+           Ganti url() di bawah dengan foto pabrik/pipa Anda sendiri.
+           Taruh file gambarnya di folder src/assets/ lalu sesuaikan namanya. -->
+      <div class="left-texture" style="background-image: url('../../assets/pipa2.png');"></div>
+      <div class="left-overlay">
+
+        <!-- Logo -->
+        <div class="brand-logo">
+          <!-- Ganti src dengan logo perusahaan Anda (format PNG transparan disarankan) -->
+          <img src="../../assets/logo bakrie.png" alt="Logo Perusahaan" class="custom-logo" />
+        </div>
+
+        <!-- Headline -->
+        <div class="left-content">
+          <h1 class="display-title">PT Bakrie<br>Pipe Industry</h1>
+          <div class="display-rule"></div>
+          <p class="display-tagline">Helpdesk &amp; Maintenance<br>Management System</p>
+          <p class="display-desc">
+            Platform terintegrasi untuk pengelolaan tiket permintaan, permasalahan IT,
+            dan maintenance peralatan perusahaan secara efisien dan terstruktur.
+          </p>
+        </div>
+
+        <!-- Feature list -->
+        <div class="feature-list">
+          <div class="feature-item">
+            <ion-icon name="pricetags-outline"></ion-icon>
+            <div class="feature-text">
+              <strong>Kelola Tiket</strong>
+              <span>Buat dan pantau tiket dengan mudah</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <ion-icon name="people-outline"></ion-icon>
+            <div class="feature-text">
+              <strong>Penugasan</strong>
+              <span>Kelola penugasan teknisi secara efektif</span>
+            </div>
+          </div>
+          <div class="feature-item">
+            <ion-icon name="stats-chart-outline"></ion-icon>
+            <div class="feature-text">
+              <strong>Monitoring</strong>
+              <span>Pantau progress pekerjaan secara real-time</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="left-footer">© 2026 PT Bakrie Pipe Industry. All Rights Reserved.</p>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT SIDE (Form Login) ===== -->
+    <div class="login-right">
+      <div class="login-card">
+
+        <div class="card-header">
+          <div class="card-icon">
+            <ion-icon name="business-outline"></ion-icon>
+          </div>
+          <h2 class="card-title">Selamat Datang</h2>
+          <p class="card-subtitle">Masuk ke sistem untuk mengelola permintaan dan laporan pekerjaan.</p>
+        </div>
+
+        <form (ngSubmit)="login()" class="login-form">
+
+          <!-- Username -->
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <div class="input-with-icon">
+              <ion-icon name="person-outline" class="input-icon"></ion-icon>
+              <ion-input
+                type="text"
+                [(ngModel)]="loginData.username"
+                name="username"
+                placeholder="Masukkan username"
+                class="custom-input"
+                autocomplete="off"
+              ></ion-input>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="input-with-icon">
+              <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+              <ion-input
+                [type]="showPassword ? 'text' : 'password'"
+                [(ngModel)]="loginData.password"
+                name="password"
+                placeholder="Masukkan password"
+                class="custom-input has-toggle"
+              ></ion-input>
+              <ion-icon
+                [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+                class="input-toggle-icon"
+                (click)="showPassword = !showPassword"
+              ></ion-icon>
+            </div>
+          </div>
+
+          <!-- Remember + Forgot -->
+          <div class="form-row-between">
+            <label class="remember-check">
+              <ion-checkbox [(ngModel)]="rememberMe" name="rememberMe"></ion-checkbox>
+              <span>Ingat saya</span>
+            </label>
+            <a href="javascript:void(0)" class="forgot-link" (click)="onForgotPassword()">Lupa password?</a>
+          </div>
+
+          <!-- Error Message -->
+          <div class="error-message" *ngIf="errorMessage">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            <span>{{ errorMessage }}</span>
+          </div>
+
+          <!-- Tombol Login -->
+          <ion-button
+            type="submit"
+            expand="block"
+            class="login-btn"
+            [disabled]="isLoading">
+            <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+            <ng-container *ngIf="!isLoading">
+              <ion-icon name="log-in-outline" slot="start"></ion-icon>
+              <span>Masuk ke Sistem</span>
+            </ng-container>
+          </ion-button>
+
+          <!-- Divider -->
+          <div class="divider">
+            <span>atau</span>
+          </div>
+
+          <!-- SSO Button (visual only) -->
+          <ion-button
+            type="button"
+            expand="block"
+            fill="outline"
+            class="sso-btn"
+            (click)="onSsoLogin()">
+            <ion-icon name="shield-checkmark-outline" slot="start"></ion-icon>
+            Masuk dengan SSO
+          </ion-button>
+
+        </form>
+
+        <p class="help-text">
+          Butuh bantuan? Hubungi <a href="javascript:void(0)">Administrator IT</a>
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+</ion-content>

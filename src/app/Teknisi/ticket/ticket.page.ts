@@ -1,0 +1,257 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { IonicModule } from '@ionic/angular';
+import { TicketService, AssignedTicketApiRow } from '../../services/ticket.service';
+import { environment } from '../../../environments/environment';
+
+export interface TeknisiTicket {
+  id: string;
+  reportedBy: string;
+  kategori: string;
+  subKategori: string;
+  asset: string;
+  deskripsi: string;
+  lampiran: string;
+  lampiranUrl: string | null;
+  tanggalAssign: string;
+  status: string;
+  isProsesing?: boolean;
+  prioritas?: 'Low' | 'Normal' | 'Urgent';
+  deadline?: string | null;
+}
+
+@Component({
+  selector: 'app-teknisi-ticket',
+  templateUrl: './ticket.page.html',
+  styleUrls: ['./ticket.page.scss'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, IonicModule],
+})
+export class TeknisiTicketPage implements OnInit, OnDestroy {
+  isSidebarOpen = false;
+  activeMenu = 'ticket';
+
+  user = { nama: 'Teknisi', role: 'teknisi' };
+
+  tickets: TeknisiTicket[] = [];
+  isLoading = false;
+  loadError = '';
+
+  searchTerm = '';
+  filterStatus = '';
+
+  statusOptions: string[] = ['Menunggu Diproses', 'Proses', 'Selesai'];
+
+  currentPage = 1;
+  pageSize = 10;
+
+  private countdownInterval: any;
+
+  constructor(private router: Router, private ticketService: TicketService) {}
+
+  ngOnInit() {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        this.user.nama = parsed.nama || 'Teknisi';
+        this.user.role = parsed.role || 'teknisi';
+      } catch (e) {}
+    }
+
+    this.loadTickets();
+  }
+
+  ionViewDidEnter() {
+    this.startTimer();
+  }
+
+  ngOnDestroy() {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
+  startTimer() {
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    this.countdownInterval = setInterval(() => {
+      this.tickets = [...this.tickets];
+    }, 1000);
+  }
+
+  loadTickets() {
+    this.isLoading = true;
+    this.loadError = '';
+    this.ticketService.getAssignedMe().subscribe({
+      next: (data: AssignedTicketApiRow[]) => {
+        this.tickets = (data || []).map(this.mapToTeknisiTicket);
+        this.isLoading = false;
+      },
+      error: (err: any) => {
+        console.error('Gagal mengambil daftar tiket', err);
+        this.loadError = err?.error?.message || 'Gagal memuat data tiket, coba lagi.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  private mapToTeknisiTicket(row: any): TeknisiTicket {
+    const uploadsBase = environment.apiUrl.replace(/\/api\/?$/, '');
+    return {
+      id: row.id_ticket || row.id,
+      reportedBy: row.nama_pelapor || row.reported || '-',
+      kategori: row.nama_kategori || row.kategori || '-',
+      subKategori: row.nama_sub_kategori || row.sub_kategori || '-',
+      asset: row.aset || row.asset || '-',
+      deskripsi: row.deskripsi || '-',
+      lampiran: row.lampiran ? 'Foto' : '-',
+      lampiranUrl: row.lampiran ? `${uploadsBase}${row.lampiran}` : null,
+      tanggalAssign: row.tanggal_assign || '-',
+      status: row.status_pengerjaan || row.status || 'Menunggu Diproses',
+      prioritas: row.prioritas || row.priority || row.PRIORITAS || row.Prioritas || 'Normal',
+      deadline: row.deadline || row.DEADLINE || row.Deadline || null,
+    };
+  }
+
+  // ==========================================
+  // HELPER TIMER & PRIORITAS
+  // ==========================================
+  getCountdownText(deadline: string | null): string {
+    if (!deadline) return '-';
+    const now = new Date().getTime();
+    const target = new Date(deadline).getTime();
+    const diff = target - now;
+
+    if (diff <= 0) return '⚠️ TELAT';
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  isDeadlineLate(deadline: string | null): boolean {
+    if (!deadline) return false;
+    return new Date().getTime() > new Date(deadline).getTime();
+  }
+
+  getPrioritasClass(prioritas: string): string {
+    const p = prioritas?.toLowerCase() || 'normal';
+    if (p === 'low') return 'prioritas-low';
+    if (p === 'urgent') return 'prioritas-urgent';
+    return 'prioritas-normal';
+  }
+
+  get filteredTickets(): TeknisiTicket[] {
+    const term = this.searchTerm.trim().toLowerCase();
+    return this.tickets.filter((t) => {
+      const matchSearch =
+        !term ||
+        t.id.toLowerCase().includes(term) ||
+        t.reportedBy.toLowerCase().includes(term);
+      const matchStatus = !this.filterStatus || t.status === this.filterStatus;
+      return matchSearch && matchStatus;
+    });
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredTickets.length / this.pageSize));
+  }
+  get totalPagesArray(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+  get pagedTickets(): TeknisiTicket[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredTickets.slice(start, start + this.pageSize);
+  }
+
+  onFilterChange() { this.currentPage = 1; }
+  goToPage(page: number) { this.currentPage = page; }
+  prevPage() { if (this.currentPage > 1) this.currentPage--; }
+  nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
+
+  getStatusClass(status: string): string {
+    const s = (status || '').toLowerCase();
+    if (s.includes('menunggu')) return 'status-waiting';
+    if (s.includes('proses')) return 'status-proses';
+    if (s.includes('selesai')) return 'status-selesai';
+    return 'status-default';
+  }
+
+  onProses(ticket: TeknisiTicket) {
+    if (ticket.status === 'Menunggu Diproses') {
+      ticket.isProsesing = true;
+      this.ticketService
+        .updateProgress(ticket.id, { progress: 0, status_pengerjaan: 'Proses' })
+        .subscribe({
+          next: () => {
+            ticket.isProsesing = false;
+            this.router.navigate(['/teknisi/proses'], { queryParams: { id: ticket.id } });
+          },
+          error: (err: any) => {
+            ticket.isProsesing = false;
+            alert(err?.error?.message || 'Gagal memulai proses tiket');
+          },
+        });
+    } else {
+      this.router.navigate(['/teknisi/proses'], { queryParams: { id: ticket.id } });
+    }
+  }
+
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  setActiveMenu(menu: string) {
+    this.activeMenu = menu;
+    if (window.innerWidth < 1024) this.isSidebarOpen = false;
+  }
+
+  goToDashboardTeknisi() {
+    this.setActiveMenu('dashboard-teknisi');
+    this.router.navigate(['/teknisi/dashboard']);
+  }
+  goToTicket() {
+    this.setActiveMenu('ticket');
+    this.router.navigate(['/teknisi/ticket']);
+  }
+  goToProsesTiket() {
+    this.setActiveMenu('proses-tiket');
+    this.router.navigate(['/teknisi/proses']);
+  }
+  goToRiwayatTiket() {
+    this.setActiveMenu('riwayat-tiket');
+    this.router.navigate(['/teknisi/riwayat']);
+  }
+  goToScheduleTersedia() {
+    this.setActiveMenu('schedule-tersedia');
+    this.router.navigate(['/teknisi/schedule-tersedia']);
+  }
+  goToPengaturan() {
+    this.setActiveMenu('pengaturan');
+  }
+  goToProfile() {
+    this.setActiveMenu('profile');
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    this.router.navigate(['/login']);
+  }
+
+  getPageTitle(): string {
+    const titles: Record<string, string> = {
+      'ticket': 'Ticket',
+      'dashboard-teknisi': 'Dashboard Teknisi',
+      'proses-tiket': 'Proses Tiket',
+      'riwayat-tiket': 'Riwayat Tiket',
+      'schedule-tersedia': 'Schedule Tersedia',
+      'pengaturan': 'Pengaturan',
+    };
+    return titles[this.activeMenu] ?? 'Ticket';
+  }
+}

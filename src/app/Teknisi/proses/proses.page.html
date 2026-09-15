@@ -1,0 +1,527 @@
+<ion-content class="proses-tiket-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+        <div class="logo-icon-wrapper">
+  <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+</div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="avatar-wrapper">
+          <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=128&bold=true'" alt="Avatar" class="sidebar-avatar" />
+          <div class="online-status"></div>
+        </div>
+        <div class="sidebar-user-info">
+          <h4 class="sidebar-username">{{ user.nama || 'Teknisi' }}</h4>
+          <p class="sidebar-userrole">🔧 Teknisi</p>
+        </div>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard-teknisi'" (click)="goToDashboardTeknisi()">
+          <div class="menu-icon-wrapper"><ion-icon name="home-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'ticket'" (click)="goToTicket()">
+          <div class="menu-icon-wrapper"><ion-icon name="list-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'proses-tiket'" (click)="goToProsesTiket()">
+          <div class="menu-icon-wrapper"><ion-icon name="construct-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Proses Tiket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'riwayat-tiket'" (click)="goToRiwayatTiket()">
+          <div class="menu-icon-wrapper"><ion-icon name="time-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Riwayat Tiket</span>
+        </div>
+        <div class="menu-label">PREVENTIVE</div>
+<div class="menu-item" [class.active]="activeMenu === 'schedule-tersedia'" (click)="goToScheduleTersedia()">
+  <ion-icon name="calendar-outline" class="menu-icon"></ion-icon>
+  <span class="menu-text">Schedule Tersedia</span>
+</div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="goToPengaturan()">
+          <div class="menu-icon-wrapper"><ion-icon name="settings-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Pengaturan</span>
+        </div>
+        <div class="menu-item logout-item" (click)="logout()">
+          <div class="menu-icon-wrapper"><ion-icon name="log-out-outline" class="menu-icon"></ion-icon></div>
+          <span class="menu-text">Keluar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">{{ getPageTitle() }}</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar" (click)="goToProfile()">
+            <img [src]="'https://ui-avatars.com/api/?name=' + (user.nama || 'Teknisi') + '&background=2563eb&color=fff&size=64&bold=true'" alt="Avatar" />
+            <span class="header-avatar-name">{{ user.nama }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div class="page-heading">
+          <h1 class="page-title">Proses Tiket</h1>
+          <p class="page-subtitle">Update progress, catatan, dan status penyelesaian tiket</p>
+        </div>
+
+        <!-- TOOLBAR SEARCH -->
+        <div class="list-toolbar">
+          <div class="search-box">
+            <ion-icon name="search-outline" class="search-icon"></ion-icon>
+            <input type="text" placeholder="Cari ID Ticket / Pelapor..." [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" />
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table class="proses-tiket-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">NO</th>
+                  <th style="min-width: 140px;">ID Ticket</th>
+                  <th>Reported</th>
+                  <th>Kategori</th>
+                  <th style="min-width: 140px;">Sub Kategori</th>
+                  <th>Asset</th>
+                  <th>Lampiran</th>
+                  <th style="min-width: 150px;">Deskripsi</th>
+                  <th style="min-width: 100px;">Progress (%)</th>
+                  <th style="min-width: 180px;">Catatan Penyelesaian</th>
+                  <th style="min-width: 130px;">Update Status</th>
+                  <th style="min-width: 110px;">Sisa Waktu</th>
+                  <th style="min-width: 160px;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let t of pagedTickets; let i = index; trackBy: trackByTicket">
+                  <tr>
+                    <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                    <td class="ticket-id">{{ t.idTicket }}</td>
+                    <td class="fw-bold">{{ t.reportedBy }}</td>
+                    <td>{{ t.kategori }}</td>
+                    <td>{{ t.subKategori }}</td>
+                    <td>{{ t.asset || '-' }}</td>
+                    <td>
+                      <a *ngIf="t.lampiranUrl" [href]="t.lampiranUrl" target="_blank" rel="noopener noreferrer" class="lampiran-badge"><ion-icon name="image-outline"></ion-icon> {{ t.lampiran }}</a>
+                      <span *ngIf="!t.lampiranUrl">-</span>
+                    </td>
+                    <td class="deskripsi-col">{{ t.deskripsi }}</td>
+                    <td>
+                      <div class="progress-input-wrap">
+                        <ion-input type="number" min="0" max="100" [(ngModel)]="t.progress" (ionChange)="updateProgress(t)" class="progress-input"></ion-input>
+                        <span class="progress-symbol">%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <ion-input type="text" placeholder="Isi catatan..." [(ngModel)]="t.catatan" class="catatan-input"></ion-input>
+                    </td>
+                    <td>
+                      <div class="status-action">
+                        <span class="status-badge" [ngClass]="getStatusClass(t.status)">{{ t.status }}</span>
+                        <div class="action-buttons">
+                          <ion-button fill="solid" color="warning" size="small" class="btn-proses" (click)="updateStatus(t, 'Proses')">
+                            {{ t.status === 'Proses' ? 'Update' : 'Proses' }}
+                          </ion-button>
+                          <ion-button fill="solid" color="success" size="small" class="btn-selesai" [disabled]="t.status === 'Selesai'" (click)="updateStatus(t, 'Selesai')">Selesai</ion-button>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div *ngIf="t.deadline" class="countdown-timer" [ngClass]="{'is-late': isDeadlineLate(t)}">
+                        <ion-icon name="timer-outline"></ion-icon> {{ getCountdownText(t) }}
+                      </div>
+                      <span *ngIf="!t.deadline">-</span>
+                    </td>
+                    <td>
+                      <ion-button fill="clear" size="small" (click)="togglePause(t)" [color]="t.isPaused ? 'success' : 'warning'">
+                        <ion-icon [name]="t.isPaused ? 'play-circle-outline' : 'pause-circle-outline'"></ion-icon>
+                        {{ t.isPaused ? 'Lanjutkan' : 'Jeda' }}
+                      </ion-button>
+
+                      <!-- TOMBOL KEMBALIKAN KE ADMIN -->
+                      <ion-button fill="clear" size="small" color="danger" (click)="openReturnModal(t)">
+                        <ion-icon name="return-up-back-outline"></ion-icon> Kembalikan
+                      </ion-button>
+
+                      <ion-button fill="clear" size="small" (click)="openChatModal(t.idTicket)">
+                        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small" (click)="toggleHistory(t)">
+                        <ion-icon name="time-outline"></ion-icon>
+                      </ion-button>
+
+                      <!-- TOMBOL BUKA FORM CHECK SHEET (modal, mirip PDF) -->
+                      <ion-button fill="clear" size="small" (click)="openChecklistModal(t)">
+                        <ion-icon name="checkbox-outline"></ion-icon>
+                      </ion-button>
+
+                      <!-- TOMBOL EXPORT PDF CHECK SHEET (hanya muncul kalau checklist ada) -->
+                      <ion-button fill="clear" size="small" color="primary" *ngIf="t.checklist.length > 0" (click)="exportChecklistPdf(t)">
+                        <ion-icon name="document-outline"></ion-icon>
+                      </ion-button>
+                    </td>
+                  </tr>
+                  <!-- BARIS HISTORI PROGRES -->
+                  <tr *ngIf="t.isHistoryOpen">
+                    <td colspan="13" style="background: #f8fafc; padding: 12px 16px;">
+                      <div class="history-container">
+                        <strong>Histori Progres:</strong>
+                        <div *ngIf="t.history.length === 0" class="history-empty">Belum ada progres tercatat</div>
+                        <div class="history-item" *ngFor="let h of t.history; trackBy: trackByHistory">
+                          <div class="history-badge">{{ h.progress }}%</div>
+                          <div class="history-text">
+                            <span class="history-note">{{ h.catatan || '-' }}</span>
+                            <span class="history-date">{{ h.created_at | date:'dd-MM-yyyy HH:mm' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+
+                <tr *ngIf="filteredTickets.length === 0">
+                  <td colspan="13" class="empty-row">Tidak ada tiket yang sedang diproses</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer" *ngIf="totalPages > 1">
+            <span class="table-info">Menampilkan {{ pagedTickets.length }} dari {{ filteredTickets.length }} data</span>
+            <div class="pagination">
+              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()"><ion-icon name="chevron-back-outline"></ion-icon></ion-button>
+              <span class="page-number" *ngFor="let p of totalPagesArray" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</span>
+              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<!-- ========================================== -->
+<!-- MODAL PENGEMBALIAN TIKET                    -->
+<!-- ========================================== -->
+<ion-modal [isOpen]="isReturnModalOpen" (didDismiss)="closeReturnModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Kembalikan Tiket #{{ returnTicket?.idTicket }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeReturnModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Alasan Pengembalian <span class="required">*</span></label>
+          <ion-textarea
+            [(ngModel)]="returnReason"
+            placeholder="Jelaskan alasan Anda mengembalikan tiket ini..."
+            rows="5"
+            class="form-textarea"
+          ></ion-textarea>
+        </div>
+        <div class="modal-actions">
+          <ion-button fill="outline" color="medium" (click)="closeReturnModal()">Batal</ion-button>
+          <ion-button fill="solid" color="danger" (click)="submitReturn()" [disabled]="!returnReason.trim()">
+            <ion-icon name="send-outline" slot="start"></ion-icon>
+            Kirim ke Admin
+          </ion-button>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- ========================================== -->
+<!-- MODAL CHAT TEKNISI                          -->
+<!-- ========================================== -->
+<ion-modal [isOpen]="isChatModalOpen" (didDismiss)="closeChatModal()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Chat Tiket #{{ selectedTicketId }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeChatModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="chat-container" #chatContainer>
+        <div class="chat-messages">
+          <div *ngIf="isChatLoading" class="chat-loading">Memuat percakapan...</div>
+          <div *ngIf="!isChatLoading && chatMessages.length === 0" class="chat-empty">Belum ada pesan. Mulai diskusi!</div>
+          <div *ngFor="let msg of chatMessages" class="chat-bubble" [class.bubble-me]="msg.sender_role?.toLowerCase() === user.role?.toLowerCase()">
+            <div class="bubble-header">
+              <span class="sender-name">{{ msg.sender_name }}</span>
+              <span class="time">{{ msg.created_at | date:'shortTime' }}</span>
+            </div>
+            <div *ngIf="msg.attachment_url" class="bubble-image">
+              <img [src]="chatService.getAttachmentUrl(msg.attachment_url)" alt="Lampiran" (click)="openImagePreview(chatService.getAttachmentUrl(msg.attachment_url))" />
+            </div>
+            <div class="bubble-text" *ngIf="msg.message">{{ msg.message }}</div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="file" #chatFileInput accept="image/*" style="display:none" (change)="onChatFileSelected($event)" />
+          <ion-button fill="clear" size="small" (click)="chatFileInput.click()" class="attach-btn"><ion-icon name="attach-outline"></ion-icon></ion-button>
+          <ion-input type="text" [(ngModel)]="newChatMessage" placeholder="Tulis pesan..." class="chat-input"></ion-input>
+          <ion-button fill="solid" color="primary" (click)="sendChat()" [disabled]="!newChatMessage.trim() && !selectedChatFile" class="send-btn"><ion-icon name="send-outline"></ion-icon></ion-button>
+        </div>
+        <div class="chat-preview" *ngIf="selectedChatFile">
+          <div class="preview-wrapper">
+            <img [src]="selectedChatFilePreview" alt="Preview" />
+            <ion-button fill="clear" size="small" (click)="selectedChatFile = null; selectedChatFilePreview = ''" class="remove-preview"><ion-icon name="close-circle-outline"></ion-icon></ion-button>
+          </div>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- ========================================== -->
+<!-- MODAL CHECK SHEET (mirip layout PDF)        -->
+<!-- ========================================== -->
+<ion-modal [isOpen]="isChecklistModalOpen" (didDismiss)="closeChecklistModal()" class="checksheet-modal">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Check Sheet - {{ selectedChecklistTicket?.idTicket }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeChecklistModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="modal-content">
+      <div class="checksheet-form" *ngIf="selectedChecklistTicket as t">
+
+        <!-- HEADER PERSIS SEPERTI PDF (pakai table biar ada border tebal) -->
+        <table class="checksheet-header-table">
+          <tr>
+            <td class="cs-logo-cell">
+              <img src="../../../assets/logo bakrie.png" alt="Logo" class="checksheet-logo" />
+            </td>
+            <td class="cs-title-cell">
+              <div class="cs-title-main">CHECK SHEET</div>
+              <div class="cs-title-sub">PERSONAL COMPUTER,SOFTWARE<br />PRINTER,SCANNER &amp; NETWORK</div>
+            </td>
+            <td class="cs-formno-cell">
+              <div>No.Form : FRM/IT/CS/001</div>
+              <div>No.Rev : 00</div>
+              <div>Tanggal : {{ t.tanggalDibuatSchedule ? (t.tanggalDibuatSchedule | date:'dd-MM-yyyy') : '15-07-2014' }}</div>
+            </td>
+          </tr>
+        </table>
+
+        <table class="checksheet-info-table">
+          <tr>
+            <td class="cs-info-label">Tanggal Pelaksanaan</td>
+            <td class="cs-info-value">: {{ today }}</td>
+          </tr>
+          <tr>
+            <td class="cs-info-label">IT Propertis</td>
+            <td class="cs-info-value">: {{ t.asset || '-' }}</td>
+          </tr>
+          <tr>
+            <td class="cs-info-label">Department</td>
+            <td class="cs-info-value">: {{ t.departemen || '-' }}</td>
+          </tr>
+          <tr>
+            <td class="cs-info-label">Sub Department</td>
+            <td class="cs-info-value">: {{ t.subKategori || '-' }}</td>
+          </tr>
+        </table>
+
+        <div *ngIf="t.checklist.length === 0" class="history-empty">
+          Belum ada checklist untuk ticket ini.
+        </div>
+
+        <!-- 🔥 pakai checklistSections (bukan groupedChecklist lagi), sudah termasuk
+             baris judul "Kode Assets (Printer/Scanner)" & "Kode Assets (Network)"
+             dengan nomor grup reset ke 1, persis seperti form PDF resmi -->
+        <div class="checksheet-table-wrapper" *ngIf="t.checklist.length > 0">
+          <table class="checksheet-table">
+            <thead>
+              <tr>
+                <th style="width:30px;" rowspan="2">NO</th>
+                <th style="width:100px;" rowspan="2">UNIT</th>
+                <th rowspan="2">URAIAN PEKERJAAN</th>
+                <th style="width:110px;" rowspan="2">ALAT YANG<br />DIGUNAKAN</th>
+                <th style="width:100px;" rowspan="2">PENERIMAAN</th>
+                <th colspan="2">KONDISI</th>
+                <th rowspan="2">CATATAN</th>
+              </tr>
+              <tr>
+                <th style="width:36px;">OK</th>
+                <th style="width:36px;">NC</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let section of checklistSections; trackBy: trackBySection">
+
+                <!-- BARIS JUDUL "Kode Assets (...)" -->
+                <tr *ngIf="section.type === 'header'" class="cs-section-header-row">
+                  <td colspan="8" class="cs-section-header-cell">{{ section.label }}</td>
+                </tr>
+
+                <!-- BARIS GRUP UNIT (nomor sudah dihitung ulang per section) -->
+                <ng-container *ngIf="section.type === 'group'">
+                  <tr *ngFor="let item of section.items; let ii = index; trackBy: trackByChecklistItem">
+                    <td *ngIf="ii === 0" [attr.rowspan]="section.items.length" class="unit-cell">{{ section.number }}</td>
+                    <td *ngIf="ii === 0" [attr.rowspan]="section.items.length" class="unit-cell">{{ section.kategori }}</td>
+                    <td>{{ item.uraian_pekerjaan }}</td>
+                    <td class="alat-cell">{{ item.alat_yang_digunakan || '-' }}</td>
+                    <td class="penerimaan-cell">{{ item.penerimaan_default || '-' }}</td>
+
+                    <!-- KOTAK OK: custom div (bukan ion-checkbox), biar isian centangnya konsisten -->
+                    <td class="check-col">
+                      <div
+                        class="cs-checkbox"
+                        [class.checked]="item.kondisi === 'OK'"
+                        (click)="setKondisiOk(item, item.kondisi !== 'OK')">
+                        <ion-icon name="checkmark-outline" *ngIf="item.kondisi === 'OK'"></ion-icon>
+                      </div>
+                    </td>
+
+                    <!-- KOTAK NC: huruf B/C/D tampil DI TENGAH kotak yang sama -->
+                    <td class="check-col nc-popup-col">
+                      <div
+                        class="cs-checkbox cs-checkbox-nc"
+                        [class.checked]="item.kondisi === 'NC'"
+                        (click)="onClickNcBox(item)">
+                        <span *ngIf="item.kondisi === 'NC' && item.kondisi_huruf && !item._showHurufPicker">{{ item.kondisi_huruf }}</span>
+                      </div>
+
+                      <!-- popup kecil muncul tepat setelah kotak NC diklik -->
+                      <div class="nc-huruf-popup" *ngIf="item._showHurufPicker">
+                        <div class="nc-huruf-popup-title">Pilih Kondisi</div>
+                        <div class="nc-huruf-popup-options">
+                          <button
+                            type="button"
+                            *ngFor="let huruf of kondisiHurufOptions"
+                            class="nc-huruf-btn"
+                            [class.active]="item.kondisi_huruf === huruf"
+                            (click)="pilihHurufNc(item, huruf)">
+                            {{ huruf }}
+                          </button>
+                        </div>
+                        <button type="button" class="nc-huruf-popup-cancel" (click)="batalPilihHurufNc(item)">Batal</button>
+                      </div>
+                    </td>
+
+                    <td>
+                      <ion-input type="text" [(ngModel)]="item.catatan" (ionBlur)="updateChecklistItem(item)" placeholder="Catatan..."></ion-input>
+                    </td>
+                  </tr>
+                </ng-container>
+              </ng-container>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- legenda Catatan & Kondisi NC persis seperti di PDF resmi -->
+        <table class="checksheet-legend-table" *ngIf="t.checklist.length > 0">
+          <tr>
+            <td class="checksheet-legend-col">
+              <strong>Catatan:</strong>
+              <p>B : Masih dapat beroperasi, dan masih bisa dipertahankan, sampai waktu disiapkan dan persiapan sparepart</p>
+              <p>C : Segera diperbaiki atau harus segera diperbaiki dan waktu perbaikan ditentukan ITS</p>
+              <p>D : Harus berhenti / tidak mampu berkerja</p>
+            </td>
+            <td class="checksheet-legend-col checksheet-legend-nc">
+              <strong>Kondisi NC :</strong>
+              <p>B : Masih Baik</p>
+              <p>C : Segera Diperbaiki</p>
+              <p>D : Harus diganti</p>
+            </td>
+          </tr>
+        </table>
+
+<!-- TABEL TANDA TANGAN, PERSIS SEPERTI DI PDF -->
+<!-- 🔥 tanda tangan sekarang otomatis tampil (gambar PNG) begitu masing-masing -->
+<!-- approver (Teknisi/User/IT Service) pernah upload tanda tangan di profilnya -->
+<table class="checksheet-signature-table" *ngIf="t.checklist.length > 0">
+  <tr>
+    <th>STATUS</th>
+    <th>DIBUAT OLEH</th>
+    <th>DIKETAHUI</th>
+    <th>DISETUJUI</th>
+  </tr>
+  <tr class="signature-row">
+    <td>{{ t.status.toUpperCase() }}</td>
+    <td>
+      <div class="signature-cell">
+        <img *ngIf="selectedChecklistApproval?.ttd_dibuat_oleh"
+             [src]="getSignatureUrl(selectedChecklistApproval?.ttd_dibuat_oleh)"
+             class="signature-img" alt="Tanda tangan" />
+        <span class="signature-name">{{ selectedChecklistApproval?.nama_dibuat_oleh || user.nama || '-' }}</span>
+        <span class="signature-date">({{ (selectedChecklistApproval?.tanggal_dibuat | date:'dd-MM-yyyy') || '-' }})</span>
+      </div>
+    </td>
+    <td>
+      <div class="signature-cell">
+        <img *ngIf="selectedChecklistApproval?.ttd_diketahui_oleh"
+             [src]="getSignatureUrl(selectedChecklistApproval?.ttd_diketahui_oleh)"
+             class="signature-img" alt="Tanda tangan" />
+        <span class="signature-name">{{ selectedChecklistApproval?.nama_diketahui_oleh || 'Menunggu' }}</span>
+        <span class="signature-date">({{ (selectedChecklistApproval?.tanggal_diketahui | date:'dd-MM-yyyy') || '-' }})</span>
+      </div>
+    </td>
+    <td>
+      <div class="signature-cell">
+        <img *ngIf="selectedChecklistApproval?.ttd_disetujui_oleh"
+             [src]="getSignatureUrl(selectedChecklistApproval?.ttd_disetujui_oleh)"
+             class="signature-img" alt="Tanda tangan" />
+        <span class="signature-name">{{ selectedChecklistApproval?.nama_disetujui_oleh || 'Menunggu' }}</span>
+        <span class="signature-date">({{ (selectedChecklistApproval?.tanggal_disetujui | date:'dd-MM-yyyy') || '-' }})</span>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td class="signature-label">Diisi Technician</td>
+    <td class="signature-label">Technician</td>
+    <td class="signature-label">User</td>
+    <td class="signature-label">IT Service</td>
+  </tr>
+</table>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

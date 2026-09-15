@@ -1,0 +1,817 @@
+<ion-content class="inventory-content">
+  <div class="dashboard-container">
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar" [class.open]="isSidebarOpen">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+       <div class="logo-icon-wrapper">
+  <img src="../../../assets/logo bakrie.png" alt="Logo" class="logo-img" />
+</div>
+          <span class="logo-text">Helpdesk<br>Ticketing System</span>
+        </div>
+        <ion-button class="sidebar-close" fill="clear" (click)="toggleSidebar()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </div>
+
+      <div class="sidebar-menu">
+        <div class="menu-label">MAIN MENU</div>
+        <div class="menu-item" [class.active]="activeMenu === 'dashboard'" (click)="goToDashboard()">
+          <ion-icon name="home-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Dashboard</span>
+        </div>
+
+        <div class="menu-label">TICKET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'list-ticket'" (click)="goToListTicket()">
+          <ion-icon name="list-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">List Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'approval-ticket'" (click)="goToApprovalTicket()">
+          <ion-icon name="checkmark-done-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Approval Ticket</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'assignment-ticket'" (click)="goToAssignmentTicket()">
+          <ion-icon name="clipboard-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Assignment Ticket</span>
+        </div>
+
+        <div class="menu-label">MASTER DATA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'karyawan'" (click)="goToKaryawan()">
+          <ion-icon name="people-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Karyawan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'user'" (click)="goToUser()">
+          <ion-icon name="person-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">User</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'jabatan'" (click)="goToJabatan()">
+          <ion-icon name="ribbon-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Jabatan</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'departemen'" (click)="goToDepartemen()">
+          <ion-icon name="business-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'bagian-departemen'" (click)="goToBagianDepartemen()">
+          <ion-icon name="git-branch-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Bagian Departemen</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'teknisi'" (click)="goToTeknisi()">
+          <ion-icon name="construct-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Teknisi</span>
+        </div>
+
+        <div class="menu-label">ASSET MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'inventory'" (click)="goToInventory()">
+          <ion-icon name="cube-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Inventory</span>
+        </div>
+
+        <div class="menu-item" [class.active]="activeMenu === 'schedule'" (click)="goToSchedule()">
+          <div class="menu-icon-wrapper">
+            <ion-icon name="calendar-outline" class="menu-icon"></ion-icon>
+          </div>
+          <span class="menu-text">Schedule Preventive</span>
+        </div>
+
+        <div class="menu-label">COMPLAINT MANAGEMENT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'kategori'" (click)="goToKategori()">
+          <ion-icon name="pricetags-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Kategori</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'sub-kategori'" (click)="goToSubKategori()">
+          <ion-icon name="pricetag-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Sub Kategori</span>
+        </div>
+
+        <div class="menu-label">REPORT</div>
+        <div class="menu-item" [class.active]="activeMenu === 'laporan-feedback'" (click)="goToLaporanFeedback()">
+          <ion-icon name="chatbox-ellipses-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Laporan Feedback</span>
+        </div>
+        <div class="menu-item" [class.active]="activeMenu === 'statistik-ticket'" (click)="goToStatistikTicket()">
+          <ion-icon name="bar-chart-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Statistik Ticket</span>
+        </div>
+
+        <div class="menu-label">LAINNYA</div>
+        <div class="menu-item" [class.active]="activeMenu === 'pengaturan'" (click)="setActiveMenu('pengaturan')">
+          <ion-icon name="settings-outline" class="menu-icon"></ion-icon>
+          <span class="menu-text">Pengaturan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" [class.open]="isSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- HEADER -->
+      <div class="main-header">
+        <div class="header-left">
+          <ion-button class="menu-toggle" fill="clear" (click)="toggleSidebar()">
+            <ion-icon name="menu-outline"></ion-icon>
+          </ion-button>
+          <span class="page-title-inline">Inventory</span>
+        </div>
+        <div class="header-right">
+          <div class="header-avatar" (click)="goToProfile()">
+            <img [src]="'https://ui-avatars.com/api/?name=Admin&background=2563eb&color=fff&size=64&bold=true'" alt="Avatar" />
+            <span class="header-avatar-name">Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div class="content-area">
+        <div class="page-header">
+          <div class="header-left">
+            <div>
+              <h1 class="page-title">Data Inventory</h1>
+              <p class="page-subtitle">Kelola data aset IT perusahaan</p>
+            </div>
+          </div>
+          <div class="header-right">
+            <!-- 🔥 BARU: tombol export data tabel (ikut filter aktif) ke Excel -->
+            <ion-button class="export-btn" fill="outline" (click)="exportToExcel()">
+              <ion-icon name="download-outline" slot="start"></ion-icon>
+              Export Excel
+            </ion-button>
+            <ion-button class="tambah-btn" fill="solid" (click)="openTambahModal()">
+              <ion-icon name="add-outline"></ion-icon>
+              Tambah Asset
+            </ion-button>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- DASHBOARD CHART - Jumlah Asset per Departemen -->
+        <!-- ========================================== -->
+        <div class="stats-card">
+          <div class="stats-header">
+            <h3>Jumlah Asset per Departemen</h3>
+            <ion-select
+              [(ngModel)]="filterJenisStats"
+              (ionChange)="loadStats(); onFilterChange()"
+              interface="action-sheet"
+              placeholder="Semua Jenis"
+              class="stats-filter">
+              <ion-select-option value="">Semua Jenis</ion-select-option>
+              <ion-select-option *ngFor="let j of jenisOptions" [value]="j">{{ j }}</ion-select-option>
+            </ion-select>
+          </div>
+
+          <div class="bar-chart" *ngIf="statsData.length > 0">
+            <div
+              class="bar-item"
+              *ngFor="let s of statsData"
+              [class.active]="filterDept === s.departemen"
+              (click)="filterByDepartemen(s.departemen)"
+              [title]="'Klik untuk filter asset departemen ' + s.departemen">
+              <div class="bar-track">
+                <div class="bar-fill" [style.height.%]="(s.jumlah / maxStatsValue) * 100">
+                  <span class="bar-value">{{ s.jumlah }}</span>
+                </div>
+              </div>
+              <div class="bar-label">{{ s.departemen }}</div>
+            </div>
+          </div>
+          <div class="stats-empty" *ngIf="statsData.length === 0">Belum ada data untuk ditampilkan</div>
+          <div class="stats-hint" *ngIf="statsData.length > 0">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            Klik salah satu bagan untuk memfilter tabel asset per departemen
+          </div>
+        </div>
+
+        <!-- FILTER -->
+        <div class="filter-section">
+          <div class="filter-group">
+            <input type="text" placeholder="Cari Kode Asset / Nama Barang..." [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" class="filter-input" />
+          </div>
+          <div class="filter-group">
+            <ion-select [(ngModel)]="filterDept" interface="action-sheet" (ionChange)="onFilterChange()" placeholder="Filter Departemen">
+              <ion-select-option value="">Semua Departemen</ion-select-option>
+              <ion-select-option *ngFor="let d of deptOptions" [value]="d">{{ d }}</ion-select-option>
+            </ion-select>
+          </div>
+          <div class="filter-group">
+            <ion-select [(ngModel)]="filterKategori" interface="action-sheet" (ionChange)="onFilterChange()" placeholder="Filter Kategori">
+              <ion-select-option value="">Semua Kategori</ion-select-option>
+              <ion-select-option *ngFor="let k of kategoriOptions" [value]="k">{{ k }}</ion-select-option>
+            </ion-select>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-wrapper">
+            <table class="inventory-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Kode Asset</th>
+                  <th>Nama Barang</th>
+                  <th>Merk/Model</th>
+                  <th>Dept</th>
+                  <th>Kategori</th>
+                  <th>Pemegang</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of pagedInventory; let i = index">
+                  <td>{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+                  <td class="asset-kode">{{ item.kodeAsset }}</td>
+                  <td class="fw-bold">{{ item.namaBarang }}</td>
+                  <td class="text-muted">{{ item.merkModel }}</td>
+                  <td><span class="dept-badge">{{ item.dept }}</span></td>
+                  <td><span class="kategori-badge">{{ item.kategori }}</span></td>
+                  <td>{{ item.pemegang || '-' }}</td>
+                  <td>
+                    <ion-badge [color]="item.statusAset === 'Aktif' ? 'success' : 'medium'">
+                      {{ item.statusAset || 'Aktif' }}
+                    </ion-badge>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <ion-button fill="clear" size="small" class="edit-btn" (click)="openEditModal(item)">
+                        <ion-icon name="create-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small" class="hapus-btn" (click)="hapusInventory(item)">
+                        <ion-icon name="trash-outline"></ion-icon>
+                      </ion-button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr *ngIf="filteredInventory.length === 0">
+                  <td colspan="9" class="empty-row">Tidak ada data asset yang cocok</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer" *ngIf="totalPages > 1">
+            <span class="table-info">Menampilkan {{ pagedInventory.length }} dari {{ filteredInventory.length }} data</span>
+            <div class="pagination">
+              <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="prevPage()"><ion-icon name="chevron-back-outline"></ion-icon></ion-button>
+              <span class="page-number" *ngFor="let p of totalPagesArray" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</span>
+              <ion-button fill="clear" size="small" [disabled]="currentPage === totalPages" (click)="nextPage()"><ion-icon name="chevron-forward-outline"></ion-icon></ion-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="empty-state" *ngIf="filteredInventory.length === 0 && inventoryList.length === 0">
+          <ion-icon name="cube-outline"></ion-icon>
+          <h3>Belum Ada Data Asset</h3>
+          <p>Klik tombol "Tambah Asset" untuk menambahkan data baru</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<!-- ========================================== -->
+<!-- MODAL TAMBAH/EDIT INVENTORY (BERTAB)       -->
+<!-- ========================================== -->
+<ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()" [cssClass]="isEditing ? 'detail-modal' : ''">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ isEditing ? 'Detail Asset - ' + selectedKode : 'Tambah Asset' }}</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeModal()">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+
+      <!-- TAB NAVIGATION (hanya muncul saat Edit) -->
+      <div class="detail-tabs" *ngIf="isEditing">
+        <button
+          class="tab-btn"
+          [class.active]="activeDetailTab === 'profile'"
+          (click)="setDetailTab('profile')">
+          <ion-icon name="person-circle-outline"></ion-icon> Profile
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeDetailTab === 'hardware'"
+          (click)="setDetailTab('hardware')">
+          <ion-icon name="hardware-chip-outline"></ion-icon> Hardware
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeDetailTab === 'software'"
+          (click)="setDetailTab('software')">
+          <ion-icon name="apps-outline"></ion-icon> Software
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeDetailTab === 'ip'"
+          (click)="setDetailTab('ip')">
+          <ion-icon name="globe-outline"></ion-icon> IP Address
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeDetailTab === 'history'"
+          (click)="setDetailTab('history')">
+          <ion-icon name="time-outline"></ion-icon> History
+          <span class="tab-count" *ngIf="historyList.length > 0">{{ historyList.length }}</span>
+        </button>
+      </div>
+    </ion-header>
+
+    <ion-content class="modal-content">
+      <div class="modal-body" [class.wide]="isEditing">
+
+        <div *ngIf="isDetailLoading" class="detail-loading">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>Memuat detail asset...</span>
+        </div>
+
+        <ng-container *ngIf="!isDetailLoading">
+
+          <!-- ===================== TAB: PROFILE ===================== -->
+          <ng-container *ngIf="!isEditing || activeDetailTab === 'profile'">
+
+            <div class="form-group">
+              <label class="form-label">Nama Barang <span class="required">*</span></label>
+              <ion-input type="text" placeholder="Contoh: Switch Jaringan" [(ngModel)]="formData.nama_barang" class="form-input"></ion-input>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Merk / Model</label>
+              <ion-input type="text" placeholder="Contoh: Cisco 24 Port" [(ngModel)]="formData.merk_model" class="form-input"></ion-input>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Pemegang Asset</label>
+              <ion-select
+                [(ngModel)]="formData.nik_pemegang"
+                (ionChange)="onPemegangChange()"
+                interface="action-sheet"
+                class="form-select"
+                placeholder="Pilih Karyawan / Pemegang">
+                <ion-select-option [value]="null">Tidak ada pemegang</ion-select-option>
+                <ion-select-option *ngFor="let k of karyawanList" [value]="k.nik">{{ k.namaKaryawan }}</ion-select-option>
+              </ion-select>
+              <p class="form-hint" *ngIf="isEditing">
+              </p>
+            </div>
+
+            <!-- Muncul hanya saat edit, dicatat di riwayat pemegang kalau pemegang diganti -->
+            <div class="form-group" *ngIf="isEditing">
+              <label class="form-label">Keterangan Perpindahan Pemegang</label>
+              <ion-input type="text" placeholder="Contoh: Pemegang lama resign" [(ngModel)]="formData.keterangan_pindah" class="form-input"></ion-input>
+            </div>
+
+            <!-- Departemen: ion-select yang bisa dipilih manual, tidak lagi readonly -->
+            <div class="form-group">
+              <label class="form-label">Departemen <span class="required">*</span></label>
+              <ion-select
+                [(ngModel)]="formData.id_departemen"
+                (ionChange)="onDepartemenChange()"
+                interface="action-sheet"
+                class="form-select"
+                placeholder="Pilih Departemen">
+                <ion-select-option *ngFor="let d of departemenList" [value]="d.idDepartemen">{{ d.namaDepartemen }}</ion-select-option>
+              </ion-select>
+            </div>
+
+            <!-- Muncul hanya saat edit, dicatat di riwayat departemen kalau departemen berubah -->
+            <div class="form-group" *ngIf="isEditing">
+              <label class="form-label">Keterangan Perpindahan Departemen</label>
+              <ion-input type="text" placeholder="Contoh: Asset dialihkan ke Finance & Accounting" [(ngModel)]="formData.keterangan_pindah_departemen" class="form-input"></ion-input>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kategori <span class="required">*</span></label>
+              <ion-select [(ngModel)]="formData.id_kategori" interface="action-sheet" class="form-select" placeholder="Pilih Kategori">
+                <ion-select-option *ngFor="let kat of kategoriList" [value]="kat.idKategori">{{ kat.namaKategori }}</ion-select-option>
+              </ion-select>
+            </div>
+
+            <!-- Status Asset -->
+            <div class="form-group">
+              <label class="form-label">Status Asset</label>
+              <ion-select [(ngModel)]="formData.status_aset" interface="action-sheet" class="form-select" placeholder="Pilih Status">
+                <ion-select-option value="Aktif">Aktif</ion-select-option>
+                <ion-select-option value="Tidak Aktif">Tidak Aktif</ion-select-option>
+              </ion-select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Computer Name</label>
+                <ion-input type="text" placeholder="Contoh: PC-IT-001" [(ngModel)]="formData.computer_name" class="form-input"></ion-input>
+              </div>
+              <div class="form-group">
+                <label class="form-label">IT Priority / No</label>
+                <ion-input type="text" placeholder="Contoh: HIGH / IT-0012" [(ngModel)]="formData.it_priority" class="form-input"></ion-input>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Tahun Perolehan</label>
+                <ion-input type="number" placeholder="Contoh: 2023" [(ngModel)]="formData.tahun_perolehan" class="form-input"></ion-input>
+              </div>
+              <div class="form-group">
+                <label class="form-label">User / Pemakai</label>
+                <ion-input type="text" placeholder="Nama pengguna perangkat" [(ngModel)]="formData.user_pemakai" class="form-input"></ion-input>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <ion-input type="email" placeholder="user@company.com" [(ngModel)]="formData.email" class="form-input"></ion-input>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Extension</label>
+                <ion-input type="text" placeholder="Contoh: 1234" [(ngModel)]="formData.extension" class="form-input"></ion-input>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Divisi</label>
+                <ion-input type="text" placeholder="Contoh: Commercial" [(ngModel)]="formData.divisi" class="form-input"></ion-input>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Gedung / Lokasi</label>
+                <ion-input type="text" placeholder="Contoh: Gedung A Lt. 2" [(ngModel)]="formData.gedung" class="form-input"></ion-input>
+              </div>
+            </div>
+
+            <!-- Tombol simpan hanya untuk tab Profile -->
+            <div class="modal-actions">
+              <ion-button class="cancel-modal-btn" fill="outline" color="medium" (click)="closeModal()">
+                Batal
+              </ion-button>
+              <ion-button class="submit-modal-btn" (click)="simpanInventory()" [disabled]="!formData.nama_barang || !formData.id_departemen || !formData.id_kategori">
+                <ion-icon name="save-outline" slot="start"></ion-icon>
+                {{ isEditing ? 'Update Profile' : 'Simpan' }}
+              </ion-button>
+            </div>
+          </ng-container>
+
+          <!-- ===================== TAB: HARDWARE (fixed fields) ===================== -->
+          <ng-container *ngIf="isEditing && activeDetailTab === 'hardware'">
+            <div class="detail-form-card">
+              <h4>Detail Hardware</h4>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Serial No PC</label>
+                  <ion-input type="text" placeholder="Contoh: R3008YDF" [(ngModel)]="hardwareDetail.serial_no_pc" class="form-input"></ion-input>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Mobo Type</label>
+                  <ion-input type="text" placeholder="Contoh: LENOVO" [(ngModel)]="hardwareDetail.mobo_type" class="form-input"></ion-input>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Kelas</label>
+                  <ion-input type="text" placeholder="Contoh: 3.0" [(ngModel)]="hardwareDetail.kelas" class="form-input"></ion-input>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Processor</label>
+                  <ion-input type="text" placeholder="Contoh: Intel(R) Core(TM) i3-4160 CPU @ 3.60GHz" [(ngModel)]="hardwareDetail.processor" class="form-input"></ion-input>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">HDD Size</label>
+                  <ion-input type="text" placeholder="Contoh: 1 TB" [(ngModel)]="hardwareDetail.hdd_size" class="form-input"></ion-input>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">HDD Model</label>
+                  <ion-input type="text" placeholder="Contoh: WDC WD10EZEX-08M2NA0" [(ngModel)]="hardwareDetail.hdd_model" class="form-input"></ion-input>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">HDD Serial No</label>
+                  <ion-input type="text" placeholder="Contoh: WD-WMC3F0E7YTXP" [(ngModel)]="hardwareDetail.hdd_serial_no" class="form-input"></ion-input>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Memory Size</label>
+                  <ion-input type="text" placeholder="Contoh: 4 GB" [(ngModel)]="hardwareDetail.memory_size" class="form-input"></ion-input>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Memory Type</label>
+                  <ion-input type="text" placeholder="Contoh: DDR3" [(ngModel)]="hardwareDetail.memory_type" class="form-input"></ion-input>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Display</label>
+                  <ion-input type="text" placeholder="Contoh: LCD" [(ngModel)]="hardwareDetail.display" class="form-input"></ion-input>
+                </div>
+              </div>
+
+              <div class="detail-form-actions">
+                <ion-button size="small" (click)="submitHardwareDetail()">
+                  <ion-icon name="save-outline" slot="start"></ion-icon>
+                  Simpan Hardware
+                </ion-button>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ===================== TAB: SOFTWARE (fixed fields) ===================== -->
+          <ng-container *ngIf="isEditing && activeDetailTab === 'software'">
+            <div class="detail-form-card">
+              <h4>Detail Software</h4>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Operating System</label>
+                  <ion-select [(ngModel)]="softwareDetail.operating_system" interface="action-sheet" class="form-select" placeholder="Pilih Operating System">
+                    <ion-select-option *ngFor="let os of osOptions" [value]="os">{{ os }}</ion-select-option>
+                  </ion-select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Serial No OS</label>
+                  <ion-input type="text" placeholder="Contoh: XXXXX-XXXXX-XXXXX" [(ngModel)]="softwareDetail.serial_no_os" class="form-input"></ion-input>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">MS Office</label>
+                  <ion-select [(ngModel)]="softwareDetail.ms_office" interface="action-sheet" class="form-select" placeholder="Pilih MS Office">
+                    <ion-select-option *ngFor="let ms of msOfficeOptions" [value]="ms">{{ ms }}</ion-select-option>
+                  </ion-select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">MS Office SN</label>
+                  <ion-input type="text" placeholder="Contoh: XXXXX-XXXXX-XXXXX" [(ngModel)]="softwareDetail.ms_office_sn" class="form-input"></ion-input>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">ERP</label>
+                  <ion-select [(ngModel)]="softwareDetail.erp" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">WMS</label>
+                  <ion-select [(ngModel)]="softwareDetail.wms" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">ERIS</label>
+                  <ion-select [(ngModel)]="softwareDetail.eris" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CMMS</label>
+                  <ion-select [(ngModel)]="softwareDetail.cmms" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Visio</label>
+                  <ion-select [(ngModel)]="softwareDetail.visio" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">AutoCAD</label>
+                  <ion-select [(ngModel)]="softwareDetail.autocad" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Kaspersky</label>
+                  <ion-select [(ngModel)]="softwareDetail.kaspersky" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Ms Project</label>
+                  <ion-select [(ngModel)]="softwareDetail.ms_project" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Acrobat</label>
+                  <ion-select [(ngModel)]="softwareDetail.acrobat" interface="action-sheet" class="form-select">
+                    <ion-select-option value="TIDAK">TIDAK</ion-select-option>
+                    <ion-select-option value="ADA">ADA</ion-select-option>
+                  </ion-select>
+                </div>
+              </div>
+
+              <div class="detail-form-actions">
+                <ion-button size="small" (click)="submitSoftwareDetail()">
+                  <ion-icon name="save-outline" slot="start"></ion-icon>
+                  Simpan Software
+                </ion-button>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ===================== TAB: IP ADDRESS ===================== -->
+          <ng-container *ngIf="isEditing && activeDetailTab === 'ip'">
+            <div class="detail-form-card">
+              <h4>IP Address</h4>
+              <div class="form-group">
+                <label class="form-label">IP Address</label>
+                <ion-input type="text" placeholder="Contoh: 192.168.1.25" [(ngModel)]="formData.ip_address" class="form-input"></ion-input>
+              </div>
+              <div class="detail-form-actions">
+                <ion-button size="small" (click)="simpanInventory()">
+                  <ion-icon name="save-outline" slot="start"></ion-icon>
+                  Simpan IP Address
+                </ion-button>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ===================== TAB: HISTORY ===================== -->
+          <ng-container *ngIf="isEditing && activeDetailTab === 'history'">
+
+            <!-- Sub-tab: Riwayat Tiket vs Riwayat Pemegang vs Riwayat Departemen -->
+            <div class="history-subtabs">
+              <button
+                class="history-subtab-btn"
+                [class.active]="historySubTab === 'tiket'"
+                (click)="setHistorySubTab('tiket')">
+                <ion-icon name="pricetags-outline"></ion-icon> Riwayat Tiket
+              </button>
+              <button
+                class="history-subtab-btn"
+                [class.active]="historySubTab === 'pemegang'"
+                (click)="setHistorySubTab('pemegang')">
+                <ion-icon name="swap-horizontal-outline"></ion-icon> Riwayat Pemegang
+              </button>
+              <button
+                class="history-subtab-btn"
+                [class.active]="historySubTab === 'departemen'"
+                (click)="setHistorySubTab('departemen')">
+                <ion-icon name="business-outline"></ion-icon> Riwayat Departemen
+              </button>
+            </div>
+
+            <!-- ===== SUB-TAB: RIWAYAT TIKET (dikelompokkan per periode pemegang) ===== -->
+            <ng-container *ngIf="historySubTab === 'tiket'">
+
+              <div class="history-summary">
+                <ion-icon name="pricetags-outline"></ion-icon>
+                <div>
+                  <strong>{{ historyList.length }}</strong>
+                  <span>total tiket sepanjang riwayat asset ini</span>
+                </div>
+              </div>
+
+              <div class="holder-group" *ngFor="let group of historyByHolder; let gi = index">
+                <div class="holder-group-header" (click)="toggleHolderGroup(gi)">
+                  <div class="holder-group-title">
+                    <ion-icon name="person-circle-outline"></ion-icon>
+                    <strong>{{ group.nama_pemegang }}</strong>
+                    <ion-badge color="light" *ngIf="!group.periode_selesai && group.periode_mulai">Pemegang saat ini</ion-badge>
+                  </div>
+                  <div class="holder-group-meta">
+                    <span class="holder-group-period" *ngIf="group.periode_mulai">
+                      {{ group.periode_mulai | date:'dd/MM/yyyy' }}
+                      -
+                      {{ group.periode_selesai ? (group.periode_selesai | date:'dd/MM/yyyy') : 'Sekarang' }}
+                    </span>
+                    <ion-badge color="primary">{{ group.tickets.length }} tiket</ion-badge>
+                    <ion-icon [name]="expandedHolderIndex === gi ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                  </div>
+                </div>
+
+                <div class="detail-list history-timeline" *ngIf="expandedHolderIndex === gi">
+                  <div class="detail-list-item" *ngFor="let h of group.tickets">
+                    <div class="detail-list-info">
+                      <div class="history-header">
+                        <span class="ticket-id-text">{{ h.id_ticket }}</span>
+                        <ion-badge [color]="getTicketStatusColor(h.status)">{{ h.status }}</ion-badge>
+                        <span class="detail-date">{{ h.tanggal | date:'dd/MM/yyyy HH:mm' }}</span>
+                      </div>
+                      <span class="history-kategori" *ngIf="h.kategori">
+                        {{ h.kategori }}<span *ngIf="h.sub_kategori"> - {{ h.sub_kategori }}</span>
+                      </span>
+                      <p *ngIf="h.deskripsi">{{ h.deskripsi }}</p>
+                      <div class="history-meta">
+                        <span>Pelapor: {{ h.pelapor }}</span>
+                        <span *ngIf="h.teknisi">Teknisi: {{ h.teknisi }}</span>
+                        <span *ngIf="h.prioritas">Prioritas: {{ h.prioritas }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="detail-list-empty" *ngIf="group.tickets.length === 0">
+                    Tidak ada tiket yang dibuat selama periode ini.
+                  </div>
+                </div>
+              </div>
+
+              <div class="detail-list-empty" *ngIf="historyByHolder.length === 0">
+                Belum pernah ada tiket yang dibuat untuk asset ini.
+              </div>
+            </ng-container>
+
+            <!-- ===== SUB-TAB: RIWAYAT PEMEGANG ===== -->
+            <ng-container *ngIf="historySubTab === 'pemegang'">
+              <div class="history-summary">
+                <ion-icon name="swap-horizontal-outline"></ion-icon>
+                <div>
+                  <strong>{{ pemegangHistoryList.length }}</strong>
+                  <span>kali perpindahan pemegang untuk asset ini</span>
+                </div>
+              </div>
+
+              <div class="detail-list history-timeline">
+                <div class="detail-list-item" *ngFor="let ph of pemegangHistoryList">
+                  <div class="detail-list-info">
+                    <div class="history-header">
+                      <span class="ticket-id-text">
+                        {{ ph.nama_lama || 'Belum ada pemegang' }}
+                        <ion-icon name="arrow-forward-outline"></ion-icon>
+                        {{ ph.nama_baru || 'Dilepas (tidak ada pemegang)' }}
+                      </span>
+                      <span class="detail-date">{{ ph.tanggal_pindah | date:'dd/MM/yyyy HH:mm' }}</span>
+                    </div>
+                    <p *ngIf="ph.keterangan">{{ ph.keterangan }}</p>
+                  </div>
+                </div>
+                <div class="detail-list-empty" *ngIf="pemegangHistoryList.length === 0">
+                  Belum ada perubahan pemegang untuk asset ini.
+                </div>
+              </div>
+            </ng-container>
+
+            <!-- ===== SUB-TAB: RIWAYAT DEPARTEMEN ===== -->
+            <ng-container *ngIf="historySubTab === 'departemen'">
+              <div class="history-summary">
+                <ion-icon name="business-outline"></ion-icon>
+                <div>
+                  <strong>{{ departmentHistoryList.length }}</strong>
+                  <span>kali perpindahan departemen untuk asset ini</span>
+                </div>
+              </div>
+
+              <div class="detail-list history-timeline">
+                <div class="detail-list-item" *ngFor="let dh of departmentHistoryList">
+                  <div class="detail-list-info">
+                    <div class="history-header">
+                      <span class="ticket-id-text">
+                        {{ dh.nama_departemen_lama || 'Belum ada departemen' }}
+                        <ion-icon name="arrow-forward-outline"></ion-icon>
+                        {{ dh.nama_departemen_baru || 'Tidak ada departemen' }}
+                      </span>
+                      <span class="detail-date">{{ dh.tanggal_pindah | date:'dd/MM/yyyy HH:mm' }}</span>
+                    </div>
+                    <p *ngIf="dh.keterangan">{{ dh.keterangan }}</p>
+                  </div>
+                </div>
+                <div class="detail-list-empty" *ngIf="departmentHistoryList.length === 0">
+                  Belum ada perpindahan departemen untuk asset ini.
+                </div>
+              </div>
+            </ng-container>
+
+          </ng-container>
+
+        </ng-container>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal>

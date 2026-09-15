@@ -1,0 +1,581 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { IonicModule } from '@ionic/angular';
+import { TicketService, TicketApiRow } from '../../services/ticket.service';
+import { InventoryService, InventoryItem } from '../../services/inventory.service';
+import { KategoriService } from '../../services/kategori.service';
+import { SubKategoriService } from '../../services/sub-kategori.service';
+import { DepartemenService } from '../../services/departemen.services';
+
+export interface ListTicket {
+  id_ticket: string;
+  reported: string;
+  dept: string;
+  tanggal: string;
+  nama_kategori: string;
+  nama_sub_kategori: string;
+  aset: string;
+  lampiran: string;
+  teknisi: string;
+  status: string;
+  deskripsi?: string;
+  prioritas?: 'Low' | 'Normal' | 'Urgent';
+  deadline?: string | null;
+  statusPengerjaan?: string | null;   // status_pengerjaan dari assignment_ticket
+}
+
+@Component({
+  selector: 'app-list',
+  templateUrl: './list.page.html',
+  styleUrls: ['./list.page.scss'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, IonicModule],
+})
+export class ListTicketPage implements OnInit, OnDestroy {
+  isSidebarOpen = false;
+  activeMenu = 'list-ticket';
+
+  tickets: ListTicket[] = [];
+  inventoryList: InventoryItem[] = [];
+  isLoading = false;
+
+  searchTerm = '';
+  filterStatus = '';
+  filterDepartemen = '';
+  filterKategori = '';
+  statusOptions: string[] = [];
+  departemenOptions: string[] = [];
+  kategoriOptions: string[] = [];
+
+  currentPage = 1;
+  pageSize = 10;
+
+  isModalOpen = false;
+  isEditing = false;
+  selectedId: string | null = null;
+  selectedFile: File | null = null;
+
+  formData: any = {
+    id_departemen: '',
+    id_kategori: '',
+    id_sub_kategori: '',
+    kode_asset: '',
+    deskripsi: '',
+  };
+
+  departemenOptionsForModal: any[] = [];
+  kategoriOptionsForModal: any[] = [];
+  subKategoriOptionsForModal: any[] = [];
+  filteredSubKategoriOptions: any[] = [];
+  filteredAssetOptions: any[] = [];
+
+  private countdownInterval: any;
+
+  // ================= CHART STATISTIK TICKET =================
+  filterTahun: number | null = null;
+  selectedBulan: number | null = null; // 0 = Januari
+  selectedDeptChart: string = '';
+  filterStatusChart: string = ''; // '' | 'approval' | 'assigned' | 'belum_proses' | 'progress' | 'selesai'
+
+  readonly namaBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  readonly statusGroups = [
+    { key: 'approval', label: 'Menunggu Approval' },
+    { key: 'assigned', label: 'Assignment Ticket' },
+    { key: 'belum_proses', label: 'Belum Diproses Teknisi' },
+    { key: 'progress', label: 'Sedang Dikerjakan' },
+    { key: 'selesai', label: 'Selesai' },
+    { key: 'rejected', label: 'Ditolak' },
+  ];
+
+  constructor(
+    private router: Router,
+    private ticketService: TicketService,
+    private inventoryService: InventoryService,
+    private kategoriService: KategoriService,
+    private subKategoriService: SubKategoriService,
+    private departemenService: DepartemenService
+  ) {}
+
+  ngOnInit() {
+    this.loadTickets();
+    this.loadInventory();
+    this.loadMasterDataModal();
+  }
+
+  ionViewDidEnter() {
+    this.startTimer();
+  }
+
+  ngOnDestroy() {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+  }
+
+  startTimer() {
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
+    this.countdownInterval = setInterval(() => {
+      this.tickets = [...this.tickets];
+    }, 1000);
+  }
+
+  getLampiranUrl(lampiranPath: string): string {
+    if (!lampiranPath) return '';
+    if (lampiranPath.startsWith('http')) {
+      return lampiranPath;
+    }
+    const baseUrl = 'http://localhost:5000';
+    let cleanPath = lampiranPath.replace(/^\/?uploads\/?/, '');
+    cleanPath = cleanPath.replace(/^\/?lampiran\/?/, '');
+    return `${baseUrl}/uploads/${cleanPath}`;
+  }
+
+  loadTickets() {
+    this.isLoading = true;
+    this.ticketService.getAllRaw().subscribe({
+      next: (data: TicketApiRow[]) => {
+        this.tickets = data.map(item => ({
+          id_ticket: item.id_ticket,
+          reported: item.reported,
+          dept: item.dept,
+          tanggal: item.tanggal,
+          nama_kategori: item.nama_kategori,
+          nama_sub_kategori: item.nama_sub_kategori || '',
+          aset: item.aset || '',
+          lampiran: item.lampiran || '',
+          teknisi: item.teknisi || '',
+          status: item.status,
+          deskripsi: '',
+          prioritas: item.prioritas || 'Normal',
+          deadline: item.deadline || null,
+          statusPengerjaan: item.status_pengerjaan || null,
+        }));
+        this.buildFilterOptions();
+
+        if (this.filterTahun === null) {
+          this.filterTahun = this.tahunOptions[0] ?? new Date().getFullYear();
+        }
+
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.isLoading = false;
+        if (err.status === 403 || err.status === 401) {
+          alert('Akses ditolak. Pastikan Anda login sebagai Admin.');
+        }
+      }
+    });
+  }
+
+  getCountdownText(deadline: string | null): string {
+    if (!deadline) return '-';
+    const now = new Date().getTime();
+    const target = new Date(deadline).getTime();
+    const diff = target - now;
+
+    if (diff <= 0) return '⚠️ TELAT';
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  isDeadlineLate(deadline: string | null): boolean {
+    if (!deadline) return false;
+    return new Date().getTime() > new Date(deadline).getTime();
+  }
+
+  loadInventory() {
+    this.inventoryService.getAll().subscribe({
+      next: (data) => {
+        this.inventoryList = data;
+        this.filteredAssetOptions = data;
+      },
+      error: (err) => console.error('Gagal load inventory', err)
+    });
+  }
+
+  loadMasterDataModal() {
+    this.kategoriService.getAll().subscribe({
+      next: (res: any) => {
+        this.kategoriOptionsForModal = Array.isArray(res) ? res : (res.data || []);
+      },
+      error: (err) => console.error('Gagal load kategori modal', err)
+    });
+
+    this.subKategoriService.getAll().subscribe({
+      next: (res: any) => {
+        this.subKategoriOptionsForModal = Array.isArray(res) ? res : (res.data || []);
+      },
+      error: (err) => console.error('Gagal load sub kategori modal', err)
+    });
+
+    this.departemenService.getAll().subscribe({
+      next: (res: any) => {
+        this.departemenOptionsForModal = Array.isArray(res) ? res : (res.data || []);
+      },
+      error: (err) => console.error('Gagal load departemen modal', err)
+    });
+  }
+
+  onKategoriChange() {
+    const selectedKatId = Number(this.formData.id_kategori);
+    this.filteredSubKategoriOptions = this.subKategoriOptionsForModal.filter(
+      (sub: any) => Number(sub.idKategori ?? sub.id_kategori) === selectedKatId
+    );
+    this.formData.id_sub_kategori = '';
+  }
+
+  onDepartemenChange() {
+    const selectedDeptId = Number(this.formData.id_departemen);
+    this.filteredAssetOptions = this.inventoryList.filter((ast: any) => {
+      return !selectedDeptId || Number(ast.id_departemen) === selectedDeptId;
+    });
+  }
+
+  private buildFilterOptions() {
+    this.statusOptions = [...new Set(this.tickets.map((t) => t.status).filter(Boolean))];
+    this.departemenOptions = [...new Set(this.tickets.map((t) => t.dept).filter(Boolean))];
+    this.kategoriOptions = [...new Set(this.tickets.map((t) => t.nama_kategori).filter(Boolean))];
+  }
+
+  // ================= HELPER CHART =================
+
+  /** "2026-09-15 09:09:58" -> Date (aman lintas browser) */
+  private parseTanggal(raw: string | null | undefined): Date | null {
+    if (!raw) return null;
+    const d = new Date(String(raw).trim().replace(' ', 'T'));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /** Kelompokkan status apa pun ke bucket besar berdasarkan teks status saja.
+   * Masih dipakai untuk badge chip di chart level-3 (asset breakdown). */
+  getStatusGroup(status: string): string {
+    const s = (status || '').toLowerCase();
+    if (s.includes('solved') || s.includes('closed') || s.includes('selesai') || s.includes('resolved')) return 'selesai';
+    if (s.includes('proses') || s.includes('progress') || s.includes('assign')) return 'progress';
+    if (s.includes('approve') || s.includes('approval') || s.includes('menunggu')) return 'approval';
+    return 'lainnya';
+  }
+
+  /** 🔥 FUNNEL BERJENJANG — satu tiket cuma masuk SATU tahap,
+   * dipilih dari progres paling akhir/paling maju, supaya tidak
+   * tumpang tindih antara "Assignment Ticket" dan "Sedang Dikerjakan". */
+  getFunnelStage(t: ListTicket): string {
+    const statusLower = (t.status || '').toLowerCase();
+    const pengerjaanLower = (t.statusPengerjaan || '').toLowerCase();
+    const hasTeknisi = !!t.teknisi && t.teknisi.trim() !== '' && t.teknisi !== '-';
+
+    // 1. Selesai — paling final
+    if (statusLower.includes('solved') || statusLower.includes('selesai') || pengerjaanLower === 'selesai') {
+      return 'selesai';
+    }
+    // 2. Ditolak — keluar dari funnel utama
+    if (statusLower.includes('reject')) {
+      return 'rejected';
+    }
+    // 3. Sedang Dikerjakan — sudah ada teknisi DAN sudah mulai proses
+    if (hasTeknisi && pengerjaanLower === 'proses') {
+      return 'progress';
+    }
+    // 4. Belum Diproses Teknisi — sudah ada teknisi, tapi belum mulai
+    if (hasTeknisi) {
+      return 'belum_proses';
+    }
+    // 5. Assignment Ticket — sudah di-approve, tapi BELUM ada teknisi (perlu di-assign)
+    if (statusLower.includes('assign') || statusLower.includes('approve')) {
+      return 'assigned';
+    }
+    // 6. Menunggu Approval — tahap paling awal
+    return 'approval';
+  }
+
+  /** dipakai chip, chart, dan filter tabel — satu sumber kebenaran */
+  matchesStatusGroup(t: ListTicket, key: string): boolean {
+    return this.getFunnelStage(t) === key;
+  }
+
+  get tahunOptions(): number[] {
+    const set = new Set<number>();
+    this.tickets.forEach(t => {
+      const d = this.parseTanggal(t.tanggal);
+      if (d) set.add(d.getFullYear());
+    });
+    return [...set].sort((a, b) => b - a);
+  }
+
+  /** Basis semua chart: ticket yang sudah tersaring tahun + status group aktif */
+  private get chartBaseTickets(): ListTicket[] {
+    return this.tickets.filter(t => {
+      const d = this.parseTanggal(t.tanggal);
+      if (!d) return false;
+      if (this.filterTahun && d.getFullYear() !== this.filterTahun) return false;
+      if (this.filterStatusChart && !this.matchesStatusGroup(t, this.filterStatusChart)) return false;
+      return true;
+    });
+  }
+
+  /** LEVEL 1 — jumlah ticket per bulan (untuk tahun & status terpilih) */
+  get chartBulan(): { bulan: number; label: string; jumlah: number }[] {
+    const counts = new Array(12).fill(0);
+    this.chartBaseTickets.forEach(t => {
+      const d = this.parseTanggal(t.tanggal)!;
+      counts[d.getMonth()]++;
+    });
+    return counts.map((jumlah, bulan) => ({ bulan, label: this.namaBulan[bulan], jumlah }));
+  }
+
+  get maxBulanValue(): number {
+    return Math.max(1, ...this.chartBulan.map(b => b.jumlah));
+  }
+
+  /** LEVEL 2 — daftar departemen yang ticketing di bulan terpilih */
+  get chartDepartemen(): { departemen: string; jumlah: number }[] {
+    if (this.selectedBulan === null) return [];
+    const map = new Map<string, number>();
+    this.chartBaseTickets
+      .filter(t => this.parseTanggal(t.tanggal)!.getMonth() === this.selectedBulan)
+      .forEach(t => {
+        const dept = t.dept || '(Belum Diketahui)';
+        map.set(dept, (map.get(dept) || 0) + 1);
+      });
+    return [...map.entries()]
+      .map(([departemen, jumlah]) => ({ departemen, jumlah }))
+      .sort((a, b) => b.jumlah - a.jumlah);
+  }
+
+  get maxDeptValue(): number {
+    return Math.max(1, ...this.chartDepartemen.map(d => d.jumlah));
+  }
+
+  /** LEVEL 3 — asset yang di-ticketing pada departemen + bulan terpilih */
+  get chartAssets(): { aset: string; jumlah: number; tickets: ListTicket[] }[] {
+    if (this.selectedBulan === null || !this.selectedDeptChart) return [];
+    const map = new Map<string, ListTicket[]>();
+    this.chartBaseTickets
+      .filter(t =>
+        this.parseTanggal(t.tanggal)!.getMonth() === this.selectedBulan &&
+        (t.dept || '(Belum Diketahui)') === this.selectedDeptChart
+      )
+      .forEach(t => {
+        const aset = t.aset || '(Tanpa Asset)';
+        if (!map.has(aset)) map.set(aset, []);
+        map.get(aset)!.push(t);
+      });
+    return [...map.entries()]
+      .map(([aset, tickets]) => ({ aset, jumlah: tickets.length, tickets }))
+      .sort((a, b) => b.jumlah - a.jumlah);
+  }
+
+  get totalTicketChart(): number {
+    return this.chartBaseTickets.length;
+  }
+
+  countByStatusGroup(key: string): number {
+    return this.tickets.filter(t => {
+      const d = this.parseTanggal(t.tanggal);
+      if (!d) return false;
+      if (this.filterTahun && d.getFullYear() !== this.filterTahun) return false;
+      return this.matchesStatusGroup(t, key);
+    }).length;
+  }
+
+  // ===== INTERAKSI CHART =====
+  onTahunChange() {
+    this.selectedBulan = null;
+    this.selectedDeptChart = '';
+    this.onFilterChange();
+  }
+
+  selectStatusGroup(key: string) {
+    this.filterStatusChart = this.filterStatusChart === key ? '' : key;
+    this.selectedDeptChart = '';
+    this.onFilterChange();
+  }
+
+  selectBulan(bulan: number) {
+    this.selectedBulan = this.selectedBulan === bulan ? null : bulan;
+    this.selectedDeptChart = '';
+    this.onFilterChange();
+  }
+
+  selectDeptChart(dept: string) {
+    this.selectedDeptChart = this.selectedDeptChart === dept ? '' : dept;
+    this.onFilterChange();
+    setTimeout(() => {
+      document.querySelector('.asset-breakdown')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+
+  resetChartFilter() {
+    this.selectedBulan = null;
+    this.selectedDeptChart = '';
+    this.filterStatusChart = '';
+    this.onFilterChange();
+  }
+
+  // ================= FILTER & PAGINASI TABEL =================
+
+  get filteredTickets(): ListTicket[] {
+    const term = this.searchTerm.trim().toLowerCase();
+    return this.tickets.filter((t) => {
+      const matchSearch = !term || (t.id_ticket?.toLowerCase().includes(term) || t.reported?.toLowerCase().includes(term));
+      const matchStatus = !this.filterStatus || t.status === this.filterStatus;
+      const matchDept = !this.filterDepartemen || t.dept === this.filterDepartemen;
+      const matchKategori = !this.filterKategori || t.nama_kategori === this.filterKategori;
+
+      // --- filter yang berasal dari chart ---
+      const d = this.parseTanggal(t.tanggal);
+      const matchTahun = !this.filterTahun || (d ? d.getFullYear() === this.filterTahun : false);
+      const matchBulan = this.selectedBulan === null || (d ? d.getMonth() === this.selectedBulan : false);
+      const matchDeptChart = !this.selectedDeptChart || (t.dept || '(Belum Diketahui)') === this.selectedDeptChart;
+      const matchStatusChart = !this.filterStatusChart || this.matchesStatusGroup(t, this.filterStatusChart);
+
+      return matchSearch && matchStatus && matchDept && matchKategori
+        && matchTahun && matchBulan && matchDeptChart && matchStatusChart;
+    });
+  }
+
+  get totalPages(): number { return Math.max(1, Math.ceil(this.filteredTickets.length / this.pageSize)); }
+  get totalPagesArray(): number[] { return Array.from({ length: this.totalPages }, (_, i) => i + 1); }
+  get pagedTickets(): ListTicket[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredTickets.slice(start, start + this.pageSize);
+  }
+
+  onFilterChange() { this.currentPage = 1; }
+  goToPage(page: number) { this.currentPage = page; }
+  prevPage() { if (this.currentPage > 1) this.currentPage--; }
+  nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
+
+  openTambahModal() {
+    this.isEditing = false;
+    this.selectedId = null;
+    this.selectedFile = null;
+    this.formData = {
+      id_departemen: '',
+      id_kategori: '',
+      id_sub_kategori: '',
+      kode_asset: '',
+      deskripsi: '',
+    };
+    this.filteredSubKategoriOptions = [];
+    this.filteredAssetOptions = this.inventoryList;
+    this.isModalOpen = true;
+  }
+
+  openEditModal(ticket: ListTicket) {
+    this.isEditing = true;
+    this.selectedId = ticket.id_ticket;
+    this.selectedFile = null;
+    this.formData = { ...ticket };
+    this.isModalOpen = true;
+  }
+
+  closeModal() {
+    this.isModalOpen = false;
+  }
+
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+    }
+  }
+
+  simpanTicket() {
+    if (!this.formData.id_departemen || !this.formData.id_kategori || !this.formData.deskripsi) {
+      alert('Departemen, Kategori, dan Deskripsi wajib diisi!');
+      return;
+    }
+
+    this.ticketService.create(this.formData, this.selectedFile || undefined).subscribe({
+      next: () => {
+        alert('Tiket berhasil ditambahkan!');
+        this.loadTickets();
+        this.loadInventory();
+        this.closeModal();
+      },
+      error: (err) => {
+        console.error('Gagal menyimpan tiket:', err);
+        alert('Gagal menyimpan tiket: ' + (err.error?.message || err.message));
+      }
+    });
+  }
+
+  hapusTicket(ticket: ListTicket) {
+    if (confirm(`Apakah Anda yakin ingin menghapus tiket "${ticket.id_ticket}"?`)) {
+      this.ticketService.remove(ticket.id_ticket).subscribe({
+        next: () => {
+          alert('Tiket berhasil dihapus.');
+          this.loadTickets();
+        },
+        error: (err) => {
+          console.error('Gagal menghapus tiket:', err);
+          alert(err.error?.message || 'Gagal menghapus tiket.');
+        }
+      });
+    }
+  }
+
+  // Download PDF Check Sheet (cuma relevan untuk tiket yang punya aset/checklist preventive).
+  // Kalau Check Sheet-nya belum di-approve User, service ini otomatis nampilin alert error sendiri.
+  downloadChecklistPdf(ticket: ListTicket) {
+    this.ticketService.downloadChecklistPdf(ticket.id_ticket);
+  }
+
+  getStatusClass(status: string): string {
+    if (!status) return 'status-default';
+    const s = status.toLowerCase();
+    if (s.includes('proses') || s.includes('progress')) return 'status-proses';
+    if (s.includes('approve') || s.includes('approval') || s.includes('menunggu')) return 'status-approval';
+    if (s.includes('assign')) return 'status-assigned';
+    if (s.includes('resolved') || s.includes('closed') || s.includes('selesai')) return 'status-closed';
+    if (s.includes('reject') || s.includes('tolak')) return 'status-rejected';
+    return 'status-default';
+  }
+
+  // ===== NAVIGASI & SIDEBAR =====
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
+  }
+
+  setActiveMenu(menu: string) {
+    this.activeMenu = menu;
+    if (window.innerWidth < 1024) this.isSidebarOpen = false;
+  }
+
+  goToDashboard() { this.setActiveMenu('dashboard'); this.router.navigate(['/dashboard']); }
+  goToListTicket() { this.setActiveMenu('list-ticket'); this.router.navigate(['/list']); }
+  goToApprovalTicket() { this.setActiveMenu('approval-ticket'); this.router.navigate(['/approval']); }
+  goToAssignmentTicket() { this.setActiveMenu('assignment-ticket'); this.router.navigate(['/assignment']); }
+  goToKaryawan() { this.setActiveMenu('karyawan'); this.router.navigate(['/karyawan']); }
+  goToUser() { this.setActiveMenu('user'); this.router.navigate(['/users']); }
+  goToJabatan() { this.setActiveMenu('jabatan'); this.router.navigate(['/jabatan']); }
+  goToDepartemen() { this.setActiveMenu('departemen'); this.router.navigate(['/departemen']); }
+  goToBagianDepartemen() { this.setActiveMenu('bagian-departemen'); this.router.navigate(['/bagian-departemen']); }
+  goToKategori() { this.setActiveMenu('kategori'); this.router.navigate(['/kategori']); }
+  goToSubKategori() { this.setActiveMenu('sub-kategori'); this.router.navigate(['/sub-kategori']); }
+  goToTeknisi() { this.setActiveMenu('teknisi'); this.router.navigate(['/teknisi']); }
+  goToInventory() { this.setActiveMenu('inventory'); this.router.navigate(['/inventory']); }
+  goToSchedule() { this.setActiveMenu('schedule'); this.router.navigate(['/schedule']); }
+  goToLaporanFeedback() { this.setActiveMenu('laporan-feedback'); this.router.navigate(['/laporan-feedback']); }
+  goToStatistikTicket() { this.setActiveMenu('statistik-ticket'); this.router.navigate(['/statistik-ticket']); }
+  goToProfile() { this.setActiveMenu('profile'); this.router.navigate(['/profile']); }
+  goToNotifikasi() { this.setActiveMenu('notifikasi'); }
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    this.router.navigate(['/login']);
+  }
+
+  onViewDetail(ticket: ListTicket) { console.log('View detail', ticket.id_ticket); }
+  onEditTicket(ticket: ListTicket) { this.openEditModal(ticket); }
+  onNewTicket() { this.openTambahModal(); }
+}

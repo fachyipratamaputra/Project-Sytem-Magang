@@ -1,0 +1,1138 @@
+:host {
+  --primary: #2563eb;
+  --sidebar-bg: #16213e;
+  --sidebar-bg-hover: #1e2a4a;
+  --content-bg: #f4f6fb;
+  --card-bg: #ffffff;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+}
+
+.proses-tiket-content {
+  --background: var(--content-bg);
+}
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background: var(--sidebar-bg);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1000;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+
+  @media (max-width: 992px) {
+    transform: translateX(-100%);
+    &.open {
+      transform: translateX(0);
+    }
+  }
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon-wrapper {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.sidebar-close {
+  display: none;
+  @media (max-width: 992px) {
+    display: block;
+    --color: #fff;
+  }
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.avatar-wrapper {
+  position: relative;
+}
+
+.sidebar-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  object-fit: cover;
+}
+
+.online-status {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: var(--success);
+  border-radius: 50%;
+  border: 2px solid var(--sidebar-bg);
+}
+
+.sidebar-user-info {
+  flex: 1;
+}
+
+.sidebar-username {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+}
+
+.sidebar-userrole {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.sidebar-menu {
+  flex: 1;
+  padding: 8px 16px 24px;
+}
+
+.menu-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 16px 10px 6px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13.5px;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--sidebar-bg-hover);
+    color: #fff;
+  }
+
+  &.active {
+    background: var(--primary);
+    color: #fff;
+  }
+}
+
+.menu-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  width: 20px;
+}
+
+.menu-text {
+  flex: 1;
+}
+
+.logout-item {
+  margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 16px;
+  color: var(--danger);
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .menu-icon-wrapper .menu-icon {
+    color: var(--danger);
+  }
+}
+
+.sidebar-overlay {
+  display: none;
+  @media (max-width: 992px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+
+    &.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  margin-left: 250px;
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: 992px) {
+    margin-left: 0;
+  }
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-toggle {
+  display: none;
+  @media (max-width: 992px) {
+    display: block;
+  }
+}
+
+.page-title-inline {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  img {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+  }
+
+  .header-avatar-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+
+    @media (max-width: 576px) {
+      display: none;
+    }
+  }
+}
+
+.content-area {
+  padding: 24px;
+}
+
+.page-heading {
+  margin-bottom: 18px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.page-subtitle {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+/* Toolbar */
+.list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 14px;
+  min-width: 240px;
+  flex: 1 1 240px;
+
+  input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    width: 100%;
+    background: transparent;
+  }
+
+  .search-icon {
+    color: var(--text-muted);
+  }
+}
+
+/* Table */
+.table-card {
+  background: var(--card-bg);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.proses-tiket-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th,
+  td {
+    padding: 12px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  thead th {
+    background: var(--content-bg);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border-color);
+
+    &:hover {
+      background: #fafbfe;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  td {
+    color: var(--text-dark);
+    white-space: normal;
+  }
+}
+
+.ticket-id {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.fw-bold {
+  font-weight: 700;
+}
+
+.lampiran-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #eef2ff;
+  color: var(--primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+/* Deskripsi Column */
+.deskripsi-col {
+  min-width: 180px;
+  max-width: 250px;
+  white-space: normal !important;
+  word-wrap: break-word;
+  line-height: 1.4;
+  color: var(--text-dark);
+}
+
+/* Progress Input */
+.progress-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress-input {
+  --padding-start: 8px;
+  --padding-end: 4px;
+  width: 60px;
+  height: 32px;
+  font-size: 13px;
+  --background: #f8fafc;
+  --border-radius: 6px;
+  --border-color: var(--border-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.progress-symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Catatan Input */
+.catatan-input {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  height: 32px;
+  font-size: 13px;
+  --background: #f8fafc;
+  --border-radius: 6px;
+  --border-color: var(--border-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+/* Status & Action */
+.status-action {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-badge {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-align: center;
+
+  &.status-proses {
+    background: #fff7ed;
+    color: var(--warning);
+  }
+
+  &.status-selesai {
+    background: #f0fdf4;
+    color: var(--success);
+  }
+
+  &.status-default {
+    background: #f1f5f9;
+    color: var(--text-muted);
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-proses {
+  --border-radius: 6px;
+  --box-shadow: none;
+  font-size: 11px;
+  font-weight: 700;
+  height: 28px;
+  text-transform: none;
+}
+
+.btn-selesai {
+  --border-radius: 6px;
+  --box-shadow: none;
+  font-size: 11px;
+  font-weight: 700;
+  height: 28px;
+  text-transform: none;
+}
+
+.empty-row {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--text-muted);
+  white-space: normal;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.table-info {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-number {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.page-number:hover {
+  background: var(--content-bg);
+}
+
+.page-number.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ========================================== */
+/* STYLING MODAL CHAT (WhatsApp Style)         */
+/* ========================================== */
+.modal-content {
+  --background: #f2f5f8;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f2f5f8;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-loading, .chat-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 10px 16px;
+  border-radius: 18px;
+  position: relative;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  align-self: flex-start;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.bubble-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.sender-name {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.bubble-text {
+  font-size: 14px;
+  color: var(--text-dark);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.chat-bubble.bubble-me {
+  align-self: flex-end;
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  border-bottom-right-radius: 4px;
+}
+
+.bubble-me .bubble-header {
+  color: rgba(1, 1, 1, 0.8);
+}
+
+.bubble-me .sender-name {
+  color: rgba(17, 17, 17, 0.9);
+}
+
+.bubble-me .bubble-text {
+  color: #000000;
+}
+
+.chat-input-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  background: #ffffff;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.chat-input {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  background: #f3f4f6;
+  border-radius: 24px;
+  font-size: 14px;
+  flex: 1;
+}
+
+.chat-input-area ion-button {
+  --border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  --padding-start: 0;
+  --padding-end: 0;
+  margin: 0;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 4px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* ========================================== */
+/* STYLING COUNTDOWN TIMER                     */
+/* ========================================== */
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-timer.is-late {
+  color: #ef4444 !important;
+}
+
+.countdown-timer ion-icon {
+  font-size: 14px;
+}
+
+/* ========================================== */
+/* STYLING HISTORI PROGRES                     */
+/* ========================================== */
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.history-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.history-item:last-child {
+  border-bottom: none;
+}
+.history-badge {
+  background: #e2e8f0;
+  color: #1e293b;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 13px;
+  min-width: 40px;
+  text-align: center;
+}
+.history-text {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+}
+.history-note {
+  color: #334155;
+  font-size: 13px;
+}
+.history-date {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* ========================================== */
+/* STYLING MODAL CHECK SHEET (mirip PDF)       */
+/* ========================================== */
+.checksheet-modal {
+  --width: 900px;
+  --height: 90%;
+  --border-radius: 12px;
+
+  @media (max-width: 992px) {
+    --width: 100%;
+    --height: 100%;
+  }
+}
+
+.checksheet-form {
+  padding: 20px;
+  background: #ffffff;
+}
+
+/* ========================================== */
+/* HEADER FORM PERSIS SEPERTI PDF RESMI        */
+/* (pakai <table> beneran biar border-nya      */
+/* menyatu jadi satu kotak, sama seperti PDF)  */
+/* ========================================== */
+.checksheet-header-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0;
+
+  td {
+    border: 1px solid #1f2937;
+    vertical-align: middle;
+    padding: 8px 10px;
+  }
+}
+
+.cs-logo-cell {
+  width: 70px;
+  text-align: center;
+
+  .checksheet-logo {
+    width: 55px;
+    height: auto;
+    object-fit: contain;
+  }
+}
+
+.cs-title-cell {
+  text-align: center;
+
+  .cs-title-main {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .cs-title-sub {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+}
+
+.cs-formno-cell {
+  width: 170px;
+  font-size: 10.5px;
+  color: var(--text-dark);
+
+  div {
+    margin: 1px 0;
+  }
+}
+
+.checksheet-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #1f2937;
+  border-top: none;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+  color: var(--text-dark);
+
+  td {
+    padding: 3px 10px;
+  }
+
+  .cs-info-label {
+    width: 160px;
+    font-weight: 600;
+  }
+
+  .cs-info-value {
+    text-align: left;
+  }
+}
+
+.checksheet-table-wrapper {
+  overflow-x: auto;
+  overflow-y: visible; /* penting: jangan sampai popup B/C/D kepotong */
+}
+
+.checksheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 560px;
+
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 8px;
+    vertical-align: middle;
+    overflow: visible; /* jangan potong popup B/C/D yang keluar dari sel */
+  }
+
+  th {
+    background: #f1f5f9;
+    text-align: center;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .unit-cell {
+    text-align: center;
+    font-weight: 600;
+    background: #f8fafc;
+    color: var(--text-dark);
+  }
+
+  .check-col {
+    text-align: center;
+  }
+}
+
+/* ========================================== */
+/* 🔥 KOTAK CHECK OK/NC CUSTOM                 */
+/* (ganti ion-checkbox yang sebelumnya bug     */
+/* jadi kotak biru solid tanpa tanda centang)  */
+/* ========================================== */
+.cs-checkbox {
+  width: 22px;
+  height: 22px;
+  margin: 0 auto;
+  border: 2px solid #94a3b8;
+  border-radius: 4px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+
+  ion-icon {
+    font-size: 16px;
+    color: #ffffff;
+  }
+
+  &:hover {
+    border-color: #2563eb;
+  }
+
+  &.checked {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+  }
+}
+
+.cs-checkbox-nc {
+  color: #070606;
+
+  &.checked {
+    background: #ffffff !important;
+    border-color: #020202 !important;
+    color: #0e0c0c;
+  }
+}
+
+.checksheet-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ========================================== */
+/* POPUP PILIHAN HURUF B/C/D DI NC             */
+/* ========================================== */
+.nc-popup-col {
+  position: relative;
+  overflow: visible; /* supaya popup tidak kepotong border cell */
+}
+
+.nc-huruf-popup {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  margin-top: 4px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  width: 128px;
+}
+
+.nc-huruf-popup-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.nc-huruf-popup-options {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.nc-huruf-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  line-height: 1;
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+
+  &.active {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
+  }
+}
+
+.nc-huruf-popup-cancel {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--text-dark);
+  }
+}
+
+/* ========================================== */
+/* LEGENDA "CATATAN" & "KONDISI NC"            */
+/* (persis footer kiri-kanan di PDF resmi,     */
+/* pakai <table> biar border-nya nyatu, sama   */
+/* gaya dengan checksheet-header-table dan     */
+/* checksheet-signature-table)                 */
+/* ========================================== */
+.checksheet-legend-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-dark);
+
+  td {
+    border: 1px solid #1f2937;
+    padding: 10px 14px;
+    vertical-align: top;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--text-dark);
+  }
+
+  p {
+    margin: 2px 0;
+    line-height: 1.4;
+  }
+}
+
+.checksheet-legend-col {
+  width: 70%;
+}
+
+.checksheet-legend-nc {
+  width: 30%;
+}
+
+.checksheet-approval-actions {
+  margin: 16px 0 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.checksheet-signature-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #1e293b;
+
+  th, td {
+    border: 1px solid #1f2937;
+    padding: 6px 8px;
+    text-align: center;
+  }
+
+  th {
+    background: #f1f5f9;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .signature-row td {
+    height: 70px;
+    vertical-align: middle;
+    font-weight: 600;
+  }
+
+  .signature-date {
+    font-weight: 400;
+    color: #64748b;
+    font-size: 10px;
+  }
+
+  .signature-label {
+    font-size: 10px;
+    font-weight: 400;
+    color: #64748b;
+  }
+}
+
+/* ========================================== */
+/* 🔥 SEL TANDA TANGAN (gambar PNG + nama + tanggal) */
+/* dipakai di dalam .checksheet-signature-table,     */
+/* muncul otomatis begitu approver pernah upload TTD */
+/* ========================================== */
+.signature-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.signature-img {
+  max-width: 90px;
+  max-height: 34px;
+  object-fit: contain;
+  margin-bottom: 2px;
+}
+
+.signature-name {
+  font-weight: 600;
+  font-size: 11px;
+  color: #1e293b;
+}
